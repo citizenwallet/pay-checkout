@@ -1,8 +1,4 @@
-import {
-  PostgrestResponse,
-  PostgrestSingleResponse,
-  SupabaseClient,
-} from "@supabase/supabase-js";
+import { PostgrestResponse, SupabaseClient } from "@supabase/supabase-js";
 
 export interface Item {
   id: number;
