@@ -9,6 +9,7 @@ import {
   getProfileFromUsername,
   Profile,
 } from "@citizenwallet/sdk";
+import { getItemsForPlace } from "@/db/items";
 
 export default async function Page({
   params,
@@ -30,8 +31,6 @@ async function PlacePage({ accountOrUsername }: { accountOrUsername: string }) {
   const client = getServiceRoleClient();
   const community = new CommunityConfig(Config);
 
-  console.log(community);
-
   let place: Place | null = null;
   let profile: Profile | null = null;
   if (accountOrUsername.startsWith("0x")) {
@@ -50,12 +49,18 @@ async function PlacePage({ accountOrUsername }: { accountOrUsername: string }) {
       : null;
   }
 
-  console.log(profile);
-
   if (!place) {
     return <div>Place not found</div>;
   }
 
-  // return <Menu place={place} />;
-  return <Menu place={place} profile={profile} />;
+  const { data: items } = await getItemsForPlace(client, place.id);
+
+  return (
+    <Menu
+      place={place}
+      profile={profile}
+      items={items ?? []}
+      currencyLogo={community.community.logo}
+    />
+  );
 }

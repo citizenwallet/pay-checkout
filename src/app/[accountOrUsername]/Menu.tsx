@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { ShoppingCart } from "lucide-react";
+import { PlusIcon, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,37 +14,28 @@ import {
 } from "@/components/ui/card";
 import { Place } from "@/db/places";
 import { Profile } from "@citizenwallet/sdk";
-
-interface Item {
-  id: number;
-  name: string;
-  price: number;
-  description: string;
-}
+import { Item } from "@/db/items";
+import { formatCurrencyNumber } from "@/lib/currency";
+import CurrencyLogo from "@/components/currency-logo";
 
 interface VendorPageProps {
   place: Place;
   profile: Profile | null;
   items?: Item[];
+  currencyLogo?: string;
 }
 
 export default function Menu({
   profile,
-  items = [
-    { id: 1, name: "Espresso", price: 2.5, description: "Strong and bold" },
-    { id: 2, name: "Cappuccino", price: 3.5, description: "Creamy and frothy" },
-    { id: 3, name: "Latte", price: 3.75, description: "Smooth and milky" },
-    {
-      id: 4,
-      name: "Americano",
-      price: 2.75,
-      description: "Classic and simple",
-    },
-  ],
+  items = [],
+  currencyLogo,
 }: VendorPageProps) {
   const [selectedItems, setSelectedItems] = useState<{ [key: number]: number }>(
     {}
   );
+  const [activeCategory, setActiveCategory] = useState<string>("");
+  const categoryRefs = useRef<{ [key: string]: HTMLDivElement }>({});
+  const headerRef = useRef<HTMLDivElement>(null);
 
   const adjustItemQuantity = (id: number, delta: number) => {
     setSelectedItems((prev) => {
@@ -70,10 +61,59 @@ export default function Menu({
     0
   );
 
+  const itemsByCategory = items.reduce(
+    (acc: { [key: string]: Item[] }, item) => {
+      const category = item.category || "Uncategorized";
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(item);
+      return acc;
+    },
+    {}
+  );
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveCategory(entry.target.id.replace("category-", ""));
+          }
+        });
+      },
+      {
+        rootMargin: "-50% 0px -50% 0px",
+      }
+    );
+
+    Object.values(categoryRefs.current).forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  const scrollToCategory = (category: string) => {
+    const headerHeight = headerRef.current?.offsetHeight || 0;
+    const element = categoryRefs.current[category];
+    if (element) {
+      const y =
+        element.getBoundingClientRect().top +
+        window.pageYOffset -
+        headerHeight -
+        60;
+      window.scrollTo({ top: y, behavior: "smooth" });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <div className="flex-grow max-w-md mx-auto w-full bg-white shadow-xl">
-        <header className="p-4 bg-primary text-primary-foreground">
+        <header
+          ref={headerRef}
+          className="p-4 bg-primary text-primary-foreground sticky top-0 z-10"
+        >
           <div className="flex items-center gap-4">
             <Image
               src={profile?.image ?? "/shop.png"}
@@ -89,51 +129,86 @@ export default function Menu({
           </div>
         </header>
 
-        <main className="p-4 space-y-4">
-          <h2 className="text-xl font-semibold">Menu Items</h2>
-          {items.map((item) => (
-            <Card
-              key={item.id}
-              className={selectedItems[item.id] ? "border-primary" : ""}
+        <div className="sticky top-[96px] bg-white z-10 border-b">
+          <div className="overflow-x-auto">
+            <div className="flex p-2 gap-2">
+              {Object.keys(itemsByCategory).map((category) => (
+                <button
+                  key={category}
+                  onClick={() => scrollToCategory(category)}
+                  className={`px-4 py-2 rounded-full whitespace-nowrap ${
+                    activeCategory === category
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-gray-100"
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <main className="p-4 pb-12 space-y-4">
+          {Object.entries(itemsByCategory).map(([category, categoryItems]) => (
+            <div
+              key={category}
+              id={`category-${category}`}
+              ref={(el) => {
+                if (el) categoryRefs.current[category] = el;
+              }}
             >
-              <CardHeader>
-                <CardTitle>{item.name}</CardTitle>
-                <CardDescription>{item.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-lg font-bold">${item.price.toFixed(2)}</p>
-              </CardContent>
-              <CardFooter className="flex justify-between items-center">
-                {!selectedItems[item.id] ? (
-                  <Button
-                    variant="outline"
-                    onClick={() => adjustItemQuantity(item.id, 1)}
-                  >
-                    Add to Cart
-                  </Button>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => adjustItemQuantity(item.id, -1)}
-                    >
-                      -
-                    </Button>
-                    <span className="min-w-[2rem] text-center">
-                      {selectedItems[item.id]}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => adjustItemQuantity(item.id, 1)}
-                    >
-                      +
-                    </Button>
-                  </div>
-                )}
-              </CardFooter>
-            </Card>
+              <h2 className="text-xl font-semibold mb-4">{category}</h2>
+              {categoryItems.map((item) => (
+                <Card
+                  key={item.id}
+                  className={`${
+                    selectedItems[item.id] ? "border-primary" : ""
+                  } mb-4`}
+                >
+                  <CardHeader>
+                    <CardTitle>{item.name}</CardTitle>
+                    <CardDescription>{item.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex justify-start items-center gap-2">
+                    <CurrencyLogo logo={currencyLogo} size={24} />
+                    <p className="text-lg font-bold">
+                      {formatCurrencyNumber(item.price)}
+                    </p>
+                  </CardContent>
+                  <CardFooter className="flex justify-end items-center">
+                    {!selectedItems[item.id] ? (
+                      <Button
+                        variant="outline"
+                        onClick={() => adjustItemQuantity(item.id, 1)}
+                      >
+                        <PlusIcon className="h-4 w-4" /> Add to Cart
+                      </Button>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => adjustItemQuantity(item.id, -1)}
+                        >
+                          -
+                        </Button>
+                        <span className="min-w-[2rem] text-center">
+                          {selectedItems[item.id]}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => adjustItemQuantity(item.id, 1)}
+                        >
+                          +
+                        </Button>
+                      </div>
+                    )}
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
           ))}
         </main>
 
@@ -141,7 +216,8 @@ export default function Menu({
           <div className="fixed bottom-4 right-4 left-4 max-w-md mx-auto">
             <Button className="w-full" size="lg">
               <ShoppingCart className="mr-2 h-5 w-5" />
-              Pay ${totalPrice.toFixed(2)} for {totalItems} item
+              Pay <CurrencyLogo logo={currencyLogo} size={16} />
+              {formatCurrencyNumber(totalPrice)} for {totalItems} item
               {totalItems !== 1 ? "s" : ""}
             </Button>
           </div>

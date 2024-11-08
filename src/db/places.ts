@@ -5,9 +5,9 @@ import {
 } from "@supabase/supabase-js";
 
 export interface Place {
-  id: string;
+  id: number;
   created_at: string;
-  business_id: string;
+  business_id: number;
   slug: string;
   name: string;
   accounts: string[];
