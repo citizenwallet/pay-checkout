@@ -48,14 +48,17 @@ export default function Menu({
     {}
   );
 
-  const toggleItem = (id: number) => {
+  const adjustItemQuantity = (id: number, delta: number) => {
     setSelectedItems((prev) => {
       const newState = { ...prev };
-      if (newState[id]) {
+      const newQuantity = (newState[id] || 0) + delta;
+
+      if (newQuantity <= 0) {
         delete newState[id];
       } else {
-        newState[id] = 1;
+        newState[id] = newQuantity;
       }
+
       return newState;
     });
   };
@@ -79,7 +82,7 @@ export default function Menu({
               alt={profile?.name ?? "Shop"}
               width={80}
               height={80}
-              className="rounded-full"
+              className="rounded-full h-16 w-16 object-cover"
             />
             <div>
               <h1 className="text-2xl font-bold">{profile?.name ?? "Shop"}</h1>
@@ -102,13 +105,35 @@ export default function Menu({
               <CardContent>
                 <p className="text-lg font-bold">${item.price.toFixed(2)}</p>
               </CardContent>
-              <CardFooter>
-                <Button
-                  variant={selectedItems[item.id] ? "default" : "outline"}
-                  onClick={() => toggleItem(item.id)}
-                >
-                  {selectedItems[item.id] ? "Remove" : "Add to Cart"}
-                </Button>
+              <CardFooter className="flex justify-between items-center">
+                {!selectedItems[item.id] ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => adjustItemQuantity(item.id, 1)}
+                  >
+                    Add to Cart
+                  </Button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => adjustItemQuantity(item.id, -1)}
+                    >
+                      -
+                    </Button>
+                    <span className="min-w-[2rem] text-center">
+                      {selectedItems[item.id]}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => adjustItemQuantity(item.id, 1)}
+                    >
+                      +
+                    </Button>
+                  </div>
+                )}
               </CardFooter>
             </Card>
           ))}
