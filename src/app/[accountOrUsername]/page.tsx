@@ -20,7 +20,7 @@ export default async function Page({
 
   return (
     <div>
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<Menu loading />}>
         <PlacePage accountOrUsername={accountOrUsername} />
       </Suspense>
     </div>
@@ -57,6 +57,7 @@ async function PlacePage({ accountOrUsername }: { accountOrUsername: string }) {
 
   return (
     <Menu
+      accountOrUsername={accountOrUsername}
       place={place}
       profile={profile}
       items={items ?? []}
