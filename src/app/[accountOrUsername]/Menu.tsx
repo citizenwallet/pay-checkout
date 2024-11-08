@@ -12,7 +12,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Place } from "@/db/places";
 import { Profile } from "@citizenwallet/sdk";
 
@@ -30,7 +29,6 @@ interface VendorPageProps {
 }
 
 export default function Menu({
-  place,
   profile,
   items = [
     { id: 1, name: "Espresso", price: 2.5, description: "Strong and bold" },
