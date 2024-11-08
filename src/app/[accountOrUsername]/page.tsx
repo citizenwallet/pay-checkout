@@ -10,6 +10,51 @@ import {
   Profile,
 } from "@citizenwallet/sdk";
 import { getItemsForPlace } from "@/db/items";
+import { Metadata } from "next";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ accountOrUsername: string }>;
+}): Promise<Metadata> {
+  const { accountOrUsername } = await params;
+  const metadata: Metadata = {
+    title: "Place not found",
+    description: "This place has not been claimed yet.",
+    icons: {
+      icon: "/favicon.ico",
+    },
+    openGraph: {
+      title: "Place not found",
+      description: "This place has not been claimed yet.",
+      images: ["/shop.png"],
+    },
+  };
+
+  const community = new CommunityConfig(Config);
+
+  let profile: Profile | null = null;
+  if (accountOrUsername.startsWith("0x")) {
+    profile = await getProfileFromAddress(community, accountOrUsername);
+  } else {
+    profile = await getProfileFromUsername(community, accountOrUsername);
+  }
+
+  if (!profile) {
+    return metadata;
+  }
+
+  metadata.title = profile.name;
+  metadata.description = profile.description;
+  metadata.openGraph = {
+    title: profile.name,
+    description: profile.description,
+    images: [profile.image],
+    type: "website",
+  };
+
+  return metadata;
+}
 
 export default async function Page({
   params,
