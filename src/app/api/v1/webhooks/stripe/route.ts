@@ -1,10 +1,8 @@
 import { getServiceRoleClient } from "@/db";
 import { setOrderPaid } from "@/db/orders";
-import { BundlerService, CommunityConfig } from "@citizenwallet/sdk";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import Config from "@/cw/community.json";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -27,7 +25,7 @@ export async function POST(request: Request) {
 
   try {
     event = stripe.webhooks.constructEvent(body, sig, endpointSecret);
-  } catch (err: any) {
+  } catch (err: unknown & any) {
     console.error(`Webhook Error: ${err.message}`);
     return NextResponse.json(
       { error: `Webhook Error: ${err.message}` },
@@ -64,9 +62,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const community = new CommunityConfig(Config);
+    // const community = new CommunityConfig(Config);
 
-    const bundler = new BundlerService(community);
+    // const bundler = new BundlerService(community);
     // await bundler.mintERC20Token(account, amount);
 
     console.log("Order paid", data);
