@@ -20,8 +20,6 @@ export const generateCheckoutSession = async (
     throw new Error("STRIPE_PRICE_ID is not set");
   }
 
-  console.log("amount", amount);
-
   const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [
     {
       price: priceId,
@@ -36,8 +34,9 @@ export const generateCheckoutSession = async (
 
   const metadata: Stripe.MetadataParam = {
     account,
+    orderId,
     amount,
-    // forward_url: `https://${baseDomain}/${accountOrUsername}/pay/${orderId}`,
+    forward_url: `https://${baseDomain}/api/v1/webhooks/stripe`,
   };
 
   const request: Stripe.Checkout.SessionCreateParams = {

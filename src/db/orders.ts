@@ -72,3 +72,14 @@ export const getOrderWithBusinessAccount = async (
     .eq("id", orderId)
     .single();
 };
+
+export const setOrderPaid = async (
+  client: SupabaseClient,
+  orderId: number
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client
+    .from("orders")
+    .update({ status: "paid" })
+    .eq("id", orderId)
+    .single();
+};
