@@ -47,7 +47,7 @@ export default function Component({
     const interval = setInterval(getStatus, 2000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [order.id]);
 
   if (!order) {
     return <div>Loading...</div>;

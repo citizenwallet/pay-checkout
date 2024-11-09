@@ -3,7 +3,6 @@ import { getItemsForPlace } from "@/db/items";
 import { getOrder } from "@/db/orders";
 import Success from "./Success";
 import { Item } from "@/db/items";
-import { redirect } from "next/navigation";
 import { CommunityConfig } from "@citizenwallet/sdk";
 import Config from "@/cw/community.json";
 
