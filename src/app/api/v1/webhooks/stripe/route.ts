@@ -1,5 +1,5 @@
 import { getServiceRoleClient } from "@/db";
-import { setOrderPaid } from "@/db/orders";
+import { completeOrder } from "@/db/orders";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
     }
 
     const client = getServiceRoleClient();
-    const { data, error } = await setOrderPaid(client, orderId);
+    const { data, error } = await completeOrder(client, orderId);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
