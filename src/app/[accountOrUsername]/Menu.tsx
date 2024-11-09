@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { PlusIcon, ShoppingCart } from "lucide-react";
+import { Loader2, PlusIcon, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,6 +18,7 @@ import { Item } from "@/db/items";
 import { formatCurrencyNumber } from "@/lib/currency";
 import CurrencyLogo from "@/components/currency-logo";
 import { useRouter } from "next/navigation";
+import { generateOrder } from "../actions/generateOrder";
 
 interface VendorPageProps {
   accountOrUsername?: string;
@@ -31,11 +32,14 @@ interface VendorPageProps {
 export default function Menu({
   accountOrUsername,
   loading = false,
+  place,
   profile,
   items = [],
   currencyLogo,
 }: VendorPageProps) {
   const router = useRouter();
+
+  const [loadingOrder, setLoadingOrder] = useState(false);
 
   const [selectedItems, setSelectedItems] = useState<{ [key: number]: number }>(
     {}
@@ -114,8 +118,25 @@ export default function Menu({
     }
   };
 
-  const handlePay = () => {
-    router.push(`/${accountOrUsername}/pay`);
+  const handlePay = async () => {
+    if (!place) {
+      return;
+    }
+
+    setLoadingOrder(true);
+
+    const { data, error } = await generateOrder(
+      place.id,
+      selectedItems,
+      totalPrice
+    );
+    if (error) {
+      console.error(error);
+    } else {
+      router.push(`/${accountOrUsername}/pay/${data}`);
+    }
+
+    setLoadingOrder(false);
   };
 
   return (
@@ -271,10 +292,17 @@ export default function Menu({
               disabled={totalItems === 0}
               onClick={handlePay}
             >
-              <ShoppingCart className="mr-2 h-5 w-5" />
-              Pay <CurrencyLogo logo={currencyLogo} size={16} />
-              {formatCurrencyNumber(totalPrice)} for {totalItems} item
-              {totalItems !== 1 ? "s" : ""}
+              {loadingOrder && (
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              )}
+              {!loadingOrder && (
+                <>
+                  <ShoppingCart className="mr-2 h-5 w-5" />
+                  Pay <CurrencyLogo logo={currencyLogo} size={16} />
+                  {formatCurrencyNumber(totalPrice)} for {totalItems} item
+                  {totalItems !== 1 ? "s" : ""}
+                </>
+              )}
             </Button>
           </div>
         )}

@@ -1,16 +1,74 @@
-import { SupabaseClient } from "@supabase/supabase-js";
+import "server-only";
 
-import { PostgrestResponse } from "@supabase/supabase-js";
-import { Item } from "./items";
+import { PostgrestSingleResponse, SupabaseClient } from "@supabase/supabase-js";
 
-export const getItemsForPlace = async (
+export interface Order {
+  id: number;
+  created_at: string;
+  completed_at: string | null;
+  total: number;
+  due: number;
+  place_id: number;
+  items: {
+    id: number;
+    quantity: number;
+  }[];
+  status: "pending" | "paid" | "cancelled";
+}
+
+export interface OrderWithBusinessAccount extends Order {
+  business_account: string;
+}
+
+export const createOrder = async (
   client: SupabaseClient,
-  placeId: number
-): Promise<PostgrestResponse<Item>> => {
-  console.log("getItemsForPlace", placeId);
+  placeId: number,
+  total: number,
+  items: { id: number; quantity: number }[]
+): Promise<PostgrestSingleResponse<Order>> => {
   return client
-    .from("pos_items")
-    .select("*")
-    .eq("place_id", placeId)
-    .order("order", { ascending: true });
+    .from("orders")
+    .insert({ place_id: placeId, items, total, due: total, status: "pending" })
+    .select()
+    .single();
+};
+
+export const updateOrder = async (
+  client: SupabaseClient,
+  orderId: number,
+  total: number,
+  items: { id: number; quantity: number }[]
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client
+    .from("orders")
+    .update({ total, items })
+    .eq("id", orderId)
+    .single();
+};
+
+export const getOrder = async (
+  client: SupabaseClient,
+  orderId: number
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client.from("orders").select().eq("id", orderId).single();
+};
+
+export const getOrderWithBusinessAccount = async (
+  client: SupabaseClient,
+  orderId: number
+): Promise<PostgrestSingleResponse<OrderWithBusinessAccount>> => {
+  return client
+    .from("orders")
+    .select(
+      `
+      *,
+      places!inner (
+        businesses!inner (
+          account
+        )
+      )
+    `
+    )
+    .eq("id", orderId)
+    .single();
 };

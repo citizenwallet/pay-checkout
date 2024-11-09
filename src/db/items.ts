@@ -1,3 +1,5 @@
+import "server-only";
+
 import { PostgrestResponse, SupabaseClient } from "@supabase/supabase-js";
 
 export interface Item {
@@ -15,7 +17,6 @@ export const getItemsForPlace = async (
   client: SupabaseClient,
   placeId: number
 ): Promise<PostgrestResponse<Item>> => {
-  console.log("getItemsForPlace", placeId);
   return client
     .from("pos_items")
     .select("*")

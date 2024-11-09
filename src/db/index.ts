@@ -1,3 +1,5 @@
+import "server-only";
+
 import { SupabaseClient, createClient } from "@supabase/supabase-js";
 
 export const getServiceRoleClient = (): SupabaseClient => {
