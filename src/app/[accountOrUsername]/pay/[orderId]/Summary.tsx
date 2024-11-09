@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Minus, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, Minus, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -176,11 +176,12 @@ export default function Component({
             </span>
           </div>
           <Button
-            disabled={cartItems.length === 0}
+            disabled={cartItems.length === 0 || loading}
             onClick={handleConfirm}
             className="w-full"
           >
-            Confirm Purchase
+            Confirm Purchase{" "}
+            {loading && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
           </Button>
         </CardFooter>
       </Card>
