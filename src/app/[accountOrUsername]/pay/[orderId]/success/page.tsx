@@ -20,10 +20,6 @@ export default async function Page({
     return <div>Error: {error.message}</div>;
   }
 
-  if (data.status !== "paid") {
-    redirect(`/${accountOrUsername}/pay/${orderId}`);
-  }
-
   const { data: items, error: itemsError } = await getItemsForPlace(
     client,
     data.place_id

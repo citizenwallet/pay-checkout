@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Check, ChevronDown, ChevronUp } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Check, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,6 +15,7 @@ import { Item } from "@/db/items";
 import { formatCurrencyNumber } from "@/lib/currency";
 import CurrencyLogo from "@/components/currency-logo";
 import { useRouter } from "next/navigation";
+import { getOrderStatus } from "@/app/actions/getOrderStatuts";
 
 interface Props {
   accountOrUsername: string;
@@ -31,6 +32,22 @@ export default function Component({
 }: Props) {
   const router = useRouter();
   const [isExpanded, setIsExpanded] = useState(false);
+  const [status, setStatus] = useState<Order["status"]>(order.status);
+
+  useEffect(() => {
+    const getStatus = async () => {
+      const { data, error } = await getOrderStatus(order.id);
+      if (error) {
+        console.error(error);
+      } else {
+        setStatus(data?.status ?? "pending");
+      }
+    };
+
+    const interval = setInterval(getStatus, 2000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   if (!order) {
     return <div>Loading...</div>;
@@ -42,11 +59,16 @@ export default function Component({
     <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
       <Card className="mx-auto max-w-lg">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Order Confirmed</CardTitle>
-          <div className="text-green-600 flex items-center justify-center mt-2">
-            <Check className="w-6 h-6 mr-2" />
-            <span>Thank you for your order!</span>
-          </div>
+          <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
+            {status === "paid" ? "Order Confirmed" : "Order Pending"}{" "}
+            {status === "pending" && <Loader2 className="animate-spin" />}
+          </CardTitle>
+          {status === "paid" && (
+            <div className="text-green-600 flex items-center justify-center mt-2">
+              <Check className="w-6 h-6 mr-2" />
+              <span>Thank you for your order!</span>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
