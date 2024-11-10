@@ -92,9 +92,11 @@ export async function POST(request: Request) {
 
     const community = new CommunityConfig(Config);
 
+    const intAmount = parseInt(amount);
+
     const description = `Received ${
       community.primaryToken.symbol
-    } ${formatCurrencyNumber(parseInt(amount))} from ${placeName}`;
+    } ${formatCurrencyNumber(intAmount)} from ${placeName}`;
 
     const senderAccount = await getAccountAddress(community, signer.address);
     if (!senderAccount) {
@@ -108,7 +110,7 @@ export async function POST(request: Request) {
       community.primaryToken.address,
       senderAccount,
       account,
-      amount,
+      `${intAmount / 100}`,
       description
     );
 
