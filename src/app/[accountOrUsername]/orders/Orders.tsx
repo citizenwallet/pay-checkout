@@ -105,62 +105,72 @@ export default function VendorOrders({
 
         <div className="p-4">
           <ScrollArea className="h-[calc(100vh-8rem)]">
-            {orders.map((order) => {
-              const status = getOrderStatus(order);
-              return (
-                <Card key={order.id} className="mb-4">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Order #{order.id}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="flex items-center gap-2">
-                        <Badge className={getStatusColor(status)}>
-                          {status}
-                        </Badge>
-                        {status === "pending" && (
-                          <Loader2 className="animate-spin h-4 w-4" />
-                        )}
+            {loading &&
+              Array.from({ length: 5 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-[200px] w-full bg-gray-200 animate-pulse rounded-md mb-4"
+                />
+              ))}
+            {!loading &&
+              orders.map((order) => {
+                const status = getOrderStatus(order);
+                return (
+                  <Card key={order.id} className="mb-4">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg">
+                        Order #{order.id}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex justify-between items-center mb-2">
+                        <div className="flex items-center gap-2">
+                          <Badge className={getStatusColor(status)}>
+                            {status}
+                          </Badge>
+                          {status === "pending" && (
+                            <Loader2 className="animate-spin h-4 w-4" />
+                          )}
+                        </div>
+                        <span className="text-sm text-gray-500">
+                          {format(
+                            new Date(order.created_at),
+                            "MMM d, yyyy HH:mm"
+                          )}
+                        </span>
                       </div>
-                      <span className="text-sm text-gray-500">
-                        {format(
-                          new Date(order.created_at),
-                          "MMM d, yyyy HH:mm"
-                        )}
-                      </span>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="flex items-center gap-1">
-                        Total: <CurrencyLogo logo={currencyLogo} size={18} />
-                        {formatCurrencyNumber(order.total)}
-                      </p>
-                      <div className="mt-2">
-                        <p className="font-medium">Items:</p>
-                        {order.items.map((orderItem) => {
-                          const item = items[orderItem.id];
-                          return (
-                            <div
-                              key={orderItem.id}
-                              className="flex justify-between text-sm pl-2"
-                            >
-                              <span>
-                                {item?.name} × {orderItem.quantity}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <CurrencyLogo logo={currencyLogo} size={14} />
-                                {formatCurrencyNumber(
-                                  item.price * orderItem.quantity
-                                )}
-                              </span>
-                            </div>
-                          );
-                        })}
+                      <div className="space-y-1">
+                        <p className="flex items-center gap-1">
+                          Total: <CurrencyLogo logo={currencyLogo} size={18} />
+                          {formatCurrencyNumber(order.total)}
+                        </p>
+                        <div className="mt-2">
+                          <p className="font-medium">Items:</p>
+                          {order.items.map((orderItem) => {
+                            const item = items[orderItem.id];
+                            return (
+                              <div
+                                key={orderItem.id}
+                                className="flex justify-between text-sm pl-2"
+                              >
+                                <span>
+                                  {item?.name} × {orderItem.quantity}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <CurrencyLogo logo={currencyLogo} size={14} />
+                                  {formatCurrencyNumber(
+                                    item.price * orderItem.quantity
+                                  )}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                    </CardContent>
+                  </Card>
+                );
+              })}
           </ScrollArea>
         </div>
       </div>
