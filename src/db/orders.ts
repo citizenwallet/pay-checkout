@@ -77,6 +77,7 @@ export const getOrdersByPlace = async (
   limit: number = 10,
   offset: number = 0
 ): Promise<PostgrestResponse<Order>> => {
+  console.log("getOrdersByPlace", placeId, limit, offset);
   return client
     .from("orders")
     .select()
