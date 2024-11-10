@@ -15,6 +15,12 @@ export interface Place {
   accounts: string[];
 }
 
+export interface PlaceSearchResult {
+  id: number;
+  name: string;
+  slug: string;
+}
+
 export const getPlaceByUsername = async (
   client: SupabaseClient,
   username: string
@@ -30,4 +36,14 @@ export const getPlacesByAccount = async (
     .from("places")
     .select("*")
     .contains("accounts", JSON.stringify([account]));
+};
+
+export const searchPlaces = async (
+  client: SupabaseClient,
+  query: string
+): Promise<PostgrestResponse<PlaceSearchResult>> => {
+  return client
+    .from("places")
+    .select("id, name, slug")
+    .ilike("name", `%${query}%`);
 };
