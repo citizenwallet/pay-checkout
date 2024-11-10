@@ -16,6 +16,7 @@ import { formatCurrencyNumber } from "@/lib/currency";
 import CurrencyLogo from "@/components/currency-logo";
 import { useRouter } from "next/navigation";
 import { getOrderStatus } from "@/app/actions/getOrderStatuts";
+import { format } from "date-fns";
 
 interface Props {
   accountOrUsername: string;
@@ -31,7 +32,6 @@ export default function Component({
   currencyLogo,
 }: Props) {
   const router = useRouter();
-  const [isExpanded, setIsExpanded] = useState(false);
   const [status, setStatus] = useState<Order["status"]>(order.status);
 
   useEffect(() => {
@@ -52,8 +52,6 @@ export default function Component({
   if (!order) {
     return <div>Loading...</div>;
   }
-
-  const toggleExpand = () => setIsExpanded(!isExpanded);
 
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
@@ -78,51 +76,41 @@ export default function Component({
             </div>
             <div className="flex justify-between items-center">
               <span className="font-semibold">Date:</span>
-              <span>{order.completed_at}</span>
+              <span>
+                {order.completed_at
+                  ? format(new Date(order.completed_at), "MMM d, yyyy HH:mm")
+                  : ""}
+              </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="font-semibold">Total:</span>
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2 font-semibold">
                 <CurrencyLogo logo={currencyLogo} size={20} />
                 {formatCurrencyNumber(order.total)}
               </span>
             </div>
           </div>
           <div className="mt-6">
-            <Button
-              onClick={toggleExpand}
-              variant="outline"
-              className="w-full flex justify-between items-center"
-            >
-              {isExpanded ? "Hide" : "Show"} Order Details
-              {isExpanded ? (
-                <ChevronUp className="ml-2 h-4 w-4" />
-              ) : (
-                <ChevronDown className="ml-2 h-4 w-4" />
-              )}
-            </Button>
-            {isExpanded && (
-              <div className="mt-4 space-y-2">
-                {order.items.map((item) => {
-                  const itemData = items[item.id];
-                  if (!itemData) return null;
-                  return (
-                    <div
-                      key={item.id}
-                      className="flex justify-between items-center"
-                    >
-                      <span>
-                        {itemData.name} x{item.quantity}
-                      </span>
-                      <span className="flex items-center gap-2">
-                        <CurrencyLogo logo={currencyLogo} size={20} />
-                        {formatCurrencyNumber(itemData.price * item.quantity)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            <div className="mt-4 p-2 space-y-2 rounded-lg bg-gray-200">
+              {order.items.map((item) => {
+                const itemData = items[item.id];
+                if (!itemData) return null;
+                return (
+                  <div
+                    key={item.id}
+                    className="flex justify-between items-center"
+                  >
+                    <span>
+                      {itemData.name} x{item.quantity}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <CurrencyLogo logo={currencyLogo} size={20} />
+                      {formatCurrencyNumber(itemData.price * item.quantity)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </CardContent>
         <CardFooter className="flex justify-center">
