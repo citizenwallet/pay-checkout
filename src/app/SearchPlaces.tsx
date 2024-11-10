@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Loader2, Search } from "lucide-react";
@@ -36,9 +36,12 @@ export default function PlaceSearch({
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleSearch = async (q: string) => {
-    router.push(`?search=${q}`);
-  };
+  const handleSearch = useCallback(
+    async (q: string) => {
+      router.push(`?search=${q}`);
+    },
+    [router]
+  );
 
   useEffect(() => {
     if (debouncedQuery) {
