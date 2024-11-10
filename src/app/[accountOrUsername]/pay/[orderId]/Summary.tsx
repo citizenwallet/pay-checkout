@@ -50,7 +50,7 @@ export default function Component({
     );
   };
 
-  const totalExcludingVat = !items
+  const total = !items
     ? 0
     : cartItems.reduce((sum, cartItem) => {
         const item = items[cartItem.id];
@@ -63,12 +63,14 @@ export default function Component({
     : cartItems.reduce((sum, cartItem) => {
         const item = items[cartItem.id];
         if (!item) return sum;
-
-        const itemTotal = item.price * (item.vat / 100) * cartItem.quantity;
-        return sum + itemTotal;
+        // Calculate VAT portion from the inclusive price
+        // For example, with 20% VAT: price of 120 contains 20 VAT
+        const vatMultiplier = item.vat / (100 + item.vat);
+        const itemVat = item.price * vatMultiplier * cartItem.quantity;
+        return sum + itemVat;
       }, 0);
 
-  const total = totalExcludingVat + vat;
+  const totalExcludingVat = total - vat;
 
   const handleConfirm = async () => {
     if (!order) return;
