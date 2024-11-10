@@ -1,8 +1,16 @@
 import { getServiceRoleClient } from "@/db";
 import { completeOrder } from "@/db/orders";
+import { formatCurrencyNumber } from "@/lib/currency";
+import {
+  BundlerService,
+  CommunityConfig,
+  getAccountAddress,
+} from "@citizenwallet/sdk";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import Config from "@/cw/community.json";
+import { Wallet } from "ethers";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -51,6 +59,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No account" }, { status: 400 });
     }
 
+    const placeName = session.metadata?.placeName;
+    if (!placeName) {
+      return NextResponse.json({ error: "No placeName" }, { status: 400 });
+    }
+
+    const placeId = session.metadata?.placeId;
+    if (!placeId) {
+      return NextResponse.json({ error: "No placeId" }, { status: 400 });
+    }
+
     const orderId = parseInt(session.metadata?.orderId ?? "0");
     if (!orderId || isNaN(orderId)) {
       return NextResponse.json({ error: "No orderId" }, { status: 400 });
@@ -63,10 +81,36 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // const community = new CommunityConfig(Config);
+    if (
+      !process.env.FAUCET_PRIVATE_KEY ||
+      process.env.FAUCET_PRIVATE_KEY === "DEV"
+    ) {
+      return NextResponse.json({ received: true });
+    }
 
-    // const bundler = new BundlerService(community);
-    // await bundler.mintERC20Token(account, amount);
+    const signer = new Wallet(process.env.FAUCET_PRIVATE_KEY!);
+
+    const community = new CommunityConfig(Config);
+
+    const description = `Received ${
+      community.primaryToken.symbol
+    } ${formatCurrencyNumber(parseInt(amount))} from ${placeName}`;
+
+    const senderAccount = await getAccountAddress(community, signer.address);
+    if (!senderAccount) {
+      return NextResponse.json({ error: "No sender account" }, { status: 400 });
+    }
+
+    const bundler = new BundlerService(community);
+
+    await bundler.mintERC20Token(
+      signer,
+      community.primaryToken.address,
+      senderAccount,
+      account,
+      amount,
+      description
+    );
 
     console.log("Order paid", data);
   }

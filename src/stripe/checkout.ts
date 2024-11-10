@@ -1,10 +1,11 @@
+import { getServiceRoleClient } from "@/db";
+import { getPlaceByUsername, getPlacesByAccount } from "@/db/places";
 import "server-only";
 
 import Stripe from "stripe";
 
 export const generateCheckoutSession = async (
   accountOrUsername: string,
-  account: string,
   orderId: number,
   amount: number
 ) => {
@@ -32,8 +33,36 @@ export const generateCheckoutSession = async (
     throw new Error("BASE_DOMAIN is not set");
   }
 
+  const client = getServiceRoleClient();
+
+  let account = accountOrUsername;
+  if (!account.startsWith("0x")) {
+    const { data } = await getPlaceByUsername(client, accountOrUsername);
+    const accounts = data?.accounts ?? [];
+
+    if (accounts.length > 0) {
+      account = accounts[0];
+    }
+  }
+
+  if (!account.startsWith("0x")) {
+    throw new Error("Invalid account");
+  }
+
+  const { data: placeData, error } = await getPlacesByAccount(client, account);
+  if (error) {
+    throw new Error("Error getting place");
+  }
+
+  const place = placeData?.[0] ?? null;
+  if (!place) {
+    throw new Error("Place not found");
+  }
+
   const metadata: Stripe.MetadataParam = {
     account,
+    placeName: place.name,
+    placeId: place.id,
     orderId,
     amount,
     forward_url: `https://${baseDomain}/api/v1/webhooks/stripe`,
@@ -43,6 +72,7 @@ export const generateCheckoutSession = async (
     client_reference_id: account,
     line_items,
     mode: "payment",
+    automatic_tax: { enabled: true },
     success_url: `https://${baseDomain}/${accountOrUsername}/pay/${orderId}/success`,
     cancel_url: `https://${baseDomain}/${accountOrUsername}/pay/${orderId}`,
     metadata,

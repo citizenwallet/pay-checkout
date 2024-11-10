@@ -16,14 +16,6 @@ export interface Order {
   status: "pending" | "paid" | "cancelled";
 }
 
-export interface OrderWithBusinessAccount extends Order {
-  places: {
-    businesses: {
-      account: string;
-    };
-  };
-}
-
 export const createOrder = async (
   client: SupabaseClient,
   placeId: number,
@@ -55,26 +47,6 @@ export const getOrder = async (
   orderId: number
 ): Promise<PostgrestSingleResponse<Order>> => {
   return client.from("orders").select().eq("id", orderId).single();
-};
-
-export const getOrderWithBusinessAccount = async (
-  client: SupabaseClient,
-  orderId: number
-): Promise<PostgrestSingleResponse<OrderWithBusinessAccount>> => {
-  return client
-    .from("orders")
-    .select(
-      `
-      *,
-      places!inner (
-        businesses!inner (
-          account
-        )
-      )
-    `
-    )
-    .eq("id", orderId)
-    .single();
 };
 
 export const completeOrder = async (

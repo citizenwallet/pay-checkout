@@ -1,7 +1,7 @@
 "use server";
 
 import { getServiceRoleClient } from "@/db";
-import { updateOrder, getOrderWithBusinessAccount } from "@/db/orders";
+import { updateOrder, getOrder } from "@/db/orders";
 import { generateCheckoutSession } from "@/stripe/checkout";
 
 export const confirmPurchase = async (
@@ -17,19 +17,11 @@ export const confirmPurchase = async (
     throw new Error(error.message);
   }
 
-  const {
-    data: orderWithBusinessAccount,
-    error: orderWithBusinessAccountError,
-  } = await getOrderWithBusinessAccount(client, orderId);
+  const { data: order, error: orderError } = await getOrder(client, orderId);
 
-  if (orderWithBusinessAccountError) {
-    throw new Error(orderWithBusinessAccountError.message);
+  if (orderError) {
+    throw new Error(orderError.message);
   }
 
-  return generateCheckoutSession(
-    accountOrUsername,
-    orderWithBusinessAccount.places.businesses.account,
-    orderWithBusinessAccount.id,
-    orderWithBusinessAccount.total
-  );
+  return generateCheckoutSession(accountOrUsername, order.id, order.total);
 };
