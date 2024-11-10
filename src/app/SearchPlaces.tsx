@@ -36,11 +36,15 @@ export default function PlaceSearch({
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const handleSearch = async (q: string) => {
+    router.push(`?search=${q}`);
+  };
+
   useEffect(() => {
     if (debouncedQuery) {
       handleSearch(debouncedQuery);
     }
-  }, [debouncedQuery]);
+  }, [debouncedQuery, handleSearch]);
 
   useEffect(() => {
     setIsLoading(false);
@@ -68,10 +72,6 @@ export default function PlaceSearch({
     } else {
       setIsLoading(true);
     }
-  };
-
-  const handleSearch = async (q: string) => {
-    router.push(`?search=${q}`);
   };
 
   const handlePlaceClick = (slug: string) => {

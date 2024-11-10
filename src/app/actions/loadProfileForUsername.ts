@@ -9,6 +9,7 @@ export const loadProfileForUsernameAction = async (username: string) => {
   try {
     return await getProfileFromUsername(community, username);
   } catch (e) {
+    console.error(e);
     return null;
   }
 };
