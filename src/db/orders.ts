@@ -1,6 +1,10 @@
 import "server-only";
 
-import { PostgrestSingleResponse, SupabaseClient } from "@supabase/supabase-js";
+import {
+  PostgrestResponse,
+  PostgrestSingleResponse,
+  SupabaseClient,
+} from "@supabase/supabase-js";
 
 export interface Order {
   id: number;
@@ -65,4 +69,18 @@ export const getOrderStatus = async (
   orderId: number
 ): Promise<PostgrestSingleResponse<Order["status"]>> => {
   return client.from("orders").select("status").eq("id", orderId).single();
+};
+
+export const getOrdersByPlace = async (
+  client: SupabaseClient,
+  placeId: number,
+  limit: number = 10,
+  offset: number = 0
+): Promise<PostgrestResponse<Order>> => {
+  return client
+    .from("orders")
+    .select()
+    .eq("place_id", placeId)
+    .order("created_at", { ascending: false });
+  // .range(offset, offset + limit); // TODO: Uncomment this when we have pagination
 };
