@@ -72,7 +72,6 @@ export const generateCheckoutSession = async (
     client_reference_id: account,
     line_items,
     mode: "payment",
-    automatic_tax: { enabled: true },
     success_url: `https://${baseDomain}/${accountOrUsername}/pay/${orderId}/success`,
     cancel_url: `https://${baseDomain}/${accountOrUsername}/pay/${orderId}`,
     metadata,
