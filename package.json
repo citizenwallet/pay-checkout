@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@citizenwallet/sdk": "^2.0.33",
+    "@citizenwallet/sdk": "^2.0.34",
     "@radix-ui/react-slot": "^1.1.0",
     "@supabase/supabase-js": "^2.46.1",
     "class-variance-authority": "^0.7.0",
