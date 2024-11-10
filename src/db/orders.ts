@@ -17,7 +17,11 @@ export interface Order {
 }
 
 export interface OrderWithBusinessAccount extends Order {
-  business_account: string;
+  places: {
+    businesses: {
+      account: string;
+    };
+  };
 }
 
 export const createOrder = async (
@@ -79,7 +83,7 @@ export const completeOrder = async (
 ): Promise<PostgrestSingleResponse<Order>> => {
   return client
     .from("orders")
-    .update({ status: "paid", completed_at: new Date().toISOString() })
+    .update({ status: "paid", due: 0, completed_at: new Date().toISOString() })
     .eq("id", orderId)
     .single();
 };

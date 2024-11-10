@@ -28,7 +28,7 @@ export const confirmPurchase = async (
 
   return generateCheckoutSession(
     accountOrUsername,
-    orderWithBusinessAccount.business_account,
+    orderWithBusinessAccount.places.businesses.account,
     orderWithBusinessAccount.id,
     orderWithBusinessAccount.total
   );
