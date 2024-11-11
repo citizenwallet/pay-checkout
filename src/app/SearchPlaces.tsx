@@ -11,6 +11,7 @@ import { loadProfileForUsernameAction } from "./actions/loadProfileForUsername";
 import { ProfileWithTokenId } from "@citizenwallet/sdk";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Link } from "@/components/link";
 
 interface PlaceSearchProps {
   search?: string;
@@ -77,10 +78,6 @@ export default function PlaceSearch({
     }
   };
 
-  const handlePlaceClick = (slug: string) => {
-    router.push(`/${slug}`);
-  };
-
   return (
     <div className="flex flex-col justify-start items-center min-h-screen bg-gray-100 p-4 md:flex md:justify-start">
       <div className="flex flex-col flex-1 w-full max-w-md">
@@ -105,16 +102,16 @@ export default function PlaceSearch({
           </div>
         </div>
         {places.length > 0 && (
-          <ul className="space-y-4">
+          <div className="space-y-4">
             {places.map((place) => {
               const profile: ProfileWithTokenId | undefined =
                 profiles[place.slug];
               const isProfileLoading = profilesLoading[place.slug];
               return (
-                <li
+                <Link
                   key={place.id}
                   className="bg-white p-4 rounded-lg shadow"
-                  onClick={() => handlePlaceClick(place.slug)}
+                  href={`/${place.slug}`}
                 >
                   <div className="flex items-start space-x-4">
                     {!isProfileLoading && (
@@ -142,10 +139,10 @@ export default function PlaceSearch({
                       <ArrowRight className="h-4 w-4" />
                     </div>
                   </div>
-                </li>
+                </Link>
               );
             })}
-          </ul>
+          </div>
         )}
         {places.length === 0 && query && !isLoading && (
           <div className="w-full flex-1 flex justify-center items-center">
