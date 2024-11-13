@@ -77,17 +77,21 @@ export default function Component({
 
     setLoading(true);
 
-    const session = await confirmPurchase(
-      accountOrUsername,
-      order.id,
-      total,
-      cartItems
-    );
+    try {
+      const session = await confirmPurchase(
+        accountOrUsername,
+        order.id,
+        total,
+        cartItems
+      );
 
-    setLoading(false);
-
-    if (session?.url) {
-      router.push(session.url);
+      if (session?.url) {
+        router.push(session.url);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 

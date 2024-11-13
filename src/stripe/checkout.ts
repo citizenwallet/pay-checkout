@@ -1,4 +1,5 @@
 import { getServiceRoleClient } from "@/db";
+import { completeOrder } from "@/db/orders";
 import { getPlaceByUsername, getPlacesByAccount } from "@/db/places";
 import "server-only";
 
@@ -20,13 +21,6 @@ export const generateCheckoutSession = async (
   if (!priceId) {
     throw new Error("STRIPE_PRICE_ID is not set");
   }
-
-  const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [
-    {
-      price: priceId,
-      quantity: amount,
-    },
-  ];
 
   const baseDomain = process.env.BASE_DOMAIN;
   if (!baseDomain) {
@@ -59,6 +53,23 @@ export const generateCheckoutSession = async (
     throw new Error("Place not found");
   }
 
+  const demoCheckoutSlugs = process.env.DEMO_CHECKOUT_SLUGS?.split(",") ?? [];
+  if (demoCheckoutSlugs.includes(place.slug)) {
+    // demo checkout does not need to go through stripe
+    // wait 1 second to simulate processing time
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // set order to paid
+    const { error } = await completeOrder(client, orderId);
+    if (error) {
+      throw new Error("Error completing order");
+    }
+
+    return {
+      url: `https://${baseDomain}/${accountOrUsername}/pay/${orderId}/success`,
+    };
+  }
+
   const metadata: Stripe.MetadataParam = {
     account,
     placeName: place.name,
@@ -67,6 +78,13 @@ export const generateCheckoutSession = async (
     amount,
     forward_url: `https://${baseDomain}/api/v1/webhooks/stripe`,
   };
+
+  const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [
+    {
+      price: priceId,
+      quantity: amount,
+    },
+  ];
 
   const request: Stripe.Checkout.SessionCreateParams = {
     client_reference_id: account,
