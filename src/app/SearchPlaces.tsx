@@ -12,6 +12,7 @@ import { ProfileWithTokenId } from "@citizenwallet/sdk";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "@/components/link";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface PlaceSearchProps {
   search?: string;
@@ -102,43 +103,43 @@ export default function PlaceSearch({
           </div>
         </div>
         {places.length > 0 && (
-          <div className="space-y-4">
+          <div className="flex flex-col gap-2">
             {places.map((place) => {
               const profile: ProfileWithTokenId | undefined =
                 profiles[place.slug];
               const isProfileLoading = profilesLoading[place.slug];
               return (
-                <Link
-                  key={place.id}
-                  className="bg-white p-4 rounded-lg shadow"
-                  href={`/${place.slug}`}
-                >
-                  <div className="flex items-start space-x-4">
-                    {!isProfileLoading && (
-                      <Image
-                        height={30}
-                        width={30}
-                        src={profile?.image_small ?? "/shop.png"}
-                        alt={profile?.name ?? place.name}
-                        className="w-16 h-16 object-cover rounded-full"
-                      />
-                    )}
-                    {isProfileLoading && (
-                      <Skeleton className="w-16 h-16 rounded-full" />
-                    )}
-                    <div className="flex-1">
-                      <h2 className="text-xl font-semibold mb-2">
-                        {profile?.name ?? place.name}
-                      </h2>
-                      <p className="text-gray-600 mb-2">@{place.slug}</p>
-                      <p className="text-gray-600 h-6">
-                        {profile?.description ?? " "}
-                      </p>
-                    </div>
-                    <div className="h-full flex flex-col justify-center items-center">
-                      <ArrowRight className="h-4 w-4" />
-                    </div>
-                  </div>
+                <Link key={place.id} className="block" href={`/${place.slug}`}>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-start space-x-4">
+                        {!isProfileLoading && (
+                          <Image
+                            height={30}
+                            width={30}
+                            src={profile?.image_small ?? "/shop.png"}
+                            alt={profile?.name ?? place.name}
+                            className="w-16 h-16 object-cover rounded-full"
+                          />
+                        )}
+                        {isProfileLoading && (
+                          <Skeleton className="w-16 h-16 rounded-full" />
+                        )}
+                        <div className="flex-1">
+                          <h2 className="text-xl font-semibold mb-2">
+                            {profile?.name ?? place.name}
+                          </h2>
+                          <p className="text-gray-600 mb-2">@{place.slug}</p>
+                          <p className="text-gray-600 h-6">
+                            {profile?.description ?? " "}
+                          </p>
+                        </div>
+                        <div className="h-full flex flex-col justify-center items-center">
+                          <ArrowRight className="h-4 w-4" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </Link>
               );
             })}
