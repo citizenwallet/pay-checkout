@@ -8,6 +8,7 @@ export interface Item {
   place_id: number;
   name: string;
   description: string;
+  image?: string;
   price: number;
   vat: number;
   category: string;

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { Loader2, PlusIcon, ShoppingCart } from "lucide-react";
+import { Loader2, PlusIcon, ShoppingCart, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -47,6 +47,8 @@ export default function Menu({
   const [activeCategory, setActiveCategory] = useState<string>("");
   const categoryRefs = useRef<{ [key: string]: HTMLDivElement }>({});
   const headerRef = useRef<HTMLDivElement>(null);
+
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const adjustItemQuantity = (id: number, delta: number) => {
     setSelectedItems((prev) => {
@@ -141,6 +143,27 @@ export default function Menu({
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
+      {selectedImage && (
+        <div
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white p-2"
+            onClick={() => setSelectedImage(null)}
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <Loader2 className="absolute z-10 top-1/2 left-1/2 h-12 w-12 animate-spin text-white" />
+          <img
+            src={selectedImage}
+            alt="Full size"
+            className="z-10 max-h-[90vh] max-w-[90vw] md:max-w-3xl object-contain rounded-md animate-fade-in"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
       <div className="flex-grow max-w-md mx-auto w-full bg-white shadow-xl">
         <header
           ref={headerRef}
@@ -240,6 +263,18 @@ export default function Menu({
                         <CardTitle>{item.name}</CardTitle>
                         <CardDescription>{item.description}</CardDescription>
                       </CardHeader>
+                      {item.image && (
+                        <div className="px-6 pb-4">
+                          <Image
+                            src={item.image}
+                            alt={item.name}
+                            width={400}
+                            height={300}
+                            className="rounded-md w-full h-48 object-cover cursor-pointer"
+                            onClick={() => setSelectedImage(item.image!)}
+                          />
+                        </div>
+                      )}
                       <CardContent className="flex justify-start items-center gap-2">
                         <CurrencyLogo logo={currencyLogo} size={24} />
                         <p className="text-lg font-bold">
