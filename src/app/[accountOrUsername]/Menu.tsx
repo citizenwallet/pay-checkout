@@ -95,7 +95,9 @@ export default function Menu({
 
   useEffect(() => {
     if (noItems && customAmountInputRef) {
-      customAmountInputRef.focus();
+      setTimeout(() => {
+        customAmountInputRef.focus();
+      }, 250);
     }
   }, [noItems, customAmountInputRef]);
 
