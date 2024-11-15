@@ -19,6 +19,7 @@ import { formatCurrencyNumber } from "@/lib/currency";
 import CurrencyLogo from "@/components/currency-logo";
 import { useRouter } from "next/navigation";
 import { generateOrder } from "../actions/generateOrder";
+import { Input } from "@/components/ui/input";
 
 interface VendorPageProps {
   accountOrUsername?: string;
@@ -49,6 +50,7 @@ export default function Menu({
   const headerRef = useRef<HTMLDivElement>(null);
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [customAmount, setCustomAmount] = useState<string>("");
 
   const adjustItemQuantity = (id: number, delta: number) => {
     setSelectedItems((prev) => {
@@ -120,6 +122,13 @@ export default function Menu({
     }
   };
 
+  const handleCustomAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^0-9.]/g, "");
+    if (value === "" || /^\d*\.?\d*$/.test(value)) {
+      setCustomAmount(value);
+    }
+  };
+
   const handlePay = async () => {
     if (!place) {
       return;
@@ -127,19 +136,31 @@ export default function Menu({
 
     setLoadingOrder(true);
 
-    const { data, error } = await generateOrder(
-      place.id,
-      selectedItems,
-      totalPrice
-    );
-    if (error) {
-      console.error(error);
+    if (noItems && customAmount) {
+      const amount = parseFloat(customAmount) * 100;
+      const { data, error } = await generateOrder(place.id, {}, amount);
+      if (error) {
+        console.error(error);
+      } else {
+        router.push(`/${accountOrUsername}/pay/${data}`);
+      }
     } else {
-      router.push(`/${accountOrUsername}/pay/${data}`);
+      const { data, error } = await generateOrder(
+        place.id,
+        selectedItems,
+        totalPrice
+      );
+      if (error) {
+        console.error(error);
+      } else {
+        router.push(`/${accountOrUsername}/pay/${data}`);
+      }
     }
 
     setLoadingOrder(false);
   };
+
+  const noItems = items.length === 0;
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
@@ -201,33 +222,35 @@ export default function Menu({
           </div>
         </header>
 
-        <div className="sticky top-[96px] bg-white z-10 border-b">
-          <div className="overflow-x-auto">
-            <div className="flex p-2 gap-2">
-              {loading &&
-                Array.from({ length: 2 }).map((_, index) => (
-                  <div
-                    key={index}
-                    className="h-10 w-24 bg-gray-200 animate-pulse rounded-full"
-                  />
-                ))}
-              {!loading &&
-                Object.keys(itemsByCategory).map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => scrollToCategory(category)}
-                    className={`px-4 py-2 rounded-full whitespace-nowrap ${
-                      activeCategory === category
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-gray-100"
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
+        {!noItems && (
+          <div className="sticky top-[96px] bg-white z-10 border-b">
+            <div className="overflow-x-auto">
+              <div className="flex p-2 gap-2">
+                {loading &&
+                  Array.from({ length: 2 }).map((_, index) => (
+                    <div
+                      key={index}
+                      className="h-10 w-24 bg-gray-200 animate-pulse rounded-full"
+                    />
+                  ))}
+                {!loading &&
+                  Object.keys(itemsByCategory).map((category) => (
+                    <button
+                      key={category}
+                      onClick={() => scrollToCategory(category)}
+                      className={`px-4 py-2 rounded-full whitespace-nowrap ${
+                        activeCategory === category
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-gray-100"
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {loading && (
           <div className="p-4 pb-12 space-y-4">
@@ -242,6 +265,11 @@ export default function Menu({
         )}
         {!loading && (
           <main className="p-4 pb-12 space-y-4">
+            {noItems && (
+              <div className="flex-1 flex flex-col items-center justify-center text-center text-lg">
+                Enter an amount to pay
+              </div>
+            )}
             {Object.entries(itemsByCategory).map(
               ([category, categoryItems]) => (
                 <div
@@ -319,26 +347,63 @@ export default function Menu({
           </main>
         )}
 
-        {totalItems > 0 && (
+        {(totalItems > 0 || noItems) && (
           <div className="fixed bottom-4 right-4 left-4 max-w-md mx-auto">
-            <Button
-              className="w-full"
-              size="lg"
-              disabled={totalItems === 0}
-              onClick={handlePay}
-            >
-              {loadingOrder && (
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              )}
-              {!loadingOrder && (
-                <>
-                  <ShoppingCart className="mr-2 h-5 w-5" />
-                  Pay <CurrencyLogo logo={currencyLogo} size={16} />
-                  {formatCurrencyNumber(totalPrice)} for {totalItems} item
-                  {totalItems !== 1 ? "s" : ""}
-                </>
-              )}
-            </Button>
+            {noItems ? (
+              <div className="space-y-2">
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                    <CurrencyLogo logo={currencyLogo} size={24} />
+                  </div>
+                  <Input
+                    key="custom-amount"
+                    type="text"
+                    value={customAmount}
+                    autoFocus
+                    onChange={handleCustomAmountChange}
+                    className="pl-12"
+                    placeholder="Enter amount"
+                  />
+                </div>
+                <Button
+                  className="w-full"
+                  size="lg"
+                  disabled={!customAmount || loadingOrder}
+                  onClick={handlePay}
+                >
+                  {loadingOrder ? (
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  ) : (
+                    <>
+                      <ShoppingCart className="mr-2 h-5 w-5" />
+                      Pay <CurrencyLogo logo={currencyLogo} size={16} />
+                      {formatCurrencyNumber(
+                        parseFloat(customAmount || "0") * 100
+                      )}
+                    </>
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <Button
+                className="w-full"
+                size="lg"
+                disabled={totalItems === 0}
+                onClick={handlePay}
+              >
+                {loadingOrder && (
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                )}
+                {!loadingOrder && (
+                  <>
+                    <ShoppingCart className="mr-2 h-5 w-5" />
+                    Pay <CurrencyLogo logo={currencyLogo} size={16} />
+                    {formatCurrencyNumber(totalPrice)} for {totalItems} item
+                    {totalItems !== 1 ? "s" : ""}
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         )}
       </div>

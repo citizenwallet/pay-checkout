@@ -90,28 +90,30 @@ export default function Component({
               </span>
             </div>
           </div>
-          <div className="mt-6">
-            <div className="mt-4 p-2 space-y-2 rounded-lg bg-gray-200">
-              {order.items.map((item) => {
-                const itemData = items[item.id];
-                if (!itemData) return null;
-                return (
-                  <div
-                    key={item.id}
-                    className="flex justify-between items-center"
-                  >
-                    <span>
-                      {itemData.name} x{item.quantity}
-                    </span>
-                    <span className="flex items-center gap-2">
-                      <CurrencyLogo logo={currencyLogo} size={20} />
-                      {formatCurrencyNumber(itemData.price * item.quantity)}
-                    </span>
-                  </div>
-                );
-              })}
+          {order.items.length > 0 && (
+            <div className="mt-6">
+              <div className="mt-4 p-2 space-y-2 rounded-lg bg-gray-200">
+                {order.items.map((item) => {
+                  const itemData = items[item.id];
+                  if (!itemData) return null;
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex justify-between items-center"
+                    >
+                      <span>
+                        {itemData.name} x{item.quantity}
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <CurrencyLogo logo={currencyLogo} size={20} />
+                        {formatCurrencyNumber(itemData.price * item.quantity)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
         <CardFooter className="flex justify-center">
           <p className="text-sm text-gray-500">

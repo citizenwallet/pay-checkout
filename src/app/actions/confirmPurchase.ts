@@ -5,7 +5,7 @@ import { getServiceRoleClient } from "@/db";
 import { updateOrder, getOrder } from "@/db/orders";
 import { generateCheckoutSession } from "@/stripe/checkout";
 
-export const confirmPurchase = async (
+export const confirmPurchaseAction = async (
   accountOrUsername: string,
   orderId: number,
   total: number,

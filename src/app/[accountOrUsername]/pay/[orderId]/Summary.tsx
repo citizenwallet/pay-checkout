@@ -15,7 +15,7 @@ import CurrencyLogo from "@/components/currency-logo";
 import { Item } from "@/db/items";
 import { Order } from "@/db/orders";
 import { formatCurrencyNumber } from "@/lib/currency";
-import { confirmPurchase } from "@/app/actions/confirmPurchase";
+import { confirmPurchaseAction } from "@/app/actions/confirmPurchase";
 
 interface Props {
   accountOrUsername: string;
@@ -52,14 +52,20 @@ export default function Component({
 
   const total = !items
     ? 0
+    : order?.items.length === 0
+    ? order?.total ?? 0
     : cartItems.reduce((sum, cartItem) => {
         const item = items[cartItem.id];
         if (!item) return sum;
         return sum + item.price * cartItem.quantity;
       }, 0);
 
+  const vatPercent = 0.21; // TODO: make this configurable
+
   const vat = !items
     ? 0
+    : order?.items.length === 0
+    ? (order?.total ?? 0) * vatPercent
     : cartItems.reduce((sum, cartItem) => {
         const item = items[cartItem.id];
         if (!item) return sum;
@@ -78,7 +84,7 @@ export default function Component({
     setLoading(true);
 
     try {
-      const session = await confirmPurchase(
+      const session = await confirmPurchaseAction(
         accountOrUsername,
         order.id,
         total,
@@ -98,6 +104,11 @@ export default function Component({
   const handleBack = () => {
     router.back();
   };
+
+  const disableConfirm =
+    order?.items.length === 0
+      ? order?.total === 0
+      : cartItems.length === 0 || loading;
 
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
@@ -182,7 +193,7 @@ export default function Component({
             </span>
           </div>
           <Button
-            disabled={cartItems.length === 0 || loading}
+            disabled={disableConfirm}
             onClick={handleConfirm}
             className="w-full"
           >
