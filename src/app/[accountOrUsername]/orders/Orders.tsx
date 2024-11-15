@@ -67,6 +67,8 @@ export default function VendorOrders({
     }
   };
 
+  console.log(orders);
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <div className="flex-grow max-w-md mx-auto w-full bg-white shadow-xl">
@@ -144,28 +146,34 @@ export default function VendorOrders({
                           Total: <CurrencyLogo logo={currencyLogo} size={18} />
                           {formatCurrencyNumber(order.total)}
                         </p>
-                        <div className="mt-2">
-                          <p className="font-medium">Items:</p>
-                          {order.items.map((orderItem) => {
-                            const item = items[orderItem.id];
-                            return (
-                              <div
-                                key={orderItem.id}
-                                className="flex justify-between text-sm pl-2"
-                              >
-                                <span>
-                                  {item?.name} × {orderItem.quantity}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <CurrencyLogo logo={currencyLogo} size={14} />
-                                  {formatCurrencyNumber(
-                                    item.price * orderItem.quantity
-                                  )}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
+                        {order.items.length > 0 && (
+                          <div className="mt-2">
+                            <p className="font-medium">Items:</p>
+                            {order.items.map((orderItem) => {
+                              const item = items[orderItem.id];
+                              if (!item) return null;
+                              return (
+                                <div
+                                  key={orderItem.id}
+                                  className="flex justify-between text-sm pl-2"
+                                >
+                                  <span>
+                                    {item?.name} × {orderItem.quantity}
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <CurrencyLogo
+                                      logo={currencyLogo}
+                                      size={14}
+                                    />
+                                    {formatCurrencyNumber(
+                                      item?.price * orderItem.quantity
+                                    )}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
