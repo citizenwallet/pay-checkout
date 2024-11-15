@@ -88,6 +88,17 @@ export default function Menu({
     {}
   );
 
+  const [customAmountInputRef, setCustomAmountInputRef] =
+    useState<HTMLInputElement | null>(null);
+
+  const noItems = items.length === 0;
+
+  useEffect(() => {
+    if (noItems && customAmountInputRef) {
+      customAmountInputRef.focus();
+    }
+  }, [noItems, customAmountInputRef]);
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -159,8 +170,6 @@ export default function Menu({
 
     setLoadingOrder(false);
   };
-
-  const noItems = items.length === 0;
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
@@ -359,6 +368,7 @@ export default function Menu({
                     key="custom-amount"
                     type="text"
                     value={customAmount}
+                    ref={setCustomAmountInputRef}
                     autoFocus
                     onChange={handleCustomAmountChange}
                     className="pl-12"
