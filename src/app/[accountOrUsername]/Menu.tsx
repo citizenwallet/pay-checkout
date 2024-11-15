@@ -277,8 +277,48 @@ export default function Menu({
         {!loading && (
           <main className="p-4 pb-12 space-y-4">
             {noItems && (
-              <div className="flex-1 flex flex-col items-center justify-center text-center text-lg">
-                Enter an amount to pay
+              <div className="flex-1 flex flex-col items-center justify-center text-center text-lg min-h-[50vh]">
+                <div className="w-full max-w-xs space-y-2">
+                  <div className="text-lg mb-4">Enter an amount to pay</div>
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                      <CurrencyLogo logo={currencyLogo} size={24} />
+                    </div>
+                    <Input
+                      key="custom-amount"
+                      type="text"
+                      value={customAmount}
+                      ref={setCustomAmountInputRef}
+                      autoFocus
+                      onChange={handleCustomAmountChange}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          handlePay();
+                        }
+                      }}
+                      className="pl-12"
+                      placeholder="Enter amount"
+                    />
+                  </div>
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    disabled={!customAmount || loadingOrder}
+                    onClick={handlePay}
+                  >
+                    {loadingOrder ? (
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    ) : (
+                      <>
+                        <ShoppingCart className="mr-2 h-5 w-5" />
+                        Pay <CurrencyLogo logo={currencyLogo} size={16} />
+                        {formatCurrencyNumber(
+                          parseFloat(customAmount || "0") * 100
+                        )}
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             )}
             {Object.entries(itemsByCategory).map(
@@ -358,64 +398,26 @@ export default function Menu({
           </main>
         )}
 
-        {(totalItems > 0 || noItems) && (
+        {totalItems > 0 && !noItems && (
           <div className="fixed bottom-4 right-4 left-4 max-w-md mx-auto">
-            {noItems ? (
-              <div className="space-y-2">
-                <div className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                    <CurrencyLogo logo={currencyLogo} size={24} />
-                  </div>
-                  <Input
-                    key="custom-amount"
-                    type="text"
-                    value={customAmount}
-                    ref={setCustomAmountInputRef}
-                    autoFocus
-                    onChange={handleCustomAmountChange}
-                    className="pl-12"
-                    placeholder="Enter amount"
-                  />
-                </div>
-                <Button
-                  className="w-full"
-                  size="lg"
-                  disabled={!customAmount || loadingOrder}
-                  onClick={handlePay}
-                >
-                  {loadingOrder ? (
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  ) : (
-                    <>
-                      <ShoppingCart className="mr-2 h-5 w-5" />
-                      Pay <CurrencyLogo logo={currencyLogo} size={16} />
-                      {formatCurrencyNumber(
-                        parseFloat(customAmount || "0") * 100
-                      )}
-                    </>
-                  )}
-                </Button>
-              </div>
-            ) : (
-              <Button
-                className="w-full"
-                size="lg"
-                disabled={totalItems === 0}
-                onClick={handlePay}
-              >
-                {loadingOrder && (
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                )}
-                {!loadingOrder && (
-                  <>
-                    <ShoppingCart className="mr-2 h-5 w-5" />
-                    Pay <CurrencyLogo logo={currencyLogo} size={16} />
-                    {formatCurrencyNumber(totalPrice)} for {totalItems} item
-                    {totalItems !== 1 ? "s" : ""}
-                  </>
-                )}
-              </Button>
-            )}
+            <Button
+              className="w-full"
+              size="lg"
+              disabled={totalItems === 0}
+              onClick={handlePay}
+            >
+              {loadingOrder && (
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              )}
+              {!loadingOrder && (
+                <>
+                  <ShoppingCart className="mr-2 h-5 w-5" />
+                  Pay <CurrencyLogo logo={currencyLogo} size={16} />
+                  {formatCurrencyNumber(totalPrice)} for {totalItems} item
+                  {totalItems !== 1 ? "s" : ""}
+                </>
+              )}
+            </Button>
           </div>
         )}
       </div>
