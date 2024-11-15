@@ -67,8 +67,6 @@ export default function VendorOrders({
     }
   };
 
-  console.log(orders);
-
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <div className="flex-grow max-w-md mx-auto w-full bg-white shadow-xl">
