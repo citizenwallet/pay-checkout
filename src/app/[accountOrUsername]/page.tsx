@@ -91,9 +91,7 @@ async function PlacePage({ accountOrUsername }: { accountOrUsername: string }) {
 
   if (!place) {
     if (inviteCode) {
-      redirect(
-        `${process.env.BUSINESS_INVITE_BASE_URL}?inviteCode=${accountOrUsername}`
-      );
+      redirect(`/${accountOrUsername}/join`);
     }
 
     return <div>Place not found</div>;
