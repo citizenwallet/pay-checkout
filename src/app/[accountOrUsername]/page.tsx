@@ -30,13 +30,13 @@ export async function generateMetadata({
   const client = getServiceRoleClient();
   const community = new CommunityConfig(Config);
 
-  const { profile, inviteCode } = await getPlaceWithProfile(
+  const { place, profile, inviteCode } = await getPlaceWithProfile(
     client,
     community,
     accountOrUsername
   );
 
-  if (inviteCode && !profile) {
+  if (inviteCode && !place) {
     metadata.title = "Join Brussels Pay";
     metadata.description = "Verify your business to activate this code.";
     metadata.openGraph = {
@@ -47,16 +47,16 @@ export async function generateMetadata({
     return metadata;
   }
 
-  if (!profile) {
+  if (!place) {
     return metadata;
   }
 
-  metadata.title = profile.name;
-  metadata.description = profile.description;
+  metadata.title = place.name;
+  metadata.description = profile?.description ?? "Pay with Brussels Pay";
   metadata.openGraph = {
-    title: profile.name,
-    description: profile.description,
-    images: [profile.image],
+    title: place.name,
+    description: profile?.description ?? "Pay with Brussels Pay",
+    images: [profile?.image ?? "/shop.png"],
     type: "website",
   };
 

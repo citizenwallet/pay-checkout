@@ -1,7 +1,10 @@
+import "server-only";
+
 import { getServiceRoleClient } from "@/db";
 import { completeOrder } from "@/db/orders";
-import { getPlaceByUsername, getPlacesByAccount } from "@/db/places";
-import "server-only";
+import { getPlace } from "@/lib/place";
+import { CommunityConfig } from "@citizenwallet/sdk";
+import Config from "@/cw/community.json";
 
 import Stripe from "stripe";
 
@@ -28,30 +31,15 @@ export const generateCheckoutSession = async (
   }
 
   const client = getServiceRoleClient();
+  const community = new CommunityConfig(Config);
 
-  let account = accountOrUsername;
-  if (!account.startsWith("0x")) {
-    const { data } = await getPlaceByUsername(client, accountOrUsername);
-    const accounts = data?.accounts ?? [];
+  const { place } = await getPlace(client, community, accountOrUsername);
 
-    if (accounts.length > 0) {
-      account = accounts[0];
-    }
-  }
-
-  if (!account.startsWith("0x")) {
-    throw new Error("Invalid account");
-  }
-
-  const { data: placeData, error } = await getPlacesByAccount(client, account);
-  if (error) {
-    throw new Error("Error getting place");
-  }
-
-  const place = placeData?.[0] ?? null;
   if (!place) {
     throw new Error("Place not found");
   }
+
+  const account = place.accounts[0];
 
   const demoCheckoutSlugs = process.env.DEMO_CHECKOUT_SLUGS?.split(",") ?? [];
   if (demoCheckoutSlugs.includes(place.slug)) {
