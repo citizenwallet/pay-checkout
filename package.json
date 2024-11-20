@@ -6,8 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "vercel-build": "npm i --force && next build"
+    "lint": "next lint"
   },
   "dependencies": {
     "@citizenwallet/sdk": "^2.0.35",
