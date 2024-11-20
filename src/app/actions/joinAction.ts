@@ -47,6 +47,8 @@ export async function joinAction(
       business_status: "created",
       account,
       invite_code: inviteCode,
+      email: data.email,
+      phone: data.phone,
     }
   );
 

@@ -24,6 +24,17 @@ export const joinFormSchema = z.object({
   name: z.string().min(1, {
     message: "Name is required.",
   }),
+  email: z
+    .string()
+    .min(1, {
+      message: "Email is required.",
+    })
+    .email({
+      message: "Please enter a valid email address.",
+    }),
+  phone: z.string().min(1, {
+    message: "Phone number is required.",
+  }),
   description: z.string().min(1, {
     message: "Description is required.",
   }),
@@ -43,6 +54,8 @@ export default function Join({ inviteCode }: JoinProps) {
     resolver: zodResolver(joinFormSchema),
     defaultValues: {
       name: "",
+      email: "",
+      phone: "",
       description: "",
       image: "",
     },
@@ -96,6 +109,40 @@ export default function Join({ inviteCode }: JoinProps) {
                 <FormDescription>
                   This is your public display name.
                 </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder="example@gmail.com"
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription>Enter your email address.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Phone Number</FormLabel>
+                <FormControl>
+                  <Input type="tel" placeholder="0478 12 34 56" {...field} />
+                </FormControl>
+                <FormDescription>Enter your phone number.</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
