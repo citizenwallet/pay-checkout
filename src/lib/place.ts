@@ -61,3 +61,38 @@ export const getPlaceWithProfile = async (
 
   return { place, profile, inviteCode };
 };
+
+export const getPlace = async (
+  client: SupabaseClient,
+  community: CommunityConfig,
+  accountOrUsername: string
+): Promise<{
+  place: Place | null;
+  inviteCode: boolean;
+}> => {
+  let place: Place | null = null;
+  let inviteCode = false;
+  if (accountOrUsername.startsWith("0x")) {
+    const { data } = await getPlacesByAccount(client, accountOrUsername);
+    place = data?.[0] ?? null;
+  } else if (accountOrUsername.startsWith("invite-")) {
+    inviteCode = true;
+
+    const { data: business } = await getBusinessByInviteCode(
+      client,
+      accountOrUsername
+    );
+    if (!business) {
+      return { place: null, inviteCode };
+    }
+
+    const { data } = await getPlacesByBusinessId(client, business.id);
+    // TODO: handle multiple places
+    place = data?.[0]?.[0] ?? null;
+  } else {
+    const { data } = await getPlaceByUsername(client, accountOrUsername);
+    place = data ?? null;
+  }
+
+  return { place, inviteCode };
+};
