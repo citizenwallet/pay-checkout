@@ -17,7 +17,11 @@ export const getPlaceWithProfile = async (
   client: SupabaseClient,
   community: CommunityConfig,
   accountOrUsername: string
-) => {
+): Promise<{
+  place: Place | null;
+  profile: Profile | null;
+  inviteCode: boolean;
+}> => {
   let place: Place | null = null;
   let profile: Profile | null = null;
   let inviteCode = false;
