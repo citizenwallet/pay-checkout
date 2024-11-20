@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { joinAction } from "@/app/actions/joinAction";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export const joinFormSchema = z.object({
   name: z.string().min(1, {
@@ -34,6 +35,8 @@ interface JoinProps {
 }
 
 export default function Join({ inviteCode }: JoinProps) {
+  const router = useRouter();
+
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof joinFormSchema>>({
@@ -68,6 +71,8 @@ export default function Join({ inviteCode }: JoinProps) {
       }
 
       console.log("Successfully joined!");
+
+      router.push(`/${inviteCode}/orders`);
     } catch (error) {
       console.error("Failed to join:", error);
     } finally {
