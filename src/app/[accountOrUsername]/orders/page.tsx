@@ -8,6 +8,7 @@ import { getItemsForPlace, Item } from "@/db/items";
 import { getPlaceWithProfile } from "@/lib/place";
 import { redirect } from "next/navigation";
 import { Metadata } from "next";
+import { getAccountBalance } from "@/cw/balance";
 
 export async function generateMetadata({
   params,
@@ -118,6 +119,8 @@ async function OrdersPage({
     return <div>Error: {itemsError.message}</div>;
   }
 
+  const balance = await getAccountBalance(profile?.account ?? "");
+
   return (
     <VendorOrders
       initialOrders={data ?? []}
@@ -126,8 +129,10 @@ async function OrdersPage({
         return acc;
       }, {} as { [key: number]: Item })}
       placeId={place.id}
+      place={place}
       profile={profile}
       currencyLogo={community.community.logo}
+      initialBalance={Number(balance ?? 0)}
     />
   );
 }

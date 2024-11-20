@@ -13,6 +13,8 @@ export interface Business {
   invite_code: string | null;
 }
 
+export type NewBusiness = Omit<Business, "id" | "created_at">;
+
 export const getBusinessByInviteCode = async (
   client: SupabaseClient,
   inviteCode: string
@@ -22,4 +24,11 @@ export const getBusinessByInviteCode = async (
     .select("*")
     .eq("invite_code", inviteCode)
     .maybeSingle();
+};
+
+export const createBusiness = async (
+  client: SupabaseClient,
+  business: NewBusiness
+): Promise<PostgrestSingleResponse<Business>> => {
+  return client.from("businesses").insert(business).select().single();
 };

@@ -45,7 +45,7 @@ export const getPlaceWithProfile = async (
 
     const { data } = await getPlacesByBusinessId(client, business.id);
     // TODO: handle multiple places
-    place = data?.[0]?.[0] ?? null;
+    place = data?.[0] ?? null;
 
     profile = place
       ? await getProfileFromUsername(community, place.slug)
@@ -64,7 +64,6 @@ export const getPlaceWithProfile = async (
 
 export const getPlace = async (
   client: SupabaseClient,
-  community: CommunityConfig,
   accountOrUsername: string
 ): Promise<{
   place: Place | null;
@@ -82,13 +81,15 @@ export const getPlace = async (
       client,
       accountOrUsername
     );
+
     if (!business) {
       return { place: null, inviteCode };
     }
 
     const { data } = await getPlacesByBusinessId(client, business.id);
+
     // TODO: handle multiple places
-    place = data?.[0]?.[0] ?? null;
+    place = data?.[0] ?? null;
   } else {
     const { data } = await getPlaceByUsername(client, accountOrUsername);
     place = data ?? null;

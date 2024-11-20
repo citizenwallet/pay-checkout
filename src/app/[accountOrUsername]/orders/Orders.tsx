@@ -13,12 +13,16 @@ import { Item } from "@/db/items";
 import Image from "next/image";
 import { getOrderByPlaceAction } from "@/app/actions/getOrderByPlace";
 import { Loader2 } from "lucide-react";
+import { Place } from "@/db/places";
+import { getAccountBalance } from "@/cw/balance";
 
 interface VendorOrdersProps {
   initialOrders?: Order[];
   items?: { [key: number]: Item };
   placeId?: number;
+  place?: Place | null;
   profile?: Profile | null;
+  initialBalance?: number;
   currencyLogo?: string;
   loading?: boolean;
 }
@@ -27,11 +31,26 @@ export default function VendorOrders({
   initialOrders = [],
   items = {},
   placeId,
+  place,
   profile,
+  initialBalance = 0,
   currencyLogo,
   loading = false,
 }: VendorOrdersProps) {
   const [orders, setOrders] = useState<Order[]>(initialOrders);
+  const [balance, setBalance] = useState<number>(initialBalance);
+
+  useEffect(() => {
+    if (!profile) return;
+
+    const interval = setInterval(() => {
+      getAccountBalance(profile?.account ?? "").then((balance) => {
+        setBalance(Number(balance ?? 0));
+      });
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [profile]);
 
   useEffect(() => {
     if (!placeId) return;
@@ -78,7 +97,7 @@ export default function VendorOrders({
             {!loading && (
               <Image
                 src={profile?.image ?? "/shop.png"}
-                alt={profile?.name ?? "Shop"}
+                alt={profile?.name ?? place?.name ?? "Shop"}
                 width={80}
                 height={80}
                 className="rounded-full h-16 w-16 object-cover"
@@ -93,7 +112,7 @@ export default function VendorOrders({
             {!loading && (
               <div>
                 <h1 className="text-2xl font-bold">
-                  {profile?.name ?? "Shop"}
+                  {profile?.name ?? place?.name ?? "Shop"}
                 </h1>
                 <p className="text-sm opacity-90">
                   {profile?.description ?? ""}
@@ -104,6 +123,18 @@ export default function VendorOrders({
         </header>
 
         <div className="p-4">
+          <div className="flex flex-col items-center justify-start mb-4">
+            <h2 className="text-2xl font-bold">Balance</h2>
+            <div className="flex items-center gap-2">
+              <CurrencyLogo logo={currencyLogo} size={18} />
+              <p className="text-lg font-bold">
+                {formatCurrencyNumber(balance)}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col items-center justify-start mb-4">
+            <h2 className="text-2xl font-bold">Orders</h2>
+          </div>
           <ScrollArea className="h-[calc(100vh-8rem)]">
             {loading &&
               Array.from({ length: 5 }).map((_, index) => (
@@ -112,6 +143,9 @@ export default function VendorOrders({
                   className="h-[200px] w-full bg-gray-200 animate-pulse rounded-md mb-4"
                 />
               ))}
+            {!loading && orders.length === 0 && (
+              <div className="text-center text-gray-500">No orders yet</div>
+            )}
             {!loading &&
               orders.map((order) => {
                 const status = getOrderStatus(order);

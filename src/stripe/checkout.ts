@@ -3,8 +3,6 @@ import "server-only";
 import { getServiceRoleClient } from "@/db";
 import { completeOrder } from "@/db/orders";
 import { getPlace } from "@/lib/place";
-import { CommunityConfig } from "@citizenwallet/sdk";
-import Config from "@/cw/community.json";
 
 import Stripe from "stripe";
 
@@ -31,9 +29,8 @@ export const generateCheckoutSession = async (
   }
 
   const client = getServiceRoleClient();
-  const community = new CommunityConfig(Config);
 
-  const { place } = await getPlace(client, community, accountOrUsername);
+  const { place } = await getPlace(client, accountOrUsername);
 
   if (!place) {
     throw new Error("Place not found");

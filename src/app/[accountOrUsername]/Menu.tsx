@@ -208,7 +208,7 @@ export default function Menu({
             {!loading && (
               <Image
                 src={profile?.image ?? "/shop.png"}
-                alt={profile?.name ?? "Shop"}
+                alt={profile?.name ?? place?.name ?? "Shop"}
                 width={80}
                 height={80}
                 className="rounded-full h-16 w-16 object-cover"
@@ -223,7 +223,7 @@ export default function Menu({
             {!loading && (
               <div>
                 <h1 className="text-2xl font-bold">
-                  {profile?.name ?? "Shop"}
+                  {profile?.name ?? place?.name ?? "Shop"}
                 </h1>
                 <p className="text-sm opacity-90">
                   {profile?.description ?? ""}
