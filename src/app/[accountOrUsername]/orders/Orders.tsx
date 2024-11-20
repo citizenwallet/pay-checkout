@@ -41,16 +41,17 @@ export default function VendorOrders({
   const [balance, setBalance] = useState<number>(initialBalance);
 
   useEffect(() => {
-    if (!profile) return;
+    if (!place || !place.accounts[0]) return;
 
     const interval = setInterval(() => {
-      getAccountBalance(profile?.account ?? "").then((balance) => {
+      getAccountBalance(place.accounts[0] ?? "").then((balance) => {
+        console.log(balance);
         setBalance(Number(balance ?? 0));
       });
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [profile]);
+  }, [place]);
 
   useEffect(() => {
     if (!placeId) return;

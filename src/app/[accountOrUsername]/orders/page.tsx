@@ -117,7 +117,7 @@ async function OrdersPage({
     return <div>Error: {itemsError.message}</div>;
   }
 
-  const balance = await getAccountBalance(profile?.account ?? "");
+  const balance = await getAccountBalance(place.accounts[0] ?? "");
 
   return (
     <VendorOrders
