@@ -2,15 +2,67 @@ import { getServiceRoleClient } from "@/db";
 import VendorOrders from "./Orders";
 import { Suspense } from "react";
 import { getOrdersByPlace } from "@/db/orders";
-import { getProfileFromUsername } from "@citizenwallet/sdk";
-import { getPlaceByUsername } from "@/db/places";
-import { getProfileFromAddress } from "@citizenwallet/sdk";
-import { getPlacesByAccount } from "@/db/places";
 import { CommunityConfig } from "@citizenwallet/sdk";
-import { Profile } from "@citizenwallet/sdk";
-import { Place } from "@/db/places";
 import Config from "@/cw/community.json";
 import { getItemsForPlace, Item } from "@/db/items";
+import { getPlaceWithProfile } from "@/lib/place";
+import { redirect } from "next/navigation";
+import { Metadata } from "next";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ accountOrUsername: string }>;
+}): Promise<Metadata> {
+  const { accountOrUsername } = await params;
+  const metadata: Metadata = {
+    title: "Place not found",
+    description: "This place has not been claimed yet.",
+    icons: {
+      icon: "/favicon.ico",
+    },
+    openGraph: {
+      title: "Place not found",
+      description: "This place has not been claimed yet.",
+      images: ["/shop.png"],
+    },
+  };
+
+  const client = getServiceRoleClient();
+  const community = new CommunityConfig(Config);
+
+  const { profile, inviteCode } = await getPlaceWithProfile(
+    client,
+    community,
+    accountOrUsername
+  );
+
+  if (inviteCode && !profile) {
+    metadata.title = "Join Brussels Pay";
+    metadata.description = "Verify your business to activate this code.";
+    metadata.openGraph = {
+      title: "Join Brussels Pay",
+      description: "Verify your business to activate this code.",
+      images: ["/shop.png"],
+    };
+    return metadata;
+  }
+
+  if (!profile) {
+    return metadata;
+  }
+
+  metadata.title = `${profile.name} - Orders`;
+  metadata.description = profile.description;
+  metadata.openGraph = {
+    title: profile.name,
+    description: profile.description,
+    images: [profile.image],
+    type: "website",
+  };
+
+  return metadata;
+}
 
 export default async function Page({
   params,
@@ -39,25 +91,19 @@ async function OrdersPage({
   const client = getServiceRoleClient();
   const community = new CommunityConfig(Config);
 
-  let place: Place | null = null;
-  let profile: Profile | null = null;
-  if (accountOrUsername.startsWith("0x")) {
-    const { data } = await getPlacesByAccount(client, accountOrUsername);
-    place = data?.[0] ?? null;
-
-    profile = place
-      ? await getProfileFromAddress(community, accountOrUsername)
-      : null;
-  } else {
-    const { data } = await getPlaceByUsername(client, accountOrUsername);
-    place = data ?? null;
-
-    profile = place
-      ? await getProfileFromUsername(community, accountOrUsername)
-      : null;
-  }
+  const { place, profile, inviteCode } = await getPlaceWithProfile(
+    client,
+    community,
+    accountOrUsername
+  );
 
   if (!place) {
+    if (inviteCode) {
+      redirect(
+        `${process.env.BUSINESS_INVITE_BASE_URL}?inviteCode=${accountOrUsername}`
+      );
+    }
+
     return <div>Place not found</div>;
   }
 

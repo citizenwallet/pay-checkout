@@ -28,6 +28,13 @@ export const getPlaceByUsername = async (
   return client.from("places").select("*").eq("slug", username).maybeSingle();
 };
 
+export const getPlacesByBusinessId = async (
+  client: SupabaseClient,
+  businessId: number
+): Promise<PostgrestResponse<Place[] | null>> => {
+  return client.from("places").select("*").eq("business_id", businessId);
+};
+
 export const getPlacesByAccount = async (
   client: SupabaseClient,
   account: string

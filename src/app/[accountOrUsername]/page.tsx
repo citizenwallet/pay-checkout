@@ -1,16 +1,12 @@
-import { getPlacesByAccount, getPlaceByUsername, Place } from "@/db/places";
 import { getServiceRoleClient } from "@/db";
 import { Suspense } from "react";
 import Menu from "./Menu";
 import Config from "@/cw/community.json";
-import {
-  CommunityConfig,
-  getProfileFromAddress,
-  getProfileFromUsername,
-  Profile,
-} from "@citizenwallet/sdk";
+import { CommunityConfig } from "@citizenwallet/sdk";
 import { getItemsForPlace } from "@/db/items";
 import { Metadata } from "next";
+import { getPlaceWithProfile } from "@/lib/place";
+import { redirect } from "next/navigation";
 
 export async function generateMetadata({
   params,
@@ -31,13 +27,24 @@ export async function generateMetadata({
     },
   };
 
+  const client = getServiceRoleClient();
   const community = new CommunityConfig(Config);
 
-  let profile: Profile | null = null;
-  if (accountOrUsername.startsWith("0x")) {
-    profile = await getProfileFromAddress(community, accountOrUsername);
-  } else {
-    profile = await getProfileFromUsername(community, accountOrUsername);
+  const { profile, inviteCode } = await getPlaceWithProfile(
+    client,
+    community,
+    accountOrUsername
+  );
+
+  if (inviteCode && !profile) {
+    metadata.title = "Join Brussels Pay";
+    metadata.description = "Verify your business to activate this code.";
+    metadata.openGraph = {
+      title: "Join Brussels Pay",
+      description: "Verify your business to activate this code.",
+      images: ["/shop.png"],
+    };
+    return metadata;
   }
 
   if (!profile) {
@@ -76,25 +83,19 @@ async function PlacePage({ accountOrUsername }: { accountOrUsername: string }) {
   const client = getServiceRoleClient();
   const community = new CommunityConfig(Config);
 
-  let place: Place | null = null;
-  let profile: Profile | null = null;
-  if (accountOrUsername.startsWith("0x")) {
-    const { data } = await getPlacesByAccount(client, accountOrUsername);
-    place = data?.[0] ?? null;
-
-    profile = place
-      ? await getProfileFromAddress(community, accountOrUsername)
-      : null;
-  } else {
-    const { data } = await getPlaceByUsername(client, accountOrUsername);
-    place = data ?? null;
-
-    profile = place
-      ? await getProfileFromUsername(community, accountOrUsername)
-      : null;
-  }
+  const { place, profile, inviteCode } = await getPlaceWithProfile(
+    client,
+    community,
+    accountOrUsername
+  );
 
   if (!place) {
+    if (inviteCode) {
+      redirect(
+        `${process.env.BUSINESS_INVITE_BASE_URL}?inviteCode=${accountOrUsername}`
+      );
+    }
+
     return <div>Place not found</div>;
   }
 
