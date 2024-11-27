@@ -46,7 +46,6 @@ export async function joinAction(
       vat_number: "",
       business_status: "created",
       account,
-      invite_code: inviteCode,
       email: data.email,
       phone: data.phone,
     }
@@ -61,6 +60,7 @@ export async function joinAction(
     slug: createSlug(data.name),
     business_id: business.id,
     accounts: [account],
+    invite_code: inviteCode,
   });
 
   if (placeError) {

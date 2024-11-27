@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getPlacesByBusinessId, Place } from "@/db/places";
+import { getPlaceByInviteCode, Place } from "@/db/places";
 
 import { getPlacesByAccount } from "@/db/places";
 import { getPlaceByUsername } from "@/db/places";
@@ -11,7 +11,6 @@ import {
   CommunityConfig,
 } from "@citizenwallet/sdk";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { getBusinessByInviteCode } from "@/db/business";
 
 export const getPlaceWithProfile = async (
   client: SupabaseClient,
@@ -35,17 +34,12 @@ export const getPlaceWithProfile = async (
   } else if (accountOrUsername.startsWith("invite-")) {
     inviteCode = true;
 
-    const { data: business } = await getBusinessByInviteCode(
-      client,
-      accountOrUsername
-    );
-    if (!business) {
+    const { data } = await getPlaceByInviteCode(client, accountOrUsername);
+    if (!data) {
       return { place: null, profile: null, inviteCode };
     }
 
-    const { data } = await getPlacesByBusinessId(client, business.id);
-    // TODO: handle multiple places
-    place = data?.[0] ?? null;
+    place = data;
 
     profile = place
       ? await getProfileFromUsername(community, place.slug)
@@ -77,19 +71,13 @@ export const getPlace = async (
   } else if (accountOrUsername.startsWith("invite-")) {
     inviteCode = true;
 
-    const { data: business } = await getBusinessByInviteCode(
-      client,
-      accountOrUsername
-    );
+    const { data } = await getPlaceByInviteCode(client, accountOrUsername);
 
-    if (!business) {
+    if (!data) {
       return { place: null, inviteCode };
     }
 
-    const { data } = await getPlacesByBusinessId(client, business.id);
-
-    // TODO: handle multiple places
-    place = data?.[0] ?? null;
+    place = data;
   } else {
     const { data } = await getPlaceByUsername(client, accountOrUsername);
     place = data ?? null;

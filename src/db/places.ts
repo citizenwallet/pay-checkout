@@ -13,6 +13,7 @@ export interface Place {
   slug: string;
   name: string;
   accounts: string[];
+  invite_code: string | null;
 }
 
 export type NewPlace = Omit<Place, "id" | "created_at">;
@@ -45,6 +46,17 @@ export const getPlacesByAccount = async (
     .from("places")
     .select("*")
     .contains("accounts", JSON.stringify([account]));
+};
+
+export const getPlaceByInviteCode = async (
+  client: SupabaseClient,
+  inviteCode: string
+): Promise<PostgrestSingleResponse<Place | null>> => {
+  return client
+    .from("places")
+    .select("*")
+    .eq("invite_code", inviteCode)
+    .maybeSingle();
 };
 
 export const searchPlaces = async (
