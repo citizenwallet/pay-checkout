@@ -179,6 +179,11 @@ export default function VendorOrders({
                           Total: <CurrencyLogo logo={currencyLogo} size={18} />
                           {formatCurrencyNumber(order.total)}
                         </p>
+                        {order.description && (
+                          <p className="text-sm text-gray-500">
+                            {order.description}
+                          </p>
+                        )}
                         {order.items.length > 0 && (
                           <div className="mt-2">
                             <p className="font-medium">Items:</p>

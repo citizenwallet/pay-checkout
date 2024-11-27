@@ -90,6 +90,11 @@ export default function Component({
               </span>
             </div>
           </div>
+          {order.description && (
+            <div className="mt-6 flex justify-between items-center p-2 space-y-2 rounded-lg bg-gray-200">
+              <span>{order.description}</span>
+            </div>
+          )}
           {order.items.length > 0 && (
             <div className="mt-6">
               <div className="mt-4 p-2 space-y-2 rounded-lg bg-gray-200">

@@ -8,6 +8,7 @@ import { ActionResponse } from ".";
 export async function generateOrder(
   placeId: number,
   items: { [key: number]: number },
+  description: string,
   total: number
 ): Promise<ActionResponse<number>> {
   const client = getServiceRoleClient();
@@ -29,7 +30,8 @@ export async function generateOrder(
     client,
     placeId,
     total,
-    validItems.map((item) => ({ id: item.id, quantity: items[item.id] }))
+    validItems.map((item) => ({ id: item.id, quantity: items[item.id] })),
+    description
   );
   if (orderError) {
     return { error: orderError.message };

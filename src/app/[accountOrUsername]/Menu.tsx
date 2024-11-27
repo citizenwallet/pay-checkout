@@ -20,6 +20,7 @@ import CurrencyLogo from "@/components/currency-logo";
 import { useRouter } from "next/navigation";
 import { generateOrder } from "../actions/generateOrder";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 interface VendorPageProps {
   accountOrUsername?: string;
@@ -51,6 +52,7 @@ export default function Menu({
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [customAmount, setCustomAmount] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
 
   const adjustItemQuantity = (id: number, delta: number) => {
     setSelectedItems((prev) => {
@@ -90,6 +92,8 @@ export default function Menu({
 
   const [customAmountInputRef, setCustomAmountInputRef] =
     useState<HTMLInputElement | null>(null);
+  const [descriptionInputRef, setDescriptionInputRef] =
+    useState<HTMLTextAreaElement | null>(null);
 
   const noItems = items.length === 0;
 
@@ -151,7 +155,12 @@ export default function Menu({
 
     if (noItems && customAmount) {
       const amount = parseFloat(customAmount) * 100;
-      const { data, error } = await generateOrder(place.id, {}, amount);
+      const { data, error } = await generateOrder(
+        place.id,
+        {},
+        description,
+        amount
+      );
       if (error) {
         console.error(error);
       } else {
@@ -161,6 +170,7 @@ export default function Menu({
       const { data, error } = await generateOrder(
         place.id,
         selectedItems,
+        description,
         totalPrice
       );
       if (error) {
@@ -293,11 +303,19 @@ export default function Menu({
                       onChange={handleCustomAmountChange}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
-                          handlePay();
+                          descriptionInputRef?.focus();
                         }
                       }}
                       className="pl-12"
                       placeholder="Enter amount"
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <Textarea
+                      placeholder="Enter a description"
+                      value={description}
+                      ref={setDescriptionInputRef}
+                      onChange={(e) => setDescription(e.target.value)}
                     />
                   </div>
                   <Button
@@ -311,7 +329,7 @@ export default function Menu({
                     ) : (
                       <>
                         <ShoppingCart className="mr-2 h-5 w-5" />
-                        Pay <CurrencyLogo logo={currencyLogo} size={16} />
+                        Confirm <CurrencyLogo logo={currencyLogo} size={16} />
                         {formatCurrencyNumber(
                           parseFloat(customAmount || "0") * 100
                         )}
@@ -412,7 +430,7 @@ export default function Menu({
               {!loadingOrder && (
                 <>
                   <ShoppingCart className="mr-2 h-5 w-5" />
-                  Pay <CurrencyLogo logo={currencyLogo} size={16} />
+                  Confirm <CurrencyLogo logo={currencyLogo} size={16} />
                   {formatCurrencyNumber(totalPrice)} for {totalItems} item
                   {totalItems !== 1 ? "s" : ""}
                 </>

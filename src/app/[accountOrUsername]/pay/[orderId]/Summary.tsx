@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Loader2, Minus, Plus, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  CreditCard,
+  Loader2,
+  Minus,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -105,10 +112,11 @@ export default function Component({
     router.back();
   };
 
-  const disableConfirm =
-    order?.items.length === 0
-      ? order?.total === 0
-      : cartItems.length === 0 || loading;
+  const noItems = order?.items.length === 0;
+
+  const disableConfirm = noItems
+    ? order?.total === 0
+    : cartItems.length === 0 || loading;
 
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
@@ -119,6 +127,11 @@ export default function Component({
         </CardHeader>
         <CardContent>
           <ul className="divide-y divide-gray-200">
+            {order?.description && (
+              <li className="p-4 bg-gray-50 rounded-md">
+                <p className="text-gray-600">{order.description}</p>
+              </li>
+            )}
             {cartItems.map((cartItem) => {
               const item = items?.[cartItem.id];
               if (!item) return null;
@@ -171,20 +184,26 @@ export default function Component({
           </ul>
         </CardContent>
         <CardFooter className="flex flex-col items-stretch">
-          <div className="flex justify-between items-center mb-4">
-            <span className="text-lg font-normal">Total (excluding VAT):</span>
-            <span className="text-lg font-normal flex items-center gap-1">
-              <CurrencyLogo logo={currencyLogo} size={16} />
-              {formatCurrencyNumber(totalExcludingVat)}
-            </span>
-          </div>
-          <div className="flex justify-between items-center mb-4">
-            <span className="text-lg font-normal">VAT:</span>
-            <span className="text-lg font-normal flex items-center gap-1">
-              <CurrencyLogo logo={currencyLogo} size={16} />
-              {formatCurrencyNumber(vat)}
-            </span>
-          </div>
+          {!noItems && (
+            <div className="flex justify-between items-center mb-4">
+              <span className="text-lg font-normal">
+                Total (excluding VAT):
+              </span>
+              <span className="text-lg font-normal flex items-center gap-1">
+                <CurrencyLogo logo={currencyLogo} size={16} />
+                {formatCurrencyNumber(totalExcludingVat)}
+              </span>
+            </div>
+          )}
+          {!noItems && (
+            <div className="flex justify-between items-center mb-4">
+              <span className="text-lg font-normal">VAT:</span>
+              <span className="text-lg font-normal flex items-center gap-1">
+                <CurrencyLogo logo={currencyLogo} size={16} />
+                {formatCurrencyNumber(vat)}
+              </span>
+            </div>
+          )}
           <div className="flex justify-between items-center mb-4">
             <span className="text-lg font-semibold">Total:</span>
             <span className="text-lg font-semibold flex items-center gap-1">
@@ -197,8 +216,12 @@ export default function Component({
             onClick={handleConfirm}
             className="w-full"
           >
-            Confirm Purchase{" "}
-            {loading && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
+            Pay{" "}
+            {loading ? (
+              <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+            ) : (
+              <CreditCard className="h-4 w-4 ml-2" />
+            )}
           </Button>
         </CardFooter>
       </Card>

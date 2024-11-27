@@ -18,17 +18,26 @@ export interface Order {
     quantity: number;
   }[];
   status: "pending" | "paid" | "cancelled";
+  description: string;
 }
 
 export const createOrder = async (
   client: SupabaseClient,
   placeId: number,
   total: number,
-  items: { id: number; quantity: number }[]
+  items: { id: number; quantity: number }[],
+  description: string
 ): Promise<PostgrestSingleResponse<Order>> => {
   return client
     .from("orders")
-    .insert({ place_id: placeId, items, total, due: total, status: "pending" })
+    .insert({
+      place_id: placeId,
+      items,
+      total,
+      due: total,
+      status: "pending",
+      description,
+    })
     .select()
     .single();
 };
