@@ -7,9 +7,9 @@ import { CommunityConfig } from "@citizenwallet/sdk";
 
 export async function GET(
   request: Request,
-  { params }: { params: { accountOrUsername: string } }
+  context: { params: Promise<{ accountOrUsername: string }> }
 ) {
-  const { accountOrUsername } = params;
+  const { accountOrUsername } = await context.params;
   if (!accountOrUsername) {
     return NextResponse.json(
       { error: "No accountOrUsername" },
