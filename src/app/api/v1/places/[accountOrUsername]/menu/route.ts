@@ -1,0 +1,35 @@
+import { getServiceRoleClient } from "@/db";
+import { getItemsForPlace } from "@/db/items";
+import { getPlaceWithProfile } from "@/lib/place";
+import { NextResponse } from "next/server";
+import Config from "@/cw/community.json";
+import { CommunityConfig } from "@citizenwallet/sdk";
+
+export async function GET(
+  request: Request,
+  context: { params: { accountOrUsername: string } }
+) {
+  const { accountOrUsername } = context.params;
+  if (!accountOrUsername) {
+    return NextResponse.json(
+      { error: "No accountOrUsername" },
+      { status: 400 }
+    );
+  }
+
+  const client = getServiceRoleClient();
+  const community = new CommunityConfig(Config);
+
+  const { place, profile } = await getPlaceWithProfile(
+    client,
+    community,
+    accountOrUsername
+  );
+  if (!place) {
+    return NextResponse.json({ error: "Place not found" }, { status: 404 });
+  }
+
+  const { data } = await getItemsForPlace(client, place.id);
+
+  return NextResponse.json({ place, profile, items: data });
+}
