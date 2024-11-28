@@ -19,6 +19,7 @@ export interface Order {
   }[];
   status: "pending" | "paid" | "cancelled";
   description: string;
+  tx_hash: string | null;
 }
 
 export const createOrder = async (
