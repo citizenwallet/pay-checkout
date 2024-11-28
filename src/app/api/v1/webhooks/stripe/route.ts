@@ -1,5 +1,5 @@
 import { getServiceRoleClient } from "@/db";
-import { completeOrder } from "@/db/orders";
+import { attachTxHashToOrder, completeOrder } from "@/db/orders";
 import { formatCurrencyNumber } from "@/lib/currency";
 import {
   BundlerService,
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
 
     const bundler = new BundlerService(community);
 
-    await bundler.mintERC20Token(
+    const txHash = await bundler.mintERC20Token(
       signer,
       community.primaryToken.address,
       senderAccount,
@@ -113,6 +113,8 @@ export async function POST(request: Request) {
       `${intAmount / 100}`,
       description
     );
+
+    await attachTxHashToOrder(client, orderId, txHash);
 
     console.log("Order paid", data);
   }

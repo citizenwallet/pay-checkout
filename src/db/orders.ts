@@ -73,6 +73,18 @@ export const completeOrder = async (
     .single();
 };
 
+export const attachTxHashToOrder = async (
+  client: SupabaseClient,
+  orderId: number,
+  txHash: string
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client
+    .from("orders")
+    .update({ tx_hash: txHash })
+    .eq("id", orderId)
+    .single();
+};
+
 export const getOrderStatus = async (
   client: SupabaseClient,
   orderId: number
