@@ -23,6 +23,8 @@ interface Props {
   order: Order;
   items: { [key: number]: Item };
   currencyLogo: string;
+  tx?: string;
+  close?: string;
 }
 
 export default function Component({
@@ -30,6 +32,8 @@ export default function Component({
   order,
   items,
   currencyLogo,
+  tx,
+  close,
 }: Props) {
   const router = useRouter();
   const [status, setStatus] = useState<Order["status"]>(order.status);
@@ -54,8 +58,24 @@ export default function Component({
   useEffect(() => {
     if (status === "paid") {
       clearInterval(intervalRef.current);
+
+      if (close) {
+        setTimeout(() => {
+          router.push(close);
+        }, 10000);
+      }
     }
   }, [status]);
+
+  const handleOrderAgain = () => {
+    router.push(`/${accountOrUsername}`);
+  };
+
+  const handleClose = () => {
+    if (close) {
+      router.push(close);
+    }
+  };
 
   if (!order) {
     return <div>Loading...</div>;
@@ -135,9 +155,8 @@ export default function Component({
         </CardFooter>
       </Card>
       <div className="mt-4 flex justify-center">
-        <Button onClick={() => router.push(`/${accountOrUsername}`)}>
-          Order again
-        </Button>
+        {!tx && <Button onClick={handleOrderAgain}>Order again</Button>}
+        {tx && close && <Button onClick={handleClose}>Close</Button>}
       </div>
     </div>
   );

@@ -8,10 +8,14 @@ import Config from "@/cw/community.json";
 
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ accountOrUsername: string; orderId: number }>;
+  searchParams: Promise<{ tx?: string; close?: string }>;
 }) {
   const { accountOrUsername, orderId } = await params;
+  const { tx, close } = await searchParams;
+
   const client = getServiceRoleClient();
   const { data, error } = await getOrder(client, orderId);
 
@@ -39,6 +43,8 @@ export default async function Page({
         return acc;
       }, {} as { [key: number]: Item })}
       currencyLogo={community.community.logo}
+      tx={tx}
+      close={close}
     />
   );
 }

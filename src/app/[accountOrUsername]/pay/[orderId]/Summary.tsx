@@ -31,6 +31,7 @@ interface Props {
   items?: { [key: number]: Item };
   currencyLogo?: string;
   tx?: string;
+  close?: string;
   rpcUrl: string;
 }
 
@@ -40,6 +41,7 @@ export default function Component({
   items,
   currencyLogo,
   tx,
+  close,
   rpcUrl,
 }: Props) {
   const router = useRouter();
@@ -73,9 +75,15 @@ export default function Component({
 
   useEffect(() => {
     if (txStatus === "confirmed") {
-      router.push(`/${accountOrUsername}/pay/${order?.id}/success`);
+      let successLink = `/${accountOrUsername}/pay/${order?.id}/success?tx=${tx}`;
+
+      if (close) {
+        successLink += `&close=${encodeURIComponent(close)}`;
+      }
+
+      router.push(successLink);
     }
-  }, [router, txStatus, accountOrUsername, order?.id]);
+  }, [router, txStatus, accountOrUsername, order?.id, tx, close]);
 
   const updateQuantity = (id: number, change: number) => {
     setCartItems(
