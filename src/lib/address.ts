@@ -3,8 +3,10 @@ export const formatAddress = (address: string, chars: number = 4): string => {
 
   if (address.length <= chars * 2) return address;
 
-  const start = address.slice(0, chars);
-  const end = address.slice(-chars);
+  const formattedAddress = address.replace("0x", "");
 
-  return `${start}...${end}`;
+  const start = formattedAddress.slice(0, chars);
+  const end = formattedAddress.slice(-chars);
+
+  return `0x${start}...${end}`;
 };
