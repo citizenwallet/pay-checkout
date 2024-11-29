@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,6 +34,8 @@ export default function Component({
   const router = useRouter();
   const [status, setStatus] = useState<Order["status"]>(order.status);
 
+  const intervalRef = useRef<NodeJS.Timeout>();
+
   useEffect(() => {
     const getStatus = async () => {
       const { data, error } = await getOrderStatus(order.id);
@@ -44,10 +46,16 @@ export default function Component({
       }
     };
 
-    const interval = setInterval(getStatus, 2000);
+    intervalRef.current = setInterval(getStatus, 2000);
 
-    return () => clearInterval(interval);
+    return () => clearInterval(intervalRef.current);
   }, [order.id]);
+
+  useEffect(() => {
+    if (status === "paid") {
+      clearInterval(intervalRef.current);
+    }
+  }, [status]);
 
   if (!order) {
     return <div>Loading...</div>;
