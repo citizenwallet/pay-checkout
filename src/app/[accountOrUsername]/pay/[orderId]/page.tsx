@@ -1,6 +1,6 @@
 import { getServiceRoleClient } from "@/db";
 import { getItemsForPlace, Item } from "@/db/items";
-import { getOrder } from "@/db/orders";
+import { attachTxHashToOrder, getOrder } from "@/db/orders";
 import Summary from "./Summary";
 import { CommunityConfig } from "@citizenwallet/sdk";
 import Config from "@/cw/community.json";
@@ -28,6 +28,11 @@ export default async function Page({
 
   if (data.status === "paid") {
     return <div>Order {orderId} completed</div>;
+  }
+
+  if (!data.tx_hash && tx) {
+    data.tx_hash = tx;
+    await attachTxHashToOrder(client, orderId, tx);
   }
 
   const { data: items, error: itemsError } = await getItemsForPlace(
