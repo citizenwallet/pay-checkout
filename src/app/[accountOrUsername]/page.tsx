@@ -2,7 +2,12 @@ import { getServiceRoleClient } from "@/db";
 import { Suspense } from "react";
 import Menu from "./Menu";
 import Config from "@/cw/community.json";
-import { CommunityConfig } from "@citizenwallet/sdk";
+import {
+  CommunityConfig,
+  getProfileFromAddress,
+  ProfileWithTokenId,
+  verifyAccountOwnership,
+} from "@citizenwallet/sdk";
 import { getItemsForPlace } from "@/db/items";
 import { Metadata } from "next";
 import { getPlaceWithProfile } from "@/lib/place";
@@ -65,23 +70,83 @@ export async function generateMetadata({
 
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ accountOrUsername: string }>;
+  searchParams: Promise<{
+    sigAuthAccount?: string;
+    sigAuthExpiry?: string;
+    sigAuthSignature?: string;
+    sigAuthRedirect?: string;
+  }>;
 }) {
   const { accountOrUsername } = await params;
+  const { sigAuthAccount, sigAuthExpiry, sigAuthSignature, sigAuthRedirect } =
+    await searchParams;
 
   return (
     <div>
       <Suspense fallback={<Menu loading />}>
-        <PlacePage accountOrUsername={accountOrUsername} />
+        <PlacePage
+          accountOrUsername={accountOrUsername}
+          sigAuthAccount={sigAuthAccount}
+          sigAuthExpiry={sigAuthExpiry}
+          sigAuthSignature={sigAuthSignature}
+          sigAuthRedirect={sigAuthRedirect}
+        />
       </Suspense>
     </div>
   );
 }
 
-async function PlacePage({ accountOrUsername }: { accountOrUsername: string }) {
+async function PlacePage({
+  accountOrUsername,
+  sigAuthAccount,
+  sigAuthExpiry,
+  sigAuthSignature,
+  sigAuthRedirect,
+}: {
+  accountOrUsername: string;
+  sigAuthAccount?: string;
+  sigAuthExpiry?: string;
+  sigAuthSignature?: string;
+  sigAuthRedirect?: string;
+}) {
   const client = getServiceRoleClient();
   const community = new CommunityConfig(Config);
+
+  let connectedAccount: string | undefined;
+  if (sigAuthAccount && sigAuthExpiry && sigAuthSignature && sigAuthRedirect) {
+    // Verify the signature matches the account
+    try {
+      if (new Date().getTime() > new Date(sigAuthExpiry).getTime()) {
+        throw new Error("Signature expired");
+      }
+
+      const message = `Signature auth for ${sigAuthAccount} with expiry ${sigAuthExpiry} and redirect ${encodeURIComponent(
+        sigAuthRedirect
+      )}`;
+
+      const isOwner = await verifyAccountOwnership(
+        community,
+        sigAuthAccount,
+        message,
+        sigAuthSignature
+      );
+      if (!isOwner) {
+        throw new Error("Invalid signature");
+      }
+      connectedAccount = sigAuthAccount;
+    } catch (e) {
+      console.error("Failed to verify signature:", e);
+      // You might want to handle this error case appropriately
+    }
+  }
+
+  let connectedProfile: ProfileWithTokenId | null = null;
+  if (connectedAccount) {
+    connectedProfile = await getProfileFromAddress(community, connectedAccount);
+  }
 
   const { place, profile, inviteCode } = await getPlaceWithProfile(
     client,
@@ -101,11 +166,15 @@ async function PlacePage({ accountOrUsername }: { accountOrUsername: string }) {
 
   return (
     <Menu
+      alias={community.community.alias}
       accountOrUsername={accountOrUsername}
       place={place}
       profile={profile}
       items={items ?? []}
       currencyLogo={community.community.logo}
+      connectedAccount={connectedAccount}
+      connectedProfile={connectedProfile}
+      sigAuthRedirect={sigAuthRedirect}
     />
   );
 }

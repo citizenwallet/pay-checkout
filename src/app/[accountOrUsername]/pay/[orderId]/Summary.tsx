@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   CreditCard,
@@ -23,12 +23,15 @@ import { Item } from "@/db/items";
 import { Order } from "@/db/orders";
 import { formatCurrencyNumber } from "@/lib/currency";
 import { confirmPurchaseAction } from "@/app/actions/confirmPurchase";
+import { waitForTxSuccess } from "@/cw/success";
 
 interface Props {
   accountOrUsername: string;
   order?: Order;
   items?: { [key: number]: Item };
   currencyLogo?: string;
+  tx?: string;
+  rpcUrl: string;
 }
 
 export default function Component({
@@ -36,14 +39,43 @@ export default function Component({
   order,
   items,
   currencyLogo,
+  tx,
+  rpcUrl,
 }: Props) {
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
+  const [txStatus, setTxStatus] = useState<"pending" | "confirmed" | "failed">(
+    "pending"
+  );
 
   const [cartItems, setCartItems] = useState<Order["items"]>(
     order?.items ?? []
   );
+
+  useEffect(() => {
+    if (tx) {
+      // wait for tx to be confirmed
+      waitForTxSuccess(rpcUrl, tx)
+        .then((confirmed) => {
+          if (confirmed) {
+            setTxStatus("confirmed");
+          } else {
+            setTxStatus("failed");
+          }
+        })
+        .catch((error) => {
+          console.error(error);
+          setTxStatus("failed");
+        });
+    }
+  }, [rpcUrl, tx]);
+
+  useEffect(() => {
+    if (txStatus === "confirmed") {
+      router.push(`/${accountOrUsername}/pay/${order?.id}/success`);
+    }
+  }, [router, txStatus, accountOrUsername, order?.id]);
 
   const updateQuantity = (id: number, change: number) => {
     setCartItems(
@@ -118,11 +150,15 @@ export default function Component({
     ? order?.total === 0
     : cartItems.length === 0 || loading;
 
+  const lockModification = !!tx;
+
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
       <Card className="mx-auto max-w-lg">
         <CardHeader className="flex flex-row items-center justify-start gap-4">
-          <ArrowLeft onClick={handleBack} className="cursor-pointer mt-1.5" />
+          {!tx && (
+            <ArrowLeft onClick={handleBack} className="cursor-pointer mt-1.5" />
+          )}
           <CardTitle className="text-2xl font-bold">Order Summary</CardTitle>
         </CardHeader>
         <CardContent>
@@ -147,37 +183,39 @@ export default function Component({
                       {formatCurrencyNumber(item.price)} each
                     </p>
                   </div>
-                  <div className="flex items-center">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => updateQuantity(item.id, -1)}
-                      className="h-8 w-8 rounded-full"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                    <span className="mx-2 w-8 text-center">
-                      {cartItem.quantity}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => updateQuantity(item.id, 1)}
-                      className="h-8 w-8 rounded-full"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() =>
-                        updateQuantity(item.id, -cartItem.quantity)
-                      }
-                      className="ml-2 h-8 w-8 text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  {!lockModification && (
+                    <div className="flex items-center">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => updateQuantity(item.id, -1)}
+                        className="h-8 w-8 rounded-full"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <span className="mx-2 w-8 text-center">
+                        {cartItem.quantity}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => updateQuantity(item.id, 1)}
+                        className="h-8 w-8 rounded-full"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() =>
+                          updateQuantity(item.id, -cartItem.quantity)
+                        }
+                        className="ml-2 h-8 w-8 text-red-500 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </li>
               );
             })}
@@ -211,18 +249,42 @@ export default function Component({
               {formatCurrencyNumber(total)}
             </span>
           </div>
-          <Button
-            disabled={disableConfirm}
-            onClick={handleConfirm}
-            className="w-full"
-          >
-            Pay{" "}
-            {loading ? (
+          {!tx && (
+            <Button
+              disabled={disableConfirm}
+              onClick={handleConfirm}
+              className="w-full"
+            >
+              Pay{" "}
+              {loading ? (
+                <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+              ) : (
+                <CreditCard className="h-4 w-4 ml-2" />
+              )}
+            </Button>
+          )}
+          {tx && txStatus === "pending" && (
+            <div className="flex items-center justify-center">
+              <p className="text-sm text-gray-500 font-normal">
+                Confirming payment...
+              </p>
               <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-            ) : (
-              <CreditCard className="h-4 w-4 ml-2" />
-            )}
-          </Button>
+            </div>
+          )}
+          {tx && txStatus === "confirmed" && (
+            <div className="flex items-center justify-center">
+              <p className="text-sm text-gray-500 font-normal">
+                Payment confirmed!
+              </p>
+            </div>
+          )}
+          {tx && txStatus === "failed" && (
+            <div className="flex items-center justify-center">
+              <p className="text-sm text-gray-500 font-normal">
+                Payment failed. Please try again.
+              </p>
+            </div>
+          )}
         </CardFooter>
       </Card>
     </div>

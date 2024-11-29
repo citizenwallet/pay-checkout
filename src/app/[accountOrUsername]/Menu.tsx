@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Place } from "@/db/places";
-import { Profile } from "@citizenwallet/sdk";
+import { ProfileWithTokenId, Profile } from "@citizenwallet/sdk";
 import { Item } from "@/db/items";
 import { formatCurrencyNumber } from "@/lib/currency";
 import CurrencyLogo from "@/components/currency-logo";
@@ -21,23 +21,33 @@ import { useRouter } from "next/navigation";
 import { generateOrder } from "../actions/generateOrder";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import { generateReceiveLink } from "@/cw/links";
 
 interface VendorPageProps {
+  alias?: string;
   accountOrUsername?: string;
   loading?: boolean;
   place?: Place;
   profile?: Profile | null;
   items?: Item[];
   currencyLogo?: string;
+  connectedAccount?: string;
+  connectedProfile?: ProfileWithTokenId | null;
+  sigAuthRedirect?: string;
 }
 
 export default function Menu({
+  alias,
   accountOrUsername,
   loading = false,
   place,
   profile,
   items = [],
   currencyLogo,
+  connectedAccount,
+  connectedProfile,
+  sigAuthRedirect,
 }: VendorPageProps) {
   const router = useRouter();
 
@@ -146,12 +156,49 @@ export default function Menu({
     }
   };
 
-  const handlePay = async () => {
-    if (!place) {
+  const handleConnectedAccountPay = async (redirect: string) => {
+    if (!connectedAccount || !sigAuthRedirect || !alias) {
+      return;
+    }
+
+    const account = place?.accounts[0];
+    if (!account) {
       return;
     }
 
     setLoadingOrder(true);
+
+    try {
+      const linkDescription = noItems
+        ? description
+        : Object.keys(selectedItems).reduce((acc, id, index) => {
+            return `${acc}${index === 0 ? "" : ", "}${`${
+              items.find((item) => item.id === parseInt(id))?.name
+            } x ${selectedItems[parseInt(id)]}`}`;
+          }, "");
+
+      const receiveLink = generateReceiveLink(
+        sigAuthRedirect,
+        account,
+        alias,
+        noItems
+          ? (parseFloat(customAmount) * 100).toString()
+          : totalPrice.toString(),
+        linkDescription
+      );
+
+      router.push(`${receiveLink}&success=${encodeURIComponent(redirect)}`);
+    } catch (e) {
+      console.error(e);
+    }
+
+    setLoadingOrder(false);
+  };
+
+  const handleGenerateOrder = async (): Promise<number | undefined> => {
+    if (!place) {
+      return;
+    }
 
     if (noItems && customAmount) {
       const amount = parseFloat(customAmount) * 100;
@@ -163,9 +210,10 @@ export default function Menu({
       );
       if (error) {
         console.error(error);
-      } else {
-        router.push(`/${accountOrUsername}/pay/${data}`);
+        return;
       }
+
+      return data;
     } else {
       const { data, error } = await generateOrder(
         place.id,
@@ -175,12 +223,39 @@ export default function Menu({
       );
       if (error) {
         console.error(error);
-      } else {
-        router.push(`/${accountOrUsername}/pay/${data}`);
+        return;
       }
+
+      return data;
+    }
+  };
+
+  const handlePay = async () => {
+    if (!place) {
+      return;
     }
 
-    setLoadingOrder(false);
+    setLoadingOrder(true);
+
+    try {
+      const orderId = await handleGenerateOrder();
+      if (!orderId) {
+        throw new Error("Failed to generate order");
+      }
+
+      const orderConfirmationLink = `/${accountOrUsername}/pay/${orderId}`;
+      const baseUrl = window.location.origin;
+
+      if (connectedAccount) {
+        return handleConnectedAccountPay(`${baseUrl}${orderConfirmationLink}`);
+      }
+
+      router.push(orderConfirmationLink);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoadingOrder(false);
+    }
   };
 
   return (
@@ -209,8 +284,29 @@ export default function Menu({
       <div className="flex-grow max-w-md mx-auto w-full bg-white shadow-xl">
         <header
           ref={headerRef}
-          className="p-4 bg-primary text-primary-foreground sticky top-0 z-10"
+          className="flex flex-col gap-4 p-4 bg-primary text-primary-foreground sticky top-0 z-10"
         >
+          {connectedAccount && connectedProfile ? (
+            <div className="flex items-center gap-4">
+              <div className="h-4 w-4 rounded-full bg-green-400" />
+              <Image
+                src={connectedProfile.image}
+                alt={connectedProfile.name}
+                width={20}
+                height={20}
+                className="rounded-full h-8 w-8 object-cover"
+              />
+              {connectedProfile.name ? (
+                <div className="text-sm">
+                  {connectedProfile.name} (@{connectedProfile.username})
+                </div>
+              ) : (
+                <div className="text-sm">@{connectedProfile.username}</div>
+              )}
+            </div>
+          ) : (
+            <div>connected</div>
+          )}
           <div className="flex items-center gap-4">
             {loading && (
               <div className="h-16 w-16 rounded-full bg-gray-200 animate-pulse" />
@@ -244,7 +340,12 @@ export default function Menu({
         </header>
 
         {!noItems && (
-          <div className="sticky top-[96px] bg-white z-10 border-b">
+          <div
+            className={cn(
+              "sticky bg-white z-10 border-b",
+              connectedAccount ? "top-[144px]" : "top-[96px]"
+            )}
+          >
             <div className="overflow-x-auto">
               <div className="flex p-2 gap-2">
                 {loading &&
