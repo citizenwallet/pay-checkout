@@ -9,7 +9,7 @@ import { joinFormSchema } from "../[accountOrUsername]/join/Join";
 import { Wallet } from "ethers";
 import { getAccountAddress, CommunityConfig } from "@citizenwallet/sdk";
 import Config from "@/cw/community.json";
-import { createSlug } from "@/lib/utils";
+import { createSlug, generateRandomString } from "@/lib/utils";
 // import { uploadImage } from "@/storage/uploads";
 
 export async function joinAction(
@@ -55,9 +55,11 @@ export async function joinAction(
     return { error: businessError.message };
   }
 
+  const slug = `${createSlug(data.name)}-${generateRandomString(4)}`;
+
   const { error: placeError } = await createPlace(client, {
     name: data.name,
-    slug: createSlug(data.name),
+    slug,
     business_id: business.id,
     accounts: [account],
     invite_code: inviteCode,
