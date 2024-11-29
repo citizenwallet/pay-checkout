@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { generateReceiveLink } from "@/cw/links";
+import { formatAddress } from "@/lib/address";
 
 interface VendorPageProps {
   alias?: string;
@@ -286,7 +287,7 @@ export default function Menu({
           ref={headerRef}
           className="flex flex-col gap-4 p-4 bg-primary text-primary-foreground sticky top-0 z-10"
         >
-          {connectedAccount && connectedProfile ? (
+          {connectedAccount && connectedProfile && (
             <div className="flex items-center gap-4">
               <div className="h-4 w-4 rounded-full bg-green-400" />
               <Image
@@ -304,8 +305,12 @@ export default function Menu({
                 <div className="text-sm">@{connectedProfile.username}</div>
               )}
             </div>
-          ) : (
-            <div>connected</div>
+          )}
+          {connectedAccount && (
+            <div className="flex items-center gap-4">
+              <div className="h-4 w-4 rounded-full bg-green-400" />
+              <div className="text-sm">{formatAddress(connectedAccount)}</div>
+            </div>
           )}
           <div className="flex items-center gap-4">
             {loading && (
