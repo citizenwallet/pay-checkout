@@ -124,7 +124,7 @@ export default function VendorOrders({
           </div>
         </header>
 
-        <div className="p-4 flex flex-1 flex-col">
+        <div className="p-4 pb-0 flex flex-1 flex-col">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold">Balance</h2>
             <div className="flex items-center gap-2">
@@ -134,10 +134,10 @@ export default function VendorOrders({
               </p>
             </div>
           </div>
-          <div className="flex flex-col items-center justify-start mb-4">
+          <div className="flex flex-col items-center justify-start border-b pb-4">
             <h2 className="text-2xl font-bold">Orders</h2>
           </div>
-          <ScrollArea className="h-[calc(100vh-224px)]">
+          <ScrollArea className="h-[calc(100vh-208px)]">
             {loading &&
               Array.from({ length: 5 }).map((_, index) => (
                 <div
