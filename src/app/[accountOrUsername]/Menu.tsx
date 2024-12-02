@@ -4,14 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { Loader2, PlusIcon, ShoppingCart, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Place } from "@/db/places";
 import { ProfileWithTokenId, Profile } from "@citizenwallet/sdk";
 import { Item } from "@/db/items";
@@ -462,58 +455,64 @@ export default function Menu({
                         selectedItems[item.id] ? "border-primary" : ""
                       } mb-4`}
                     >
-                      <CardHeader>
-                        <CardTitle>{item.name}</CardTitle>
-                        <CardDescription>{item.description}</CardDescription>
-                      </CardHeader>
-                      {item.image && (
-                        <div className="px-6 pb-4">
-                          <Image
-                            src={item.image}
-                            alt={item.name}
-                            width={400}
-                            height={300}
-                            className="rounded-md w-full h-48 object-cover cursor-pointer"
-                            onClick={() => setSelectedImage(item.image!)}
-                          />
-                        </div>
-                      )}
-                      <CardContent className="flex justify-start items-center gap-2">
-                        <CurrencyLogo logo={currencyLogo} size={24} />
-                        <p className="text-lg font-bold">
-                          {formatCurrencyNumber(item.price)}
-                        </p>
-                      </CardContent>
-                      <CardFooter className="flex justify-end items-center">
-                        {!selectedItems[item.id] ? (
-                          <Button
-                            variant="outline"
-                            onClick={() => adjustItemQuantity(item.id, 1)}
-                          >
-                            <PlusIcon className="h-4 w-4" /> Add to Cart
-                          </Button>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={() => adjustItemQuantity(item.id, -1)}
-                            >
-                              -
-                            </Button>
-                            <span className="min-w-[2rem] text-center">
-                              {selectedItems[item.id]}
-                            </span>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={() => adjustItemQuantity(item.id, 1)}
-                            >
-                              +
-                            </Button>
+                      <CardContent className="flex justify-start items-center gap-2 p-2">
+                        {item.image && (
+                          <div className="pr-2 border-r">
+                            <Image
+                              src={item.image}
+                              alt={item.name}
+                              width={80}
+                              height={80}
+                              className="rounded-md w-20 h-20 object-cover cursor-pointer"
+                              onClick={() => setSelectedImage(item.image!)}
+                            />
                           </div>
                         )}
-                      </CardFooter>
+                        <div className="flex flex-1 flex-col justify-center items-start gap-2 min-h-20">
+                          <p className="text-lg font-bold">{item.name}</p>
+                          <p className="text-sm">{item.description}</p>
+                        </div>
+                        <div className="flex flex-col justify-between items-end gap-2 h-20">
+                          <div className="flex items-center gap-2">
+                            <CurrencyLogo logo={currencyLogo} size={24} />
+                            <p className="text-lg font-bold">
+                              {formatCurrencyNumber(item.price)}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {!selectedItems[item.id] ? (
+                              <Button
+                                variant="secondary"
+                                onClick={() => adjustItemQuantity(item.id, 1)}
+                              >
+                                <PlusIcon className="h-4 w-4" /> Add to Cart
+                              </Button>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={() =>
+                                    adjustItemQuantity(item.id, -1)
+                                  }
+                                >
+                                  -
+                                </Button>
+                                <span className="min-w-[2rem] text-center">
+                                  {selectedItems[item.id]}
+                                </span>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={() => adjustItemQuantity(item.id, 1)}
+                                >
+                                  +
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
                     </Card>
                   ))}
                 </div>
