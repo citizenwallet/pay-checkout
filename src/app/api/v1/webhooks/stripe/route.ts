@@ -75,7 +75,7 @@ export async function POST(request: Request) {
     }
 
     const client = getServiceRoleClient();
-    const { data, error } = await completeOrder(client, orderId);
+    const { error } = await completeOrder(client, orderId);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -115,8 +115,6 @@ export async function POST(request: Request) {
     );
 
     await attachTxHashToOrder(client, orderId, txHash);
-
-    console.log("Order paid", data);
   }
 
   return NextResponse.json({ received: true });

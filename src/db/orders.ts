@@ -99,11 +99,15 @@ export const getOrdersByPlace = async (
   limit: number = 10,
   offset: number = 0
 ): Promise<PostgrestResponse<Order>> => {
-  console.log("getOrdersByPlace", placeId, limit, offset);
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+
   return client
     .from("orders")
     .select()
     .eq("place_id", placeId)
-    .order("created_at", { ascending: false });
-  // .range(offset, offset + limit); // TODO: Uncomment this when we have pagination
+    .or(
+      `status.eq.paid,and(status.eq.pending,created_at.gte.${fiveMinutesAgo})`
+    )
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit);
 };

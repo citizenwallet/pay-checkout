@@ -16,6 +16,8 @@ import { Loader2 } from "lucide-react";
 import { Place } from "@/db/places";
 import { getAccountBalance } from "@/cw/balance";
 
+const MAX_ORDERS = 20;
+
 interface VendorOrdersProps {
   initialOrders?: Order[];
   items?: { [key: number]: Item };
@@ -45,7 +47,6 @@ export default function VendorOrders({
 
     const interval = setInterval(() => {
       getAccountBalance(place.accounts[0] ?? "").then((balance) => {
-        console.log(balance);
         setBalance(Number(balance ?? 0));
       });
     }, 2000);
@@ -57,7 +58,7 @@ export default function VendorOrders({
     if (!placeId) return;
 
     const interval = setInterval(() => {
-      getOrderByPlaceAction(placeId, 10, 0).then(({ data }) => {
+      getOrderByPlaceAction(placeId, MAX_ORDERS, 0).then(({ data }) => {
         if (!data) return;
 
         // TODO: Add pagination
@@ -88,8 +89,8 @@ export default function VendorOrders({
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
-      <div className="flex-grow max-w-md mx-auto w-full bg-white shadow-xl">
+    <div className="h-screen bg-gray-100 flex flex-col">
+      <div className="flex flex-col flex-grow max-h-screen max-w-md mx-auto w-full bg-white shadow-xl">
         <header className="p-4 bg-primary text-primary-foreground sticky top-0 z-10">
           <div className="flex items-center gap-4">
             {loading && (
@@ -123,8 +124,8 @@ export default function VendorOrders({
           </div>
         </header>
 
-        <div className="p-4">
-          <div className="flex flex-col items-center justify-start mb-4">
+        <div className="p-4 flex flex-1 flex-col">
+          <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold">Balance</h2>
             <div className="flex items-center gap-2">
               <CurrencyLogo logo={currencyLogo} size={18} />
@@ -136,7 +137,7 @@ export default function VendorOrders({
           <div className="flex flex-col items-center justify-start mb-4">
             <h2 className="text-2xl font-bold">Orders</h2>
           </div>
-          <ScrollArea className="h-[calc(100vh-8rem)]">
+          <ScrollArea className="h-[calc(100vh-224px)]">
             {loading &&
               Array.from({ length: 5 }).map((_, index) => (
                 <div
@@ -217,6 +218,14 @@ export default function VendorOrders({
                   </Card>
                 );
               })}
+            {!loading && orders.length >= MAX_ORDERS && (
+              <div className="text-center text-gray-500">
+                Showing latest orders
+              </div>
+            )}
+            {!loading && orders.length < MAX_ORDERS && orders.length > 0 && (
+              <div className="text-center text-gray-500">No more orders</div>
+            )}
           </ScrollArea>
         </div>
       </div>

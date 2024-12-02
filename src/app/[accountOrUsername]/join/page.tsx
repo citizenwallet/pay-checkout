@@ -60,8 +60,6 @@ export default async function Page({
 
   const { place, inviteCode } = await getPlace(client, accountOrUsername);
 
-  console.log(place, inviteCode);
-
   if (place || !inviteCode) {
     redirect(`/${accountOrUsername}`);
   }
