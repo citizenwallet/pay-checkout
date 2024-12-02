@@ -4,6 +4,7 @@ import { attachTxHashToOrder, getOrder } from "@/db/orders";
 import Summary from "./Summary";
 import { CommunityConfig } from "@citizenwallet/sdk";
 import Config from "@/cw/community.json";
+import { redirect } from "next/navigation";
 
 export default async function Page({
   params,
@@ -33,6 +34,14 @@ export default async function Page({
   if (!data.tx_hash && tx) {
     data.tx_hash = tx;
     await attachTxHashToOrder(client, orderId, tx);
+
+    let successLink = `/${accountOrUsername}/pay/${orderId}/success?tx=${tx}`;
+
+    if (close) {
+      successLink += `&close=${encodeURIComponent(close)}`;
+    }
+
+    redirect(successLink);
   }
 
   const { data: items, error: itemsError } = await getItemsForPlace(

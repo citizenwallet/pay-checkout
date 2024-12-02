@@ -81,7 +81,7 @@ export const attachTxHashToOrder = async (
 ): Promise<PostgrestSingleResponse<Order>> => {
   return client
     .from("orders")
-    .update({ tx_hash: txHash })
+    .update({ tx_hash: txHash, status: "paid" })
     .eq("id", orderId)
     .single();
 };

@@ -65,7 +65,7 @@ export default function Component({
         }, 10000);
       }
     }
-  }, [status]);
+  }, [status, close, router]);
 
   const handleOrderAgain = () => {
     router.push(`/${accountOrUsername}`);
@@ -155,8 +155,16 @@ export default function Component({
         </CardFooter>
       </Card>
       <div className="mt-4 flex justify-center">
-        {!tx && <Button onClick={handleOrderAgain}>Order again</Button>}
-        {tx && close && <Button onClick={handleClose}>Close</Button>}
+        {!tx && (
+          <Button className="h-14 text-lg" onClick={handleOrderAgain}>
+            Order again
+          </Button>
+        )}
+        {tx && close && (
+          <Button className="h-14 text-lg" onClick={handleClose}>
+            Close
+          </Button>
+        )}
       </div>
     </div>
   );

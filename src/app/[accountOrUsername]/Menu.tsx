@@ -525,7 +525,7 @@ export default function Menu({
         {totalItems > 0 && !noItems && (
           <div className="fixed bottom-4 right-4 left-4 max-w-md mx-auto">
             <Button
-              className="w-full"
+              className="w-full h-14 text-lg"
               size="lg"
               disabled={totalItems === 0}
               onClick={handlePay}
