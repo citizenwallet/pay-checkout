@@ -9,6 +9,8 @@ import { getPlaceWithProfile } from "@/lib/place";
 import { redirect } from "next/navigation";
 import { Metadata } from "next";
 import { getAccountBalance } from "@/cw/balance";
+import { AProfile } from "@/db/profiles";
+import { loadProfileMapFromHashesAction } from "@/app/actions/loadProfileMapFromHashes";
 
 export async function generateMetadata({
   params,
@@ -108,6 +110,15 @@ async function OrdersPage({
 
   const { data } = await getOrdersByPlace(client, place.id);
 
+  let profiles: { [key: string]: AProfile } = {};
+  if ((data ?? []).length > 0) {
+    profiles = await loadProfileMapFromHashesAction(
+      (data ?? [])
+        .filter((order) => order.tx_hash != null && order.tx_hash != "")
+        .map((order) => order.tx_hash!)
+    );
+  }
+
   const { data: items, error: itemsError } = await getItemsForPlace(
     client,
     place.id
@@ -129,6 +140,7 @@ async function OrdersPage({
       placeId={place.id}
       place={place}
       profile={profile}
+      profiles={profiles}
       currencyLogo={community.community.logo}
       initialBalance={Number(balance ?? 0)}
     />

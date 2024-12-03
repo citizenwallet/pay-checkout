@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Order } from "@/db/orders";
 import { differenceInMinutes, format } from "date-fns";
 import { Profile } from "@citizenwallet/sdk";
@@ -15,6 +14,8 @@ import { getOrderByPlaceAction } from "@/app/actions/getOrderByPlace";
 import { Loader2 } from "lucide-react";
 import { Place } from "@/db/places";
 import { getAccountBalance } from "@/cw/balance";
+import { AProfile } from "@/db/profiles";
+import { cn } from "@/lib/utils";
 
 const MAX_ORDERS = 20;
 
@@ -24,6 +25,7 @@ interface VendorOrdersProps {
   placeId?: number;
   place?: Place | null;
   profile?: Profile | null;
+  profiles?: { [key: string]: AProfile };
   initialBalance?: number;
   currencyLogo?: string;
   loading?: boolean;
@@ -35,6 +37,7 @@ export default function VendorOrders({
   placeId,
   place,
   profile,
+  profiles,
   initialBalance = 0,
   currencyLogo,
   loading = false,
@@ -89,8 +92,8 @@ export default function VendorOrders({
   };
 
   return (
-    <div className="h-screen bg-gray-100 flex flex-col">
-      <div className="flex flex-col flex-grow max-h-screen max-w-md mx-auto w-full bg-white shadow-xl">
+    <div className="min-h-screen bg-gray-100 flex flex-col">
+      <div className="flex flex-col flex-grow max-w-md mx-auto w-full bg-white shadow-xl">
         <header className="p-4 bg-primary text-primary-foreground sticky top-0 z-10">
           <div className="flex items-center gap-4">
             {loading && (
@@ -124,7 +127,7 @@ export default function VendorOrders({
           </div>
         </header>
 
-        <div className="p-4 pb-0 flex flex-1 flex-col">
+        <div className="p-4 pb-0 flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold">Balance</h2>
             <div className="flex items-center gap-2">
@@ -134,99 +137,109 @@ export default function VendorOrders({
               </p>
             </div>
           </div>
-          <div className="flex flex-col items-center justify-start border-b pb-4">
+          <div className="flex flex-col items-center justify-start pb-4">
             <h2 className="text-2xl font-bold">Orders</h2>
           </div>
-          <ScrollArea className="h-[calc(100vh-208px)]">
-            {loading &&
-              Array.from({ length: 5 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="h-[200px] w-full bg-gray-200 animate-pulse rounded-md mb-4"
-                />
-              ))}
-            {!loading && orders.length === 0 && (
-              <div className="text-center text-gray-500">No orders yet</div>
-            )}
-            {!loading &&
-              orders.map((order) => {
-                const status = getOrderStatus(order);
-                return (
-                  <Card key={order.id} className="mb-4">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg">
-                        Order #{order.id}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex justify-between items-center mb-2">
-                        <div className="flex items-center gap-2">
-                          <Badge className={getStatusColor(status)}>
-                            {status}
-                          </Badge>
-                          {status === "pending" && (
-                            <Loader2 className="animate-spin h-4 w-4" />
-                          )}
-                        </div>
-                        <span className="text-sm text-gray-500">
-                          {format(
-                            new Date(order.created_at),
-                            "MMM d, yyyy HH:mm"
-                          )}
-                        </span>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="flex items-center gap-1">
-                          Total: <CurrencyLogo logo={currencyLogo} size={18} />
-                          {formatCurrencyNumber(order.total)}
-                        </p>
-                        {order.description && (
-                          <p className="text-sm text-gray-500">
-                            {order.description}
-                          </p>
-                        )}
-                        {order.items.length > 0 && (
-                          <div className="mt-2">
-                            <p className="font-medium">Items:</p>
-                            {order.items.map((orderItem) => {
-                              const item = items[orderItem.id];
-                              if (!item) return null;
-                              return (
-                                <div
-                                  key={orderItem.id}
-                                  className="flex justify-between text-sm pl-2"
-                                >
-                                  <span>
-                                    {item?.name} × {orderItem.quantity}
-                                  </span>
-                                  <span className="flex items-center gap-1">
-                                    <CurrencyLogo
-                                      logo={currencyLogo}
-                                      size={14}
-                                    />
-                                    {formatCurrencyNumber(
-                                      item?.price * orderItem.quantity
-                                    )}
-                                  </span>
-                                </div>
-                              );
-                            })}
+          {loading &&
+            Array.from({ length: 5 }).map((_, index) => (
+              <div
+                key={index}
+                className="h-[200px] w-full bg-gray-200 animate-pulse rounded-md mb-4"
+              />
+            ))}
+          {!loading && orders.length === 0 && (
+            <div className="text-center text-gray-500">No orders yet</div>
+          )}
+          {!loading &&
+            orders.map((order) => {
+              const status = getOrderStatus(order);
+              const orderProfile = order.tx_hash
+                ? profiles?.[order.tx_hash]
+                : null;
+              return (
+                <Card key={order.id} className="mb-4">
+                  <CardHeader className="pb-2 flex flex-row justify-between">
+                    <CardTitle className="text-lg">Order #{order.id}</CardTitle>
+                    <Badge className={cn(getStatusColor(status), "gap-2")}>
+                      {status}{" "}
+                      {status === "pending" && (
+                        <Loader2 className="animate-spin h-2 w-2" />
+                      )}
+                    </Badge>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="flex items-center gap-2">
+                        {orderProfile && (
+                          <div className="flex items-center gap-2">
+                            <Image
+                              src={orderProfile.image_small}
+                              alt={orderProfile.name}
+                              width={20}
+                              height={20}
+                              className="rounded-full"
+                            />
+                            <p className="text-sm">
+                              {orderProfile.name ?? orderProfile.username}
+                            </p>
                           </div>
                         )}
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            {!loading && orders.length >= MAX_ORDERS && (
-              <div className="text-center text-gray-500">
-                Showing latest orders
-              </div>
-            )}
-            {!loading && orders.length < MAX_ORDERS && orders.length > 0 && (
-              <div className="text-center text-gray-500">No more orders</div>
-            )}
-          </ScrollArea>
+                      <span className="text-sm text-gray-500">
+                        {format(
+                          new Date(order.created_at),
+                          "MMM d, yyyy HH:mm"
+                        )}
+                      </span>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="flex items-center gap-1">
+                        Total: <CurrencyLogo logo={currencyLogo} size={18} />
+                        {formatCurrencyNumber(order.total)}
+                      </p>
+                      {order.description && (
+                        <p className="text-sm text-gray-500">
+                          {order.description}
+                        </p>
+                      )}
+                      {order.items.length > 0 && (
+                        <div className="mt-2">
+                          <p className="font-medium">Items:</p>
+                          {order.items.map((orderItem) => {
+                            const item = items[orderItem.id];
+                            if (!item) return null;
+                            return (
+                              <div
+                                key={orderItem.id}
+                                className="flex justify-between text-sm pl-2"
+                              >
+                                <span>
+                                  {item?.name} × {orderItem.quantity}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <CurrencyLogo logo={currencyLogo} size={14} />
+                                  {formatCurrencyNumber(
+                                    item?.price * orderItem.quantity
+                                  )}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          {!loading && orders.length >= MAX_ORDERS && (
+            <div className="text-center text-gray-500">
+              Showing latest orders
+            </div>
+          )}
+          {!loading && orders.length < MAX_ORDERS && orders.length > 0 && (
+            <div className="text-center text-gray-500">No more orders</div>
+          )}
         </div>
       </div>
     </div>
