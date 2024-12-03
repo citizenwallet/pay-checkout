@@ -13,6 +13,7 @@ import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "@/components/link";
 import { Card, CardContent } from "@/components/ui/card";
+import { AProfile } from "@/db/profiles";
 
 interface PlaceSearchProps {
   search?: string;
@@ -25,9 +26,7 @@ export default function PlaceSearch({
 }: PlaceSearchProps) {
   const router = useRouter();
 
-  const [profiles, setProfiles] = useState<Record<string, ProfileWithTokenId>>(
-    {}
-  );
+  const [profiles, setProfiles] = useState<Record<string, AProfile>>({});
   const [profilesLoading, setProfilesLoading] = useState<
     Record<string, boolean>
   >(places.reduce((acc, place) => ({ ...acc, [place.slug]: true }), {}));

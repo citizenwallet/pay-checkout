@@ -1,12 +1,11 @@
 "use server";
 
-import { Profile } from "@citizenwallet/sdk";
-import { getProfileByUsername } from "@/db/profiles";
+import { AProfile, getProfileByUsername } from "@/db/profiles";
 import { getServiceRoleClient } from "@/db";
 
 export const loadProfileForUsernameAction = async (
   username: string
-): Promise<Profile | null> => {
+): Promise<AProfile | null> => {
   const client = getServiceRoleClient();
 
   try {
