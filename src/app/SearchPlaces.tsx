@@ -55,7 +55,6 @@ export default function PlaceSearch({
   }, [search]);
 
   useEffect(() => {
-    console.log("loading profiles", isLoading, places.length);
     if (isLoading || places.length === 0) return;
 
     places.forEach(async (place) => {

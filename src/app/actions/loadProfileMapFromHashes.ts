@@ -9,8 +9,6 @@ export const loadProfileMapFromHashesAction = async (
 ): Promise<{ [key: string]: AProfile }> => {
   const client = getServiceRoleClient();
 
-  console.log(hashes);
-
   try {
     return getProfileMapFromTransactionHashes(client, hashes);
   } catch (e) {
