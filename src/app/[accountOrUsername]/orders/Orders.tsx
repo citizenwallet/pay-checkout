@@ -16,6 +16,7 @@ import { Place } from "@/db/places";
 import { getAccountBalance } from "@/cw/balance";
 import { AProfile } from "@/db/profiles";
 import { cn } from "@/lib/utils";
+import { loadProfileMapFromHashesAction } from "@/app/actions/loadProfileMapFromHashes";
 
 const MAX_ORDERS = 20;
 
@@ -25,7 +26,7 @@ interface VendorOrdersProps {
   placeId?: number;
   place?: Place | null;
   profile?: Profile | null;
-  profiles?: { [key: string]: AProfile };
+  initialProfiles?: { [key: string]: AProfile };
   initialBalance?: number;
   currencyLogo?: string;
   loading?: boolean;
@@ -37,12 +38,15 @@ export default function VendorOrders({
   placeId,
   place,
   profile,
-  profiles,
+  initialProfiles = {},
   initialBalance = 0,
   currencyLogo,
   loading = false,
 }: VendorOrdersProps) {
   const [orders, setOrders] = useState<Order[]>(initialOrders);
+  const [profiles, setProfiles] = useState<{ [key: string]: AProfile }>(
+    initialProfiles
+  );
   const [balance, setBalance] = useState<number>(initialBalance);
 
   useEffect(() => {
@@ -63,6 +67,14 @@ export default function VendorOrders({
     const interval = setInterval(() => {
       getOrderByPlaceAction(placeId, MAX_ORDERS, 0).then(({ data }) => {
         if (!data) return;
+
+        loadProfileMapFromHashesAction(
+          data
+            .filter((order) => order.tx_hash != null && order.tx_hash != "")
+            .map((order) => order.tx_hash!)
+        ).then((newProfiles) => {
+          setProfiles(newProfiles);
+        });
 
         // TODO: Add pagination
         setOrders(data);

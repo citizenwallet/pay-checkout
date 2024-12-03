@@ -1,3 +1,5 @@
+"use server";
+
 import { getServiceRoleClient } from "@/db";
 import { AProfile } from "@/db/profiles";
 import { getProfileMapFromTransactionHashes } from "@/db/transactions";

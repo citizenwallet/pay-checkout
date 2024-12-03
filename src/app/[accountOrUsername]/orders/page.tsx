@@ -140,7 +140,7 @@ async function OrdersPage({
       placeId={place.id}
       place={place}
       profile={profile}
-      profiles={profiles}
+      initialProfiles={profiles}
       currencyLogo={community.community.logo}
       initialBalance={Number(balance ?? 0)}
     />
