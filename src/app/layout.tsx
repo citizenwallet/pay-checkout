@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/react";
 import localFont from "next/font/local";
 import "./globals.css";
 import CurrencyLogo from "@/components/currency-logo";
@@ -45,6 +46,7 @@ export default function RootLayout({
           <p className="animate-fade-in-slow text-lg font-bold">Brussels Pay</p>
         </div>
         {children}
+        <Analytics />
       </body>
     </html>
   );
