@@ -17,6 +17,7 @@ import { getAccountBalance } from "@/cw/balance";
 import { AProfile } from "@/db/profiles";
 import { cn } from "@/lib/utils";
 import { loadProfileMapFromHashesAction } from "@/app/actions/loadProfileMapFromHashes";
+import { ZeroAddress } from "ethers";
 
 const MAX_ORDERS = 20;
 
@@ -168,6 +169,8 @@ export default function VendorOrders({
               const orderProfile = order.tx_hash
                 ? profiles?.[order.tx_hash]
                 : null;
+
+              const isMinted = orderProfile?.account === ZeroAddress;
               return (
                 <Card key={order.id} className="mb-4">
                   <CardHeader className="pb-2 flex flex-row justify-between">
@@ -181,19 +184,50 @@ export default function VendorOrders({
                   </CardHeader>
                   <CardContent>
                     <div className="flex justify-between items-center mb-2">
-                      <div className="flex items-center gap-2">
-                        {orderProfile && (
+                      <div className="flex items-center gap-2 bg-gray-200 p-2 rounded-lg">
+                        {orderProfile ? (
+                          <div className="flex items-center gap-2">
+                            {isMinted && (
+                              <>
+                                <Image
+                                  src="/card.png"
+                                  alt="Card"
+                                  width={20}
+                                  height={20}
+                                />
+                                <p className="text-sm">web payment</p>
+                              </>
+                            )}
+                            {!isMinted && (
+                              <>
+                                <Image
+                                  src="/app.png"
+                                  alt="App"
+                                  width={20}
+                                  height={20}
+                                />
+                                <Image
+                                  src={orderProfile.image_small}
+                                  alt={orderProfile.name}
+                                  width={20}
+                                  height={20}
+                                  className="rounded-full"
+                                />
+                                <p className="text-sm">
+                                  {orderProfile.name || orderProfile.username}
+                                </p>
+                              </>
+                            )}
+                          </div>
+                        ) : (
                           <div className="flex items-center gap-2">
                             <Image
-                              src={orderProfile.image_small}
-                              alt={orderProfile.name}
+                              src="/card.png"
+                              alt="Card"
                               width={20}
                               height={20}
-                              className="rounded-full"
                             />
-                            <p className="text-sm">
-                              {orderProfile.name ?? orderProfile.username}
-                            </p>
+                            <p className="text-sm">web payment</p>
                           </div>
                         )}
                       </div>
