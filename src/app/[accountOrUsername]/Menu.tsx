@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { Loader2, PlusIcon, ShoppingCart, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -134,13 +134,6 @@ export default function Menu({
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    if (pendingOrder && !pendingOrderSentRef.current) {
-      pendingOrderSentRef.current = true;
-      handlePay(pendingOrder);
-    }
-  }, [pendingOrder]);
-
   const scrollToCategory = (category: string) => {
     const headerHeight = headerRef.current?.offsetHeight || 0;
     const element = categoryRefs.current[category];
@@ -211,7 +204,9 @@ export default function Menu({
     setLoadingOrder(false);
   };
 
-  const handleGenerateOrder = async (): Promise<number | undefined> => {
+  const handleGenerateOrder = useCallback(async (): Promise<
+    number | undefined
+  > => {
     if (!place) {
       return;
     }
@@ -244,42 +239,59 @@ export default function Menu({
 
       return data;
     }
-  };
+  }, [place, noItems, customAmount, selectedItems, description, totalPrice]);
 
-  const handlePay = async (customOrder?: Order) => {
-    if (!place) {
-      return;
+  const handlePay = useCallback(
+    async (customOrder?: Order) => {
+      if (!place) {
+        return;
+      }
+
+      setLoadingOrder(true);
+
+      try {
+        const orderId = customOrder?.id ?? (await handleGenerateOrder());
+        if (!orderId) {
+          throw new Error("Failed to generate order");
+        }
+
+        let orderConfirmationLink = `/${accountOrUsername}/pay/${orderId}`;
+        if (customOrder && !connectedAccount) {
+          orderConfirmationLink = `${orderConfirmationLink}?customOrderId=${customOrder.id}`;
+        }
+
+        const baseUrl = window.location.origin;
+
+        if (connectedAccount) {
+          return handleConnectedAccountPay(
+            `${baseUrl}${orderConfirmationLink}`,
+            customOrder
+          );
+        }
+
+        router.push(orderConfirmationLink);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoadingOrder(false);
+      }
+    },
+    [
+      place,
+      accountOrUsername,
+      connectedAccount,
+      sigAuthRedirect,
+      alias,
+      handleGenerateOrder,
+    ]
+  );
+
+  useEffect(() => {
+    if (pendingOrder && !pendingOrderSentRef.current) {
+      pendingOrderSentRef.current = true;
+      handlePay(pendingOrder);
     }
-
-    setLoadingOrder(true);
-
-    try {
-      const orderId = customOrder?.id ?? (await handleGenerateOrder());
-      if (!orderId) {
-        throw new Error("Failed to generate order");
-      }
-
-      let orderConfirmationLink = `/${accountOrUsername}/pay/${orderId}`;
-      if (customOrder && !connectedAccount) {
-        orderConfirmationLink = `${orderConfirmationLink}?customOrderId=${customOrder.id}`;
-      }
-
-      const baseUrl = window.location.origin;
-
-      if (connectedAccount) {
-        return handleConnectedAccountPay(
-          `${baseUrl}${orderConfirmationLink}`,
-          customOrder
-        );
-      }
-
-      router.push(orderConfirmationLink);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoadingOrder(false);
-    }
-  };
+  }, [pendingOrder, handlePay]);
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
