@@ -1,29 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect, useMemo } from "react";
 import { Order } from "@/db/orders";
-import { differenceInMinutes, format } from "date-fns";
 import { Profile } from "@citizenwallet/sdk";
 import { formatCurrencyNumber } from "@/lib/currency";
 import CurrencyLogo from "@/components/currency-logo";
 import { Item } from "@/db/items";
 import Image from "next/image";
 import { getOrderByPlaceAction } from "@/app/actions/getOrderByPlace";
-import { Loader2 } from "lucide-react";
 import { Place } from "@/db/places";
 import { getAccountBalance } from "@/cw/balance";
 import { AProfile } from "@/db/profiles";
-import { cn } from "@/lib/utils";
 import { loadProfileMapFromHashesAction } from "@/app/actions/loadProfileMapFromHashes";
-import { ZeroAddress } from "ethers";
+import { OrderCard } from "./Order";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ListChecks, QrCode } from "lucide-react";
+import Pay from "./Pay";
 
 const MAX_ORDERS = 20;
 
 interface VendorOrdersProps {
   initialOrders?: Order[];
   items?: { [key: number]: Item };
+  accountOrUsername?: string;
+  alias: string;
   placeId?: number;
   place?: Place | null;
   profile?: Profile | null;
@@ -36,6 +36,8 @@ interface VendorOrdersProps {
 export default function VendorOrders({
   initialOrders = [],
   items = {},
+  accountOrUsername,
+  alias,
   placeId,
   place,
   profile,
@@ -85,29 +87,10 @@ export default function VendorOrders({
     return () => clearInterval(interval);
   }, [placeId]);
 
-  const getOrderStatus = (order: Order) => {
-    if (order.status === "paid") return "paid";
-    if (order.status === "cancelled") return "cancelled";
-    if (differenceInMinutes(new Date(), new Date(order.created_at)) > 15)
-      return "cancelled";
-    return "pending";
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "paid":
-        return "bg-green-500 hover:bg-green-600";
-      case "cancelled":
-        return "bg-red-500 hover:bg-red-600";
-      default:
-        return "bg-yellow-500 hover:bg-yellow-600";
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <div className="flex flex-col flex-grow max-w-md mx-auto w-full bg-white shadow-xl">
-        <header className="p-4 bg-primary text-primary-foreground sticky top-0 z-10">
+        <header className="p-4 bg-slate-900 text-white sticky top-0 z-10">
           <div className="flex items-center gap-4">
             {loading && (
               <div className="h-16 w-16 rounded-full bg-gray-200 animate-pulse" />
@@ -150,142 +133,65 @@ export default function VendorOrders({
               </p>
             </div>
           </div>
-          <div className="flex flex-col items-center justify-start pb-4">
-            <h2 className="text-2xl font-bold">Orders</h2>
-          </div>
-          {loading &&
-            Array.from({ length: 5 }).map((_, index) => (
-              <div
-                key={index}
-                className="h-[200px] w-full bg-gray-200 animate-pulse rounded-md mb-4"
-              />
-            ))}
-          {!loading && orders.length === 0 && (
-            <div className="text-center text-gray-500">No orders yet</div>
-          )}
-          {!loading &&
-            orders.map((order) => {
-              const status = getOrderStatus(order);
-              const orderProfile = order.tx_hash
-                ? profiles?.[order.tx_hash]
-                : null;
+          <Tabs defaultValue="orders" className="w-full">
+            <TabsList className="w-full h-10">
+              <TabsTrigger value="orders" className="w-full text-lg">
+                <ListChecks className="w-4 h-4 mr-2" /> Orders
+              </TabsTrigger>
+              <TabsTrigger value="pay" className="w-full text-lg">
+                <QrCode className="w-4 h-4 mr-2" /> Pay
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="orders">
+              {loading &&
+                Array.from({ length: 5 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="h-[200px] w-full bg-gray-200 animate-pulse rounded-md mb-4"
+                  />
+                ))}
+              {!loading && orders.length === 0 && (
+                <div className="text-center text-gray-500">No orders yet</div>
+              )}
+              {!loading &&
+                orders.map((order) => {
+                  const orderProfile = order.tx_hash
+                    ? profiles?.[order.tx_hash]
+                    : null;
 
-              const isMinted = orderProfile?.account === ZeroAddress;
-              return (
-                <Card key={order.id} className="mb-4">
-                  <CardHeader className="pb-2 flex flex-row justify-between">
-                    <CardTitle className="text-lg">Order #{order.id}</CardTitle>
-                    <Badge className={cn(getStatusColor(status), "gap-2")}>
-                      {status}{" "}
-                      {status === "pending" && (
-                        <Loader2 className="animate-spin h-2 w-2" />
-                      )}
-                    </Badge>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="flex items-center gap-2 bg-gray-200 p-2 rounded-lg">
-                        {orderProfile ? (
-                          <div className="flex items-center gap-2">
-                            {isMinted && (
-                              <>
-                                <Image
-                                  src="/card.png"
-                                  alt="Card"
-                                  width={20}
-                                  height={20}
-                                />
-                                <p className="text-sm">web payment</p>
-                              </>
-                            )}
-                            {!isMinted && (
-                              <>
-                                <Image
-                                  src="/app.png"
-                                  alt="App"
-                                  width={20}
-                                  height={20}
-                                />
-                                <Image
-                                  src={orderProfile.image_small}
-                                  alt={orderProfile.name}
-                                  width={20}
-                                  height={20}
-                                  className="rounded-full"
-                                />
-                                <p className="text-sm">
-                                  {orderProfile.name || orderProfile.username}
-                                </p>
-                              </>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <Image
-                              src="/card.png"
-                              alt="Card"
-                              width={20}
-                              height={20}
-                            />
-                            <p className="text-sm">web payment</p>
-                          </div>
-                        )}
-                      </div>
-                      <span className="text-sm text-gray-500">
-                        {format(
-                          new Date(order.created_at),
-                          "MMM d, yyyy HH:mm"
-                        )}
-                      </span>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="flex items-center gap-1">
-                        Total: <CurrencyLogo logo={currencyLogo} size={18} />
-                        {formatCurrencyNumber(order.total)}
-                      </p>
-                      {order.description && (
-                        <p className="text-sm text-gray-500">
-                          {order.description}
-                        </p>
-                      )}
-                      {order.items.length > 0 && (
-                        <div className="mt-2">
-                          <p className="font-medium">Items:</p>
-                          {order.items.map((orderItem) => {
-                            const item = items[orderItem.id];
-                            if (!item) return null;
-                            return (
-                              <div
-                                key={orderItem.id}
-                                className="flex justify-between text-sm pl-2"
-                              >
-                                <span>
-                                  {item?.name} × {orderItem.quantity}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <CurrencyLogo logo={currencyLogo} size={14} />
-                                  {formatCurrencyNumber(
-                                    item?.price * orderItem.quantity
-                                  )}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          {!loading && orders.length >= MAX_ORDERS && (
-            <div className="text-center text-gray-500">
-              Showing latest orders
-            </div>
-          )}
-          {!loading && orders.length < MAX_ORDERS && orders.length > 0 && (
-            <div className="text-center text-gray-500">No more orders</div>
-          )}
+                  return (
+                    <OrderCard
+                      key={order.id}
+                      order={order}
+                      orderProfile={orderProfile}
+                      items={items}
+                      currencyLogo={currencyLogo}
+                    />
+                  );
+                })}
+              {!loading && orders.length >= MAX_ORDERS && (
+                <div className="text-center text-gray-500">
+                  Showing latest orders
+                </div>
+              )}
+              {!loading && orders.length < MAX_ORDERS && orders.length > 0 && (
+                <div className="text-center text-gray-500">No more orders</div>
+              )}
+            </TabsContent>
+            <TabsContent value="pay" className="flex w-full">
+              {useMemo(
+                () => (
+                  <Pay
+                    baseUrl={`${window.location.origin}/${accountOrUsername}`}
+                    alias={alias}
+                    account={place?.accounts[0] ?? ""}
+                    currencyLogo={currencyLogo}
+                  />
+                ),
+                [accountOrUsername, alias, currencyLogo]
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>

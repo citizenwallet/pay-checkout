@@ -78,7 +78,11 @@ export default async function Page({
   return (
     <Suspense
       fallback={
-        <VendorOrders loading currencyLogo={community.community.logo} />
+        <VendorOrders
+          loading
+          alias={community.community.alias}
+          currencyLogo={community.community.logo}
+        />
       }
     >
       <OrdersPage accountOrUsername={accountOrUsername} />
@@ -137,6 +141,8 @@ async function OrdersPage({
         acc[item.id] = item;
         return acc;
       }, {} as { [key: number]: Item })}
+      accountOrUsername={accountOrUsername}
+      alias={community.community.alias}
       placeId={place.id}
       place={place}
       profile={profile}

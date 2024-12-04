@@ -278,7 +278,7 @@ export default function Menu({
       <div className="flex-grow max-w-md mx-auto w-full bg-white shadow-xl">
         <header
           ref={headerRef}
-          className="flex flex-col gap-4 p-4 bg-primary text-primary-foreground sticky top-0 z-10"
+          className="flex flex-col gap-4 p-4 bg-slate-900 text-white sticky top-0 z-10"
         >
           {connectedAccount && connectedProfile && (
             <div className="flex items-center gap-4">
