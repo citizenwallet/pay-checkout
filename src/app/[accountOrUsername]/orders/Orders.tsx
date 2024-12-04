@@ -23,7 +23,6 @@ interface VendorOrdersProps {
   initialOrders?: Order[];
   items?: { [key: number]: Item };
   accountOrUsername?: string;
-  alias: string;
   placeId?: number;
   place?: Place | null;
   profile?: Profile | null;
@@ -37,7 +36,6 @@ export default function VendorOrders({
   initialOrders = [],
   items = {},
   accountOrUsername,
-  alias,
   placeId,
   place,
   profile,
@@ -182,13 +180,16 @@ export default function VendorOrders({
               {useMemo(
                 () => (
                   <Pay
-                    baseUrl={`${window.location.origin}/${accountOrUsername}`}
-                    alias={alias}
-                    account={place?.accounts[0] ?? ""}
+                    baseUrl={`${
+                      typeof window !== "undefined"
+                        ? window.location.origin
+                        : ""
+                    }/${accountOrUsername}`}
+                    placeId={placeId}
                     currencyLogo={currencyLogo}
                   />
                 ),
-                [accountOrUsername, alias, currencyLogo]
+                [accountOrUsername, placeId, currencyLogo]
               )}
             </TabsContent>
           </Tabs>

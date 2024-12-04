@@ -5,6 +5,7 @@ import "./globals.css";
 import CurrencyLogo from "@/components/currency-logo";
 import { CommunityConfig } from "@citizenwallet/sdk";
 import Config from "@/cw/community.json";
+import { Toaster } from "@/components/ui/toaster";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -46,6 +47,7 @@ export default function RootLayout({
           <p className="animate-fade-in-slow text-lg font-bold">Brussels Pay</p>
         </div>
         {children}
+        <Toaster />
         <Analytics />
       </body>
     </html>

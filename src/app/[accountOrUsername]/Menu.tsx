@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { generateReceiveLink } from "@/cw/links";
 import { formatAddress } from "@/lib/address";
+import { Order } from "@/db/orders";
 
 interface VendorPageProps {
   alias?: string;
@@ -29,6 +30,7 @@ interface VendorPageProps {
   connectedAccount?: string;
   connectedProfile?: ProfileWithTokenId | null;
   sigAuthRedirect?: string;
+  pendingOrder?: Order | null;
 }
 
 export default function Menu({
@@ -42,10 +44,12 @@ export default function Menu({
   connectedAccount,
   connectedProfile,
   sigAuthRedirect,
+  pendingOrder,
 }: VendorPageProps) {
   const router = useRouter();
 
-  const [loadingOrder, setLoadingOrder] = useState(false);
+  const [loadingOrder, setLoadingOrder] = useState(pendingOrder ? true : false);
+  const pendingOrderSentRef = useRef(false);
 
   const [selectedItems, setSelectedItems] = useState<{ [key: number]: number }>(
     {}
@@ -130,6 +134,13 @@ export default function Menu({
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    if (pendingOrder && !pendingOrderSentRef.current) {
+      pendingOrderSentRef.current = true;
+      handlePay(pendingOrder);
+    }
+  }, [pendingOrder]);
+
   const scrollToCategory = (category: string) => {
     const headerHeight = headerRef.current?.offsetHeight || 0;
     const element = categoryRefs.current[category];
@@ -150,7 +161,10 @@ export default function Menu({
     }
   };
 
-  const handleConnectedAccountPay = async (redirect: string) => {
+  const handleConnectedAccountPay = async (
+    redirect: string,
+    customOrder?: Order
+  ) => {
     if (!connectedAccount || !sigAuthRedirect || !alias) {
       return;
     }
@@ -163,21 +177,29 @@ export default function Menu({
     setLoadingOrder(true);
 
     try {
-      const linkDescription = noItems
+      let linkDescription = noItems
         ? description
         : Object.keys(selectedItems).reduce((acc, id, index) => {
             return `${acc}${index === 0 ? "" : ", "}${`${
               items.find((item) => item.id === parseInt(id))?.name
             } x ${selectedItems[parseInt(id)]}`}`;
           }, "");
+      if (customOrder) {
+        linkDescription = customOrder.description;
+      }
+
+      let price = noItems
+        ? (parseFloat(customAmount) * 100).toString()
+        : totalPrice.toString();
+      if (customOrder) {
+        price = customOrder.total.toString();
+      }
 
       const receiveLink = generateReceiveLink(
         sigAuthRedirect,
         account,
         alias,
-        noItems
-          ? (parseFloat(customAmount) * 100).toString()
-          : totalPrice.toString(),
+        price,
         linkDescription
       );
 
@@ -224,7 +246,7 @@ export default function Menu({
     }
   };
 
-  const handlePay = async () => {
+  const handlePay = async (customOrder?: Order) => {
     if (!place) {
       return;
     }
@@ -232,16 +254,23 @@ export default function Menu({
     setLoadingOrder(true);
 
     try {
-      const orderId = await handleGenerateOrder();
+      const orderId = customOrder?.id ?? (await handleGenerateOrder());
       if (!orderId) {
         throw new Error("Failed to generate order");
       }
 
-      const orderConfirmationLink = `/${accountOrUsername}/pay/${orderId}`;
+      let orderConfirmationLink = `/${accountOrUsername}/pay/${orderId}`;
+      if (customOrder && !connectedAccount) {
+        orderConfirmationLink = `${orderConfirmationLink}?customOrderId=${customOrder.id}`;
+      }
+
       const baseUrl = window.location.origin;
 
       if (connectedAccount) {
-        return handleConnectedAccountPay(`${baseUrl}${orderConfirmationLink}`);
+        return handleConnectedAccountPay(
+          `${baseUrl}${orderConfirmationLink}`,
+          customOrder
+        );
       }
 
       router.push(orderConfirmationLink);
@@ -421,7 +450,7 @@ export default function Menu({
                     className="w-full"
                     size="lg"
                     disabled={!customAmount || loadingOrder}
-                    onClick={handlePay}
+                    onClick={() => handlePay()}
                   >
                     {loadingOrder ? (
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -527,7 +556,7 @@ export default function Menu({
               className="w-full h-14 text-lg"
               size="lg"
               disabled={totalItems === 0}
-              onClick={handlePay}
+              onClick={() => handlePay()}
             >
               {loadingOrder && (
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />

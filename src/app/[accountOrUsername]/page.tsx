@@ -12,6 +12,7 @@ import { getItemsForPlace } from "@/db/items";
 import { Metadata } from "next";
 import { getPlaceWithProfile } from "@/lib/place";
 import { redirect } from "next/navigation";
+import { getOrder, Order } from "@/db/orders";
 
 export async function generateMetadata({
   params,
@@ -74,6 +75,7 @@ export default async function Page({
 }: {
   params: Promise<{ accountOrUsername: string }>;
   searchParams: Promise<{
+    orderId?: string;
     sigAuthAccount?: string;
     sigAuthExpiry?: string;
     sigAuthSignature?: string;
@@ -81,18 +83,36 @@ export default async function Page({
   }>;
 }) {
   const { accountOrUsername } = await params;
-  const { sigAuthAccount, sigAuthExpiry, sigAuthSignature, sigAuthRedirect } =
-    await searchParams;
+  const {
+    orderId,
+    sigAuthAccount,
+    sigAuthExpiry,
+    sigAuthSignature,
+    sigAuthRedirect,
+  } = await searchParams;
+
+  // TODO: remove when app is fixed
+  let parsedOrderId = orderId;
+  let parsedSigAuthAccount = sigAuthAccount;
+  if (orderId && orderId.includes("?")) {
+    const orderIdParts = orderId.split("?");
+    console.log("orderIdParts", orderIdParts);
+    if (orderIdParts.length === 2) {
+      parsedOrderId = orderIdParts[0];
+      parsedSigAuthAccount = orderIdParts[1].replace("sigAuthAccount=", "");
+    }
+  }
 
   return (
     <div>
       <Suspense fallback={<Menu loading />}>
         <PlacePage
           accountOrUsername={accountOrUsername}
-          sigAuthAccount={sigAuthAccount}
+          sigAuthAccount={parsedSigAuthAccount}
           sigAuthExpiry={sigAuthExpiry}
           sigAuthSignature={sigAuthSignature}
           sigAuthRedirect={sigAuthRedirect}
+          orderId={parsedOrderId}
         />
       </Suspense>
     </div>
@@ -105,12 +125,14 @@ async function PlacePage({
   sigAuthExpiry,
   sigAuthSignature,
   sigAuthRedirect,
+  orderId,
 }: {
   accountOrUsername: string;
   sigAuthAccount?: string;
   sigAuthExpiry?: string;
   sigAuthSignature?: string;
   sigAuthRedirect?: string;
+  orderId?: string;
 }) {
   const client = getServiceRoleClient();
   const community = new CommunityConfig(Config);
@@ -164,6 +186,14 @@ async function PlacePage({
 
   const { data: items } = await getItemsForPlace(client, place.id);
 
+  let pendingOrder: Order | null = null;
+  if (orderId) {
+    const { data: orderData } = await getOrder(client, parseInt(orderId));
+    if (orderData) {
+      pendingOrder = orderData;
+    }
+  }
+
   return (
     <Menu
       alias={community.community.alias}
@@ -175,6 +205,7 @@ async function PlacePage({
       connectedAccount={connectedAccount}
       connectedProfile={connectedProfile}
       sigAuthRedirect={sigAuthRedirect}
+      pendingOrder={pendingOrder}
     />
   );
 }

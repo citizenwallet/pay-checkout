@@ -23,6 +23,7 @@ import { Item } from "@/db/items";
 import { Order } from "@/db/orders";
 import { formatCurrencyNumber } from "@/lib/currency";
 import { confirmPurchaseAction } from "@/app/actions/confirmPurchase";
+import { cancelOrderAction } from "@/app/actions/cancelOrder";
 
 interface Props {
   accountOrUsername: string;
@@ -30,8 +31,7 @@ interface Props {
   items?: { [key: number]: Item };
   currencyLogo?: string;
   tx?: string;
-  close?: string;
-  rpcUrl: string;
+  customOrderId?: string;
 }
 
 export default function Component({
@@ -39,10 +39,12 @@ export default function Component({
   order,
   items,
   currencyLogo,
+  customOrderId,
 }: Props) {
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
+  const [cancelled, setCancelled] = useState(false);
 
   const [cartItems, setCartItems] = useState<Order["items"]>(
     order?.items ?? []
@@ -111,7 +113,24 @@ export default function Component({
     }
   };
 
-  const handleBack = () => {
+  const handleCancelOrder = async () => {
+    if (!order) {
+      return;
+    }
+
+    await cancelOrderAction(order.id);
+    setCancelled(true);
+
+    if (!customOrderId) {
+      router.back();
+    }
+  };
+
+  const handleBack = async () => {
+    if (order) {
+      await handleCancelOrder();
+    }
+
     router.back();
   };
 
@@ -121,11 +140,17 @@ export default function Component({
     ? order?.total === 0
     : cartItems.length === 0 || loading;
 
+  if (cancelled) {
+    return <div>Order cancelled</div>;
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
       <Card className="mx-auto max-w-lg">
         <CardHeader className="flex flex-row items-center justify-start gap-4">
-          <ArrowLeft onClick={handleBack} className="cursor-pointer mt-1.5" />
+          {!customOrderId && (
+            <ArrowLeft onClick={handleBack} className="cursor-pointer mt-1.5" />
+          )}
           <CardTitle className="text-2xl font-bold">Order Summary</CardTitle>
         </CardHeader>
         <CardContent>
@@ -214,6 +239,13 @@ export default function Component({
               {formatCurrencyNumber(total)}
             </span>
           </div>
+          <Button
+            variant="outline"
+            onClick={handleCancelOrder}
+            className="w-full h-14 text-lg mb-4"
+          >
+            Cancel Order
+          </Button>
           <Button
             disabled={disableConfirm}
             onClick={handleConfirm}
