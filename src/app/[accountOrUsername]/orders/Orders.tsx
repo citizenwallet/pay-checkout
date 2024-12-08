@@ -186,10 +186,11 @@ export default function VendorOrders({
                         : ""
                     }/${accountOrUsername}`}
                     placeId={placeId}
+                    placeSlug={place?.slug}
                     currencyLogo={currencyLogo}
                   />
                 ),
-                [accountOrUsername, placeId, currencyLogo]
+                [accountOrUsername, placeId, place?.slug, currencyLogo]
               )}
             </TabsContent>
           </Tabs>

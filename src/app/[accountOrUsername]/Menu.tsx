@@ -278,11 +278,11 @@ export default function Menu({
     },
     [
       place,
+      handleGenerateOrder,
       accountOrUsername,
       connectedAccount,
-      sigAuthRedirect,
-      alias,
-      handleGenerateOrder,
+      router,
+      handleConnectedAccountPay,
     ]
   );
 
