@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import CurrencyLogo from "@/components/currency-logo";
 import { Button } from "@/components/ui/button";
-import { CheckCheck, Loader2, QrCode, RefreshCcw, X, Zap } from "lucide-react";
+import { CheckCheck, Loader2, RefreshCcw, X, Zap } from "lucide-react";
 import { generateOrder } from "@/app/actions/generateOrder";
 import { getOrderStatus } from "@/app/actions/getOrderStatuts";
 import { OrderStatus } from "@/db/orders";
@@ -17,16 +17,10 @@ const MAX_WIDTH = 448;
 interface PayProps {
   baseUrl: string;
   placeId?: number;
-  placeSlug?: string;
   currencyLogo?: string;
 }
 
-export default function Pay({
-  baseUrl,
-  placeId,
-  placeSlug,
-  currencyLogo,
-}: PayProps) {
+export default function Pay({ baseUrl, placeId, currencyLogo }: PayProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const { toast } = useToast();
@@ -36,7 +30,6 @@ export default function Pay({
 
   const [loading, setLoading] = useState(false);
   const [url, setUrl] = useState(baseUrl);
-  const [bankQR, setBankQR] = useState<string | null>(null);
   const [size, setSize] = useState(0);
 
   const orderIdRef = useRef<number | null>(null);
@@ -142,53 +135,6 @@ export default function Pay({
     }, 1000);
   };
 
-  const clearBankQR = () => {
-    setBankQR(null);
-    setLoading(false);
-    setOrderStatus(null);
-    setUrl(baseUrl);
-  };
-
-  const generateBankQR = async () => {
-    if (!placeId || !placeSlug) {
-      return;
-    }
-
-    setLoading(true);
-    setOrderStatus("pending");
-
-    const parsedAmount = parseFloat(amount) * 100;
-    const { data, error } = await generateOrder(
-      placeId,
-      {},
-      description,
-      parsedAmount
-    );
-    if (error || !data) {
-      console.error(error);
-      return;
-    }
-
-    orderIdRef.current = data;
-
-    let qrCode = "BCD\n002\n1\nSCT";
-    qrCode += `\n${process.env.NEXT_PUBLIC_BANK_ACCOUNT_BIC}`;
-    qrCode += `\n${process.env.NEXT_PUBLIC_BANK_ACCOUNT_NAME}`;
-    qrCode += `\n${process.env.NEXT_PUBLIC_BANK_ACCOUNT_IBAN}`;
-    qrCode += `\n${process.env.NEXT_PUBLIC_BANK_ACCOUNT_CURRENCY}${amount}`;
-    qrCode += `\n\n\n+++${process.env.NEXT_PUBLIC_BANK_ACCOUNT_REFERENCE_PREFIX}/${placeSlug}/${data}+++`;
-
-    setBankQR(qrCode);
-  };
-
-  const handleNewBankQR = async () => {
-    setBankQR(null);
-
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    generateBankQR();
-  };
-
   const handleCancelOrder = async () => {
     if (!orderIdRef.current) {
       return;
@@ -198,7 +144,6 @@ export default function Pay({
 
     orderIdRef.current = null;
 
-    setBankQR(null);
     setLoading(false);
     setOrderStatus(null);
     setUrl(baseUrl);
@@ -222,30 +167,10 @@ export default function Pay({
               <Loader2 className="w-4 h-4 animate-spin" />
             )}
           </div>
-          {!bankQR &&
-            ((!amount && !loading && orderStatus === null) ||
-              (loading && orderStatus === "pending")) && (
-              <QRCodeSVG
-                value={url}
-                size={size * 0.8}
-                fgColor="#0c0c0c"
-                bgColor="#ffffff"
-                className="animate-fade-in"
-                imageSettings={
-                  currencyLogo
-                    ? {
-                        src: currencyLogo,
-                        height: size * 0.1,
-                        width: size * 0.1,
-                        excavate: true,
-                      }
-                    : undefined
-                }
-              />
-            )}
-          {bankQR && (
+          {((!amount && !loading && orderStatus === null) ||
+            (loading && orderStatus === "pending")) && (
             <QRCodeSVG
-              value={bankQR}
+              value={url}
               size={size * 0.8}
               fgColor="#0c0c0c"
               bgColor="#ffffff"
@@ -280,9 +205,6 @@ export default function Pay({
                 className="mb-4 h-12 font-bold"
               >
                 Request Instant Payment <Zap className="w-4 h-4" />
-              </Button>
-              <Button onClick={generateBankQR} className="mb-4 h-12 font-bold">
-                Bank App QR Code <QrCode className="w-4 h-4" />
               </Button>
               <Button
                 variant="outline"
@@ -322,21 +244,7 @@ export default function Pay({
           </div>
         )}
 
-        {bankQR ? (
-          <div className="flex justify-center mb-4">
-            <Button variant="outline" onClick={clearBankQR} className="h-12">
-              Clear Code <X className="w-4 h-4" />
-            </Button>
-          </div>
-        ) : null}
-        {bankQR ? (
-          <div className="flex justify-center">
-            <Button onClick={handleNewBankQR} className="h-12">
-              New Bank Code <RefreshCcw className="w-4 h-4" />
-            </Button>
-          </div>
-        ) : null}
-        {orderStatus !== null || bankQR ? (
+        {orderStatus !== null ? (
           <div className="flex justify-center">
             <Button onClick={handleCancelOrder} className="h-12">
               Cancel Order <X className="w-4 h-4" />

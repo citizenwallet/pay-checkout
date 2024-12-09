@@ -14,8 +14,9 @@ import { AProfile } from "@/db/profiles";
 import { loadProfileMapFromHashesAction } from "@/app/actions/loadProfileMapFromHashes";
 import { OrderCard } from "./Order";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ListChecks, QrCode } from "lucide-react";
+import { Banknote, ListChecks, QrCode } from "lucide-react";
 import Pay from "./Pay";
+import Bank from "./Bank";
 
 const MAX_ORDERS = 20;
 
@@ -139,6 +140,9 @@ export default function VendorOrders({
               <TabsTrigger value="pay" className="w-full text-lg">
                 <QrCode className="w-4 h-4 mr-2" /> Pay
               </TabsTrigger>
+              <TabsTrigger value="bank" className="w-full text-lg">
+                <Banknote className="w-4 h-4 mr-2" /> Bank
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="orders">
               {loading &&
@@ -186,11 +190,22 @@ export default function VendorOrders({
                         : ""
                     }/${accountOrUsername}`}
                     placeId={placeId}
+                    currencyLogo={currencyLogo}
+                  />
+                ),
+                [accountOrUsername, placeId, currencyLogo]
+              )}
+            </TabsContent>
+            <TabsContent value="bank" className="flex w-full">
+              {useMemo(
+                () => (
+                  <Bank
+                    placeId={placeId}
                     placeSlug={place?.slug}
                     currencyLogo={currencyLogo}
                   />
                 ),
-                [accountOrUsername, placeId, place?.slug, currencyLogo]
+                [placeId, place?.slug, currencyLogo]
               )}
             </TabsContent>
           </Tabs>
