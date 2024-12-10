@@ -5,6 +5,7 @@ import Summary from "./Summary";
 import { CommunityConfig } from "@citizenwallet/sdk";
 import Config from "@/cw/community.json";
 import { redirect } from "next/navigation";
+import { track } from "@vercel/analytics/server";
 
 export default async function Page({
   params,
@@ -44,6 +45,11 @@ export default async function Page({
     if (close) {
       successLink += `&close=${encodeURIComponent(close)}`;
     }
+
+    await track("app_pay_success", {
+      slug: data.place_id,
+      amount: data.total,
+    });
 
     redirect(successLink);
   }

@@ -5,6 +5,8 @@ import Success from "./Success";
 import { Item } from "@/db/items";
 import { CommunityConfig } from "@citizenwallet/sdk";
 import Config from "@/cw/community.json";
+import { track } from "@vercel/analytics/server";
+import { getPlace } from "@/lib/place";
 
 export default async function Page({
   params,
@@ -33,6 +35,14 @@ export default async function Page({
   }
 
   const community = new CommunityConfig(Config);
+
+  const { place } = await getPlace(client, accountOrUsername);
+  if (place) {
+    await track("order_paid", {
+      slug: place.slug,
+      amount: data.total,
+    });
+  }
 
   return (
     <Success
