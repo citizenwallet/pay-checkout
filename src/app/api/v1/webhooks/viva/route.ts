@@ -95,7 +95,7 @@ export async function POST(request: Request) {
 
   console.log("Amount", Amount);
 
-  const amount = Amount * 100;
+  const amount = Number((Amount * 100).toFixed(0));
 
   console.log("amount", amount);
 
