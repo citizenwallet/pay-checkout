@@ -17,7 +17,7 @@ export interface Place {
   terminal_id: number | null;
 }
 
-export type NewPlace = Omit<Place, "id" | "created_at">;
+export type NewPlace = Omit<Place, "id" | "created_at" | "terminal_id">;
 
 export interface PlaceSearchResult {
   id: number;
