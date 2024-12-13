@@ -11,9 +11,6 @@ import Config from "@/cw/community.json";
 import { Wallet } from "ethers";
 import { getPlaceByTerminalId } from "@/db/places";
 import { VivaTransactionWebhookBody } from "@/viva";
-import { ipAddress } from "@vercel/edge";
-
-export const runtime = "edge";
 
 function isAllowedIP(ip: string): boolean {
   const allowedIPs = [
@@ -75,7 +72,14 @@ export async function GET() {
 
 export async function POST(request: Request) {
   if (process.env.NODE_ENV === "production") {
-    const ip = ipAddress(request);
+    // Check if request is coming from Vercel
+    const isVercelRequest = request.headers.get("x-vercel-proxy-signature");
+    if (!isVercelRequest) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    // Get IP from Vercel's trusted header
+    const ip = request.headers.get("x-real-ip");
 
     if (!ip || !isAllowedIP(ip)) {
       console.error("Unauthorized IP address:", ip);
