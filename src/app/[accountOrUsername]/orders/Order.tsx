@@ -47,6 +47,32 @@ export function OrderCard({
   const status = getOrderStatus(order);
   const isMinted = orderProfile?.account === ZeroAddress;
 
+  let paymentTypeRow = (
+    <>
+      <Image src="/qr-code.png" alt="QR code" width={20} height={20} />
+      <p className="text-sm">qr code</p>
+    </>
+  );
+
+  switch (order.type) {
+    case "web":
+      paymentTypeRow = (
+        <>
+          <Image src="/qr-code.png" alt="QR code" width={20} height={20} />
+          <p className="text-sm">qr code</p>
+        </>
+      );
+      break;
+    case "terminal":
+      paymentTypeRow = (
+        <>
+          <Image src="/card.png" alt="Card" width={20} height={20} />
+          <p className="text-sm">terminal</p>
+        </>
+      );
+      break;
+  }
+
   return (
     <Card className="mb-4">
       <CardHeader className="pb-2 flex flex-row justify-between items-center">
@@ -69,12 +95,7 @@ export function OrderCard({
           <div className="flex items-center gap-2 bg-gray-200 p-2 rounded-lg">
             {orderProfile ? (
               <div className="flex items-center gap-2">
-                {isMinted && (
-                  <>
-                    <Image src="/card.png" alt="Card" width={20} height={20} />
-                    <p className="text-sm">web payment</p>
-                  </>
-                )}
+                {isMinted && paymentTypeRow}
                 {!isMinted && (
                   <>
                     <Image src="/app.png" alt="App" width={20} height={20} />
@@ -92,10 +113,7 @@ export function OrderCard({
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <Image src="/card.png" alt="Card" width={20} height={20} />
-                <p className="text-sm">web payment</p>
-              </div>
+              <div className="flex items-center gap-2">{paymentTypeRow}</div>
             )}
           </div>
           <span className="text-sm text-gray-500">

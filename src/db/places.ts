@@ -14,6 +14,7 @@ export interface Place {
   name: string;
   accounts: string[];
   invite_code: string | null;
+  terminal_id: number | null;
 }
 
 export type NewPlace = Omit<Place, "id" | "created_at">;
@@ -36,6 +37,17 @@ export const getPlacesByBusinessId = async (
   businessId: number
 ): Promise<PostgrestResponse<Place | null>> => {
   return client.from("places").select("*").eq("business_id", businessId);
+};
+
+export const getPlaceByTerminalId = async (
+  client: SupabaseClient,
+  terminalId: number
+): Promise<PostgrestSingleResponse<Place | null>> => {
+  return client
+    .from("places")
+    .select("*")
+    .eq("terminal_id", terminalId)
+    .maybeSingle();
 };
 
 export const getPlacesByAccount = async (

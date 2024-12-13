@@ -22,6 +22,7 @@ export interface Order {
   status: OrderStatus;
   description: string;
   tx_hash: string | null;
+  type: "web" | "app" | "terminal" | null;
 }
 
 export const createOrder = async (
@@ -40,6 +41,27 @@ export const createOrder = async (
       due: total,
       status: "pending",
       description,
+    })
+    .select()
+    .single();
+};
+
+export const createTerminalOrder = async (
+  client: SupabaseClient,
+  placeId: number,
+  total: number,
+  description: string
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client
+    .from("orders")
+    .insert({
+      place_id: placeId,
+      items: [],
+      total,
+      due: total,
+      status: "paid",
+      description,
+      type: "terminal",
     })
     .select()
     .single();
