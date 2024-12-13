@@ -11,6 +11,41 @@ import Config from "@/cw/community.json";
 import { Wallet } from "ethers";
 import { getPlaceByTerminalId } from "@/db/places";
 import { VivaTransactionWebhookBody } from "@/viva";
+import { ipAddress } from "@vercel/edge";
+
+export const runtime = "edge";
+
+function isAllowedIP(ip: string): boolean {
+  const allowedIPs = [
+    "51.138.37.238",
+    "13.80.70.181",
+    "13.80.71.223",
+    "13.79.28.70",
+    "4.223.76.50",
+    "20.54.89.16",
+    // CIDR ranges
+    "40.127.253.112/28",
+    "51.105.129.192/28",
+    "51.12.157.0/28",
+  ];
+
+  return allowedIPs.some((allowedIP) => {
+    if (allowedIP.includes("/")) {
+      // Handle CIDR notation
+      const [network, bits] = allowedIP.split("/");
+      const mask = ~((1 << (32 - parseInt(bits))) - 1);
+      const ipNum = ip
+        .split(".")
+        .reduce((acc, octet) => (acc << 8) + parseInt(octet), 0);
+      const networkNum = network
+        .split(".")
+        .reduce((acc, octet) => (acc << 8) + parseInt(octet), 0);
+      return (ipNum & mask) === (networkNum & mask);
+    }
+    // Direct IP comparison
+    return ip === allowedIP;
+  });
+}
 
 export async function GET() {
   const basicAuth = Buffer.from(
@@ -39,6 +74,15 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (process.env.NODE_ENV === "production") {
+    const ip = ipAddress(request);
+
+    if (!ip || !isAllowedIP(ip)) {
+      console.error("Unauthorized IP address:", ip);
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+  }
+
   const body: VivaTransactionWebhookBody = await request.json();
 
   console.log("Viva webhook body", body);
