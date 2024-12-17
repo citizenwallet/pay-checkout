@@ -13,15 +13,21 @@ import { WiseTransaction } from "@/wise";
 import { getPlaceByUsername } from "@/db/places";
 
 export async function POST(request: Request) {
+  console.log("Received request");
+
   let bearerToken = request.headers.get("Authorization");
   if (!bearerToken) {
     return NextResponse.json({ error: "No authorization" }, { status: 400 });
   }
 
+  console.log("Parsing bearer token");
+
   bearerToken = bearerToken.split(" ")[1];
   if (!bearerToken) {
     return NextResponse.json({ error: "No authorization" }, { status: 400 });
   }
+
+  console.log("checking if bearer token is valid");
 
   if (bearerToken !== process.env.TOP_UP_PRIVATE_KEY) {
     return NextResponse.json(
@@ -29,6 +35,8 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
+
+  console.log("bearer token is valid");
 
   const body: WiseTransaction = await request.json();
 
@@ -42,11 +50,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid reference" }, { status: 400 });
   }
 
+  console.log("reference is valid");
+
   reference = reference.replace(/\+\+\+/g, "");
   const [network, slug, strOrderId] = reference.split("/");
   if (network !== process.env.NEXT_PUBLIC_BANK_ACCOUNT_REFERENCE_PREFIX) {
     return NextResponse.json({ error: "Invalid network" }, { status: 400 });
   }
+
+  console.log("network is valid");
 
   const orderId = parseInt(strOrderId);
 
@@ -54,8 +66,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid reference" }, { status: 400 });
   }
 
+  console.log("orderId is valid");
+
   const client = getServiceRoleClient();
   const { error } = await completeOrder(client, orderId);
+
+  console.log("order completed");
 
   const { data: place, error: placeError } = await getPlaceByUsername(
     client,
