@@ -46,7 +46,7 @@ export async function POST(request: Request) {
   const prefix = `+++${process.env.NEXT_PUBLIC_BANK_ACCOUNT_REFERENCE_PREFIX}`;
 
   let reference = body.details.paymentReference;
-  if (!reference.startsWith(prefix)) {
+  if (!reference?.startsWith(prefix)) {
     return NextResponse.json({ error: "Invalid reference" }, { status: 400 });
   }
 
