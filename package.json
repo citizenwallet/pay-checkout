@@ -10,13 +10,16 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@citizenwallet/sdk": "^2.0.44",
+    "@citizenwallet/sdk": "^2.0.45",
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-scroll-area": "^1.2.0",
+    "@radix-ui/react-separator": "^1.1.1",
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-tabs": "^1.1.1",
     "@radix-ui/react-toast": "^1.2.2",
+    "@stripe/react-stripe-js": "^3.1.1",
+    "@stripe/stripe-js": "^5.3.0",
     "@supabase/supabase-js": "^2.46.1",
     "@vercel/analytics": "^1.4.1",
     "@vercel/edge": "^1.1.3",

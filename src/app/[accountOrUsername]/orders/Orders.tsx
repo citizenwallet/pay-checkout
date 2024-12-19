@@ -9,7 +9,7 @@ import { Item } from "@/db/items";
 import Image from "next/image";
 import { getOrderByPlaceAction } from "@/app/actions/getOrderByPlace";
 import { Place } from "@/db/places";
-import { getAccountBalance } from "@/cw/balance";
+import { getAccountBalanceAction } from "@/cw/balance";
 import { AProfile } from "@/db/profiles";
 import { loadProfileMapFromHashesAction } from "@/app/actions/loadProfileMapFromHashes";
 import { OrderCard } from "./Order";
@@ -55,7 +55,7 @@ export default function VendorOrders({
     if (!place || !place.accounts[0]) return;
 
     const interval = setInterval(() => {
-      getAccountBalance(place.accounts[0] ?? "").then((balance) => {
+      getAccountBalanceAction(place.accounts[0] ?? "").then((balance) => {
         setBalance(Number(balance ?? 0));
       });
     }, 2000);

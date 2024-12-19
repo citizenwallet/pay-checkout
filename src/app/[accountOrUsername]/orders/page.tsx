@@ -2,13 +2,12 @@ import { getServiceRoleClient } from "@/db";
 import VendorOrders from "./Orders";
 import { Suspense } from "react";
 import { getOrdersByPlace } from "@/db/orders";
-import { CommunityConfig } from "@citizenwallet/sdk";
+import { CommunityConfig, getAccountBalance } from "@citizenwallet/sdk";
 import Config from "@/cw/community.json";
 import { getItemsForPlace, Item } from "@/db/items";
 import { getPlaceWithProfile } from "@/lib/place";
 import { redirect } from "next/navigation";
 import { Metadata } from "next";
-import { getAccountBalance } from "@/cw/balance";
 import { AProfile } from "@/db/profiles";
 import { loadProfileMapFromHashesAction } from "@/app/actions/loadProfileMapFromHashes";
 
@@ -128,7 +127,7 @@ async function OrdersPage({
     return <div>Error: {itemsError.message}</div>;
   }
 
-  const balance = await getAccountBalance(place.accounts[0] ?? "");
+  const balance = await getAccountBalance(community, place.accounts[0] ?? "");
 
   return (
     <VendorOrders

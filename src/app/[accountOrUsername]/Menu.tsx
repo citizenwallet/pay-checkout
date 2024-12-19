@@ -6,7 +6,11 @@ import { Loader2, PlusIcon, ShoppingCart, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Place } from "@/db/places";
-import { ProfileWithTokenId, Profile } from "@citizenwallet/sdk";
+import {
+  ProfileWithTokenId,
+  Profile,
+  generateReceiveLink,
+} from "@citizenwallet/sdk";
 import { Item } from "@/db/items";
 import { formatCurrencyNumber } from "@/lib/currency";
 import CurrencyLogo from "@/components/currency-logo";
@@ -15,7 +19,6 @@ import { generateOrder } from "../actions/generateOrder";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { generateReceiveLink } from "@/cw/links";
 import { formatAddress } from "@/lib/address";
 import { Order } from "@/db/orders";
 
