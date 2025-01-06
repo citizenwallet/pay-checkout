@@ -1,5 +1,5 @@
 import { getServiceRoleClient } from "@/db";
-import { attachTxHashToOrder, completeOrder } from "@/db/orders";
+import { attachTxHashToOrder, completeOrder, getOrder } from "@/db/orders";
 import { formatCurrencyNumber } from "@/lib/currency";
 import {
   BundlerService,
@@ -11,6 +11,9 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import Config from "@/cw/community.json";
 import { Wallet } from "ethers";
+import { getItemsForPlace } from "@/db/items";
+import { sendOrderConfirmationEmail } from "@/brevo";
+import { getPlaceById } from "@/db/places";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -79,6 +82,28 @@ export async function POST(request: Request) {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    try {
+      const { data: order } = await getOrder(client, orderId);
+      const { data: items } = await getItemsForPlace(client, parseInt(placeId));
+      const { data: place } = await getPlaceById(client, parseInt(placeId));
+      if (order && items && place) {
+        const customerName = session.customer_details?.name;
+        const customerEmail = session.customer_details?.email;
+
+        if (customerName && customerEmail) {
+          await sendOrderConfirmationEmail(
+            customerEmail,
+            customerName,
+            order,
+            items,
+            place
+          );
+        }
+      }
+    } catch (error) {
+      console.error(error);
     }
 
     if (

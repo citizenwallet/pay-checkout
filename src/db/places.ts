@@ -61,6 +61,13 @@ export const getPlacesByAccount = async (
     .contains("accounts", JSON.stringify([account]));
 };
 
+export const getPlaceById = async (
+  client: SupabaseClient,
+  id: number
+): Promise<PostgrestSingleResponse<Place | null>> => {
+  return client.from("places").select("*").eq("id", id).maybeSingle();
+};
+
 export const getPlaceByInviteCode = async (
   client: SupabaseClient,
   inviteCode: string
