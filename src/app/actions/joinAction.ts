@@ -63,6 +63,7 @@ export async function joinAction(
     business_id: business.id,
     accounts: [account],
     invite_code: inviteCode,
+    image: null,
   });
 
   if (placeError) {
