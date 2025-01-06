@@ -19,7 +19,7 @@ export interface Place {
   description: string | null;
 }
 
-export type NewPlace = Omit<Place, "id" | "created_at" | "terminal_id">;
+export type NewPlace = Omit<Place, "id" | "created_at" | "terminal_id" | "image" | "description">;
 
 export interface PlaceSearchResult {
   id: number;
