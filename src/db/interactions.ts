@@ -2,22 +2,25 @@ import "server-only";
 import { ATransaction, ExchangeDirection } from "./transactions";
 import { AProfile } from "./profiles";
 import { Place } from "./places";
-import { SupabaseClient } from "@supabase/supabase-js";
+import { QueryData, SupabaseClient } from "@supabase/supabase-js";
 
 export interface AInteraction {
   id: string; // uuid becomes string in TypeScript
-  account: string;
-  with: string;
+  exchange_direction: ExchangeDirection;
+  new_interaction: boolean;
+
   transaction: Pick<
     ATransaction,
     "id" | "value" | "description" | "from" | "to" | "created_at"
   >;
-  profile: Pick<
+  with_profile: Pick<
     AProfile,
     "account" | "username" | "name" | "image" | "description"
   >;
-  place: Pick<Place, "id" | "name" | "slug" | "image" | "description"> | null; // nullable
-  exchange_direction: ExchangeDirection;
+  with_place: Pick<
+    Place,
+    "id" | "name" | "slug" | "image" | "description"
+  > | null; // nullable
 }
 
 /**
@@ -25,18 +28,83 @@ export interface AInteraction {
  */
 
 // TODO: check what the app's profile DB needs to store profile data
+// TODO: paginate
 
 export async function getInteractionsOfAccount(
   supabase: SupabaseClient,
   account: string
 ): Promise<AInteraction[]> {
-  const { data, error } = await supabase
-    .rpc("get_latest_interactions", { account_param: account })
-    .returns<AInteraction[]>();
 
-  if (error) {
-    throw error;
-  }
+  const interactionsQuery = supabase
+    .from("a_interactions")
+    .select(
+      `
+    id,
+    new_interaction,
+    transaction:a_transactions!transaction_id (
+      id,
+      created_at,
+      from,
+      to,
+      value,
+      description
+    ),
+    with_profile:a_profiles!with (
+      account,
+      username,
+      name,
+      description,
+      image,
+      place:places (
+        id,
+        name,
+        slug,
+        image,
+        description
+      )
+    )
+  `
+    )
+    .eq("account", account)
+    .order("created_at", { ascending: false });
 
-  return data;
+  type RawInteraction = QueryData<typeof interactionsQuery>[number];
+
+  const { data, error } = await interactionsQuery;
+  if (error) throw error;
+
+  const transformed: AInteraction[] = data.map(
+    (interaction: RawInteraction) => {
+      
+      const transaction = interaction.transaction as unknown as Pick<
+        ATransaction,
+        "id" | "value" | "description" | "from" | "to" | "created_at"
+        >;
+      
+      const with_profile = interaction.with_profile as unknown as Pick<
+        AProfile,
+        "account" | "username" | "name" | "description" | "image"
+        > & { place: Pick<Place, "id" | "name" | "slug" | "image" | "description"> | null };
+      
+
+      const with_place = with_profile.place;
+
+      return {
+        id: interaction.id,
+        exchange_direction: transaction.from === account ? 'sent' : 'received',
+        new_interaction: interaction.new_interaction,
+        transaction,
+        with_profile: {
+          account: with_profile.account,
+          username: with_profile.username,
+          name: with_profile.name,
+          description: with_profile.description,
+          image: with_profile.image,
+        },
+        with_place,
+      };
+    }
+  );
+
+  return transformed;
 }
