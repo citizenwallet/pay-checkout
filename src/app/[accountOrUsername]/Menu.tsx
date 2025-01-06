@@ -355,7 +355,7 @@ export default function Menu({
             )}
             {!loading && (
               <Image
-                src={profile?.image ?? "/shop.png"}
+                src={profile?.image ?? place?.image ?? "/shop.png"}
                 alt={profile?.name ?? place?.name ?? "Shop"}
                 width={80}
                 height={80}

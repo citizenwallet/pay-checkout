@@ -15,6 +15,7 @@ export interface Place {
   accounts: string[];
   invite_code: string | null;
   terminal_id: number | null;
+  image: string | null;
 }
 
 export type NewPlace = Omit<Place, "id" | "created_at" | "terminal_id">;
