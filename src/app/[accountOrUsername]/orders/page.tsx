@@ -59,7 +59,7 @@ export async function generateMetadata({
   metadata.openGraph = {
     title: place.name,
     description: profile?.description ?? "Pay with Brussels Pay",
-    images: [profile?.image ?? "/shop.png"],
+    images: [profile?.image ?? place.image ?? "/shop.png"],
     type: "website",
   };
 
