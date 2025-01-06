@@ -129,6 +129,10 @@ async function OrdersPage({
 
   const balance = await getAccountBalance(community, place.accounts[0] ?? "");
 
+  const balanceWithDecimals = balance
+    ? Number(balance) / 10 ** community.primaryToken.decimals
+    : 0;
+
   return (
     <VendorOrders
       initialOrders={data ?? []}
@@ -142,7 +146,7 @@ async function OrdersPage({
       profile={profile}
       initialProfiles={profiles}
       currencyLogo={community.community.logo}
-      initialBalance={Number(balance ?? 0)}
+      initialBalance={balanceWithDecimals * 100}
     />
   );
 }
