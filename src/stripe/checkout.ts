@@ -78,6 +78,9 @@ export const generateCheckoutSession = async (
     success_url: `https://${baseDomain}/${accountOrUsername}/pay/${orderId}/success`,
     cancel_url: `https://${baseDomain}/${accountOrUsername}/pay/${orderId}`,
     metadata,
+    payment_intent_data: {
+      metadata,
+    },
   };
 
   return stripe.checkout.sessions.create(request);
