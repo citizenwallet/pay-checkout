@@ -15,6 +15,8 @@ export interface ATransaction {
   status: string;
 }
 
+export type ExchangeDirection = "sent" | "received"; // to denote '+' or '-' value
+
 export async function getProfileMapFromTransactionHashes(
   supabase: SupabaseClient,
   hashes: string[]
