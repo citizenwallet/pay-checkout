@@ -3,7 +3,7 @@ import { getServiceRoleClient } from "@/db";
 import { getNewInteractionsOfAccount } from "@/db/interactions";
 
 /**
- * GET /api/v1/interactions/[account]/new?from_date
+ * GET /api/v1/accounts/[account]/interactions/new?from_date
  *
  * Returns any new interactions for a given account since the specified from_date.
  * Used for polling new interaction updates.
@@ -17,9 +17,6 @@ import { getNewInteractionsOfAccount } from "@/db/interactions";
  * @returns {number} Response.status - HTTP status code if request fails
  *
  * @example
- * // Request
- * GET /api/v1/interactions/0x123...?from_date=2023-10-20T15:30:00Z
- *
  * // Success Response
  * {
  *   interactions: [
