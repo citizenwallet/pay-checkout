@@ -41,6 +41,7 @@ export async function getProfilesByAccounts(
     .from("a_profiles")
     .select("*")
     .in("account", accounts)
-    .neq("token_id", null)
-    .neq("token_id", "");
+    // .neq("token_id", null) // TODO: remove this
+    // .neq("token_id", "") // TODO: remove this
+    ;
 }
