@@ -38,13 +38,13 @@ import { getInteractionsOfAccount } from "@/db/interactions";
 
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ accountOrUsername: string }> }
+  context: { params: Promise<{ account: string }> }
 ) {
-  const { accountOrUsername } = await context.params;
+  const { account } = await context.params;
 
-  if (!accountOrUsername) {
+  if (!account) {
     return NextResponse.json(
-      { error: "No accountOrUsername" },
+      { error: "No account" },
       { status: 400 }
     );
   }
@@ -54,7 +54,7 @@ export async function GET(
   try {
     const interactions = await getInteractionsOfAccount(
       client,
-      accountOrUsername
+      account
     );
 
     return NextResponse.json({ interactions }, { status: 200 });
