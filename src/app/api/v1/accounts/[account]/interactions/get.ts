@@ -3,21 +3,18 @@ import { getServiceRoleClient } from "@/db";
 import { getInteractionsOfAccount } from "@/db/interactions";
 
 /**
- * GET /api/v1/interactions/[account]
+ * GET /api/v1/accounts/[account]/interactions
  *
- * Returns the latest transaction for a given account with other users or places.
+ * Returns the interactions for a given account with other users or places.
  *
- * @param account - The public address of the user requesting their latest transaction
+ * @param account - The public address of the user requesting their interactions
  *
  * @returns {Object} Response
- * @returns {Object} Response.interactions - The latest transaction data if found
+ * @returns {Object} Response.interactions - The interactions data if found
  * @returns {string} Response.error - Error message if request fails
  * @returns {number} Response.status - HTTP status code if request fails
  *
  * @example
- * // Request
- * GET /api/v1/interactions/0x123...
- *
  * // Success Response
  * {
  *   interactions: [
