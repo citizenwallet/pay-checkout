@@ -64,3 +64,32 @@ export async function getTransactionsBetweenAccounts(
 
   return transformedData;
 }
+
+export async function getNewTransactionsBetweenAccounts(
+  supabase: SupabaseClient,
+  account: string,
+  withAccount: string,
+  fromDate: Date
+): Promise<(ATransaction & { exchange_direction: ExchangeDirection })[]> {
+  const { data, error } = await supabase
+    .from("a_transactions")
+    .select("*")
+    .or(
+      `and(from.eq.${account},to.eq.${withAccount}),and(from.eq.${withAccount},to.eq.${account})`
+    )
+    .gte("created_at", fromDate.toISOString())
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  const transformedData: (ATransaction & {
+    exchange_direction: ExchangeDirection;
+  })[] = data.map((transaction) => {
+    return {
+      ...transaction,
+      exchange_direction: transaction.from === account ? "sent" : "received",
+    };
+  });
+
+  return transformedData;
+}
