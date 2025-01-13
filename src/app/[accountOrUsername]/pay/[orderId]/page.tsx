@@ -6,8 +6,67 @@ import { CommunityConfig } from "@citizenwallet/sdk";
 import Config from "@/cw/community.json";
 import { redirect } from "next/navigation";
 import { track } from "@vercel/analytics/server";
+import { Suspense } from "react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { CreditCard } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default async function Page({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ accountOrUsername: string; orderId: number }>;
+  searchParams: Promise<{
+    tx?: string;
+    close?: string;
+    customOrderId?: string;
+  }>;
+}) {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+          <Card className="mx-auto max-w-lg">
+            <CardHeader className="flex flex-row items-center justify-start gap-4">
+              <CardTitle className="text-2xl font-bold">
+                Order Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="divide-y divide-gray-200 space-y-4">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-40 w-full" />
+              </ul>
+            </CardContent>
+            <CardFooter className="flex flex-col items-stretch">
+              <Button
+                variant="outline"
+                disabled
+                className="w-full h-14 text-lg mb-4"
+              >
+                Cancel Order
+              </Button>
+              <Button disabled className="w-full h-14 text-lg">
+                Pay <CreditCard className="h-4 w-4 ml-2" />
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      }
+    >
+      <AsyncPage params={params} searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function AsyncPage({
   params,
   searchParams,
 }: {

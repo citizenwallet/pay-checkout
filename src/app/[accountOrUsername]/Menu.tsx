@@ -157,55 +157,67 @@ export default function Menu({
     }
   };
 
-  const handleConnectedAccountPay = async (
-    redirect: string,
-    customOrder?: Order
-  ) => {
-    if (!connectedAccount || !sigAuthRedirect || !alias) {
-      return;
-    }
-
-    const account = place?.accounts[0];
-    if (!account) {
-      return;
-    }
-
-    setLoadingOrder(true);
-
-    try {
-      let linkDescription = noItems
-        ? description
-        : Object.keys(selectedItems).reduce((acc, id, index) => {
-            return `${acc}${index === 0 ? "" : ", "}${`${
-              items.find((item) => item.id === parseInt(id))?.name
-            } x ${selectedItems[parseInt(id)]}`}`;
-          }, "");
-      if (customOrder) {
-        linkDescription = customOrder.description;
+  const handleConnectedAccountPay = useCallback(
+    async (redirect: string, customOrder?: Order) => {
+      if (!connectedAccount || !sigAuthRedirect || !alias) {
+        return;
       }
 
-      let price = noItems
-        ? (parseFloat(customAmount) * 100).toString()
-        : totalPrice.toString();
-      if (customOrder) {
-        price = customOrder.total.toString();
+      const account = place?.accounts[0];
+      if (!account) {
+        return;
       }
 
-      const receiveLink = generateReceiveLink(
-        sigAuthRedirect,
-        account,
-        alias,
-        price,
-        linkDescription
-      );
+      setLoadingOrder(true);
 
-      router.push(`${receiveLink}&success=${encodeURIComponent(redirect)}`);
-    } catch (e) {
-      console.error(e);
-    }
+      try {
+        let linkDescription = noItems
+          ? description
+          : Object.keys(selectedItems).reduce((acc, id, index) => {
+              return `${acc}${index === 0 ? "" : ", "}${`${
+                items.find((item) => item.id === parseInt(id))?.name
+              } x ${selectedItems[parseInt(id)]}`}`;
+            }, "");
+        if (customOrder) {
+          linkDescription = customOrder.description;
+        }
 
-    setLoadingOrder(false);
-  };
+        let price = noItems
+          ? (parseFloat(customAmount) * 100).toString()
+          : totalPrice.toString();
+        if (customOrder) {
+          price = customOrder.total.toString();
+        }
+
+        const receiveLink = generateReceiveLink(
+          sigAuthRedirect,
+          account,
+          alias,
+          price,
+          linkDescription
+        );
+
+        router.push(`${receiveLink}&success=${encodeURIComponent(redirect)}`);
+      } catch (e) {
+        console.error(e);
+      }
+
+      setLoadingOrder(false);
+    },
+    [
+      alias,
+      connectedAccount,
+      customAmount,
+      description,
+      items,
+      noItems,
+      place?.accounts,
+      router,
+      selectedItems,
+      sigAuthRedirect,
+      totalPrice,
+    ]
+  );
 
   const handleGenerateOrder = useCallback(async (): Promise<
     number | undefined
