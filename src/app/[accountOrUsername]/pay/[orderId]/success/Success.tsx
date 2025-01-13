@@ -38,7 +38,7 @@ export default function Component({
   const router = useRouter();
   const [status, setStatus] = useState<Order["status"]>(order.status);
 
-  const intervalRef = useRef<NodeJS.Timeout>();
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const getStatus = async () => {
@@ -52,12 +52,18 @@ export default function Component({
 
     intervalRef.current = setInterval(getStatus, 2000);
 
-    return () => clearInterval(intervalRef.current);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
   }, [order.id]);
 
   useEffect(() => {
     if (status === "paid") {
-      clearInterval(intervalRef.current);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
 
       if (close) {
         setTimeout(() => {
