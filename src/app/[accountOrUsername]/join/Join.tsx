@@ -19,6 +19,7 @@ import { joinAction } from "@/app/actions/joinAction";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 
 export const joinFormSchema = z.object({
   name: z.string().min(1, {
@@ -47,6 +48,7 @@ interface JoinProps {
 
 export default function Join({ inviteCode }: JoinProps) {
   const router = useRouter();
+  const { toast } = useToast();
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -80,10 +82,18 @@ export default function Join({ inviteCode }: JoinProps) {
 
       if (result.error) {
         console.error(result.error);
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        });
         return;
       }
 
-      console.log("Successfully joined!");
+      toast({
+        title: "Success",
+        description: "Invite sent!",
+      });
 
       router.push(`/${inviteCode}/orders`);
     } catch (error) {

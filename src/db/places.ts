@@ -73,6 +73,13 @@ export const getPlaceById = async (
   return client.from("places").select("*").eq("id", id).maybeSingle();
 };
 
+export const getPlaceBySlug = async (
+  client: SupabaseClient,
+  slug: string
+): Promise<PostgrestSingleResponse<Place | null>> => {
+  return client.from("places").select("*").eq("slug", slug).maybeSingle();
+};
+
 export const getPlaceByInviteCode = async (
   client: SupabaseClient,
   inviteCode: string
