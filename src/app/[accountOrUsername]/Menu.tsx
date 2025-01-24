@@ -10,6 +10,8 @@ import {
   ProfileWithTokenId,
   Profile,
   generateReceiveLink,
+  Config,
+  CommunityConfig,
 } from "@citizenwallet/sdk";
 import { Item } from "@/db/items";
 import { formatCurrencyNumber } from "@/lib/currency";
@@ -23,6 +25,7 @@ import { formatAddress } from "@/lib/address";
 import { Order } from "@/db/orders";
 
 interface VendorPageProps {
+  config: Config;
   alias?: string;
   accountOrUsername?: string;
   loading?: boolean;
@@ -37,6 +40,7 @@ interface VendorPageProps {
 }
 
 export default function Menu({
+  config,
   alias,
   accountOrUsername,
   loading = false,
@@ -191,8 +195,8 @@ export default function Menu({
 
         const receiveLink = generateReceiveLink(
           sigAuthRedirect,
+          new CommunityConfig(config),
           account,
-          alias,
           price,
           linkDescription
         );
@@ -205,6 +209,7 @@ export default function Menu({
       setLoadingOrder(false);
     },
     [
+      config,
       alias,
       connectedAccount,
       customAmount,

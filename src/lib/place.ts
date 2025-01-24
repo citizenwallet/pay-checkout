@@ -29,7 +29,11 @@ export const getPlaceWithProfile = async (
     place = data?.[0] ?? null;
 
     profile = place
-      ? await getProfileFromAddress(community, accountOrUsername)
+      ? await getProfileFromAddress(
+          process.env.IPFS_DOMAIN!,
+          community,
+          accountOrUsername
+        )
       : null;
   } else if (accountOrUsername.startsWith("invite-")) {
     inviteCode = true;
@@ -42,14 +46,22 @@ export const getPlaceWithProfile = async (
     place = data;
 
     profile = place
-      ? await getProfileFromUsername(community, place.slug)
+      ? await getProfileFromUsername(
+          process.env.IPFS_DOMAIN!,
+          community,
+          place.slug
+        )
       : null;
   } else {
     const { data } = await getPlaceByUsername(client, accountOrUsername);
     place = data ?? null;
 
     profile = place
-      ? await getProfileFromUsername(community, place.slug)
+      ? await getProfileFromUsername(
+          process.env.IPFS_DOMAIN!,
+          community,
+          place.slug
+        )
       : null;
   }
 

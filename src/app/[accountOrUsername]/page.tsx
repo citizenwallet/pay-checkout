@@ -105,7 +105,7 @@ export default async function Page({
 
   return (
     <div>
-      <Suspense fallback={<Menu loading />}>
+      <Suspense fallback={<Menu config={Config} loading />}>
         <PlacePage
           accountOrUsername={accountOrUsername}
           sigAuthAccount={parsedSigAuthAccount}
@@ -167,7 +167,11 @@ async function PlacePage({
 
   let connectedProfile: ProfileWithTokenId | null = null;
   if (connectedAccount) {
-    connectedProfile = await getProfileFromAddress(community, connectedAccount);
+    connectedProfile = await getProfileFromAddress(
+      process.env.IPFS_DOMAIN!,
+      community,
+      connectedAccount
+    );
   }
 
   const { place, profile, inviteCode } = await getPlaceWithProfile(
@@ -196,6 +200,7 @@ async function PlacePage({
 
   return (
     <Menu
+      config={Config}
       alias={community.community.alias}
       accountOrUsername={accountOrUsername}
       place={place}
