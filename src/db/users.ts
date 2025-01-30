@@ -7,6 +7,7 @@ export interface User {
   email: string;
   name: string;
   auth_id: string;
+  linked_business_id: number | null;
 }
 
 export async function getUserByEmail(
@@ -16,6 +17,14 @@ export async function getUserByEmail(
   return client.from("users").select("*").eq("email", email).single();
 }
 
-export async function createUser(client: SupabaseClient, email: string) {
-  return client.from("users").insert({ email }).select().single();
+export async function createUser(
+  client: SupabaseClient,
+  email: string,
+  linked_business_id: number | null
+) {
+  return client
+    .from("users")
+    .insert({ email, linked_business_id })
+    .select()
+    .single();
 }

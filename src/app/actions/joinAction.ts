@@ -46,13 +46,6 @@ export async function joinAction(
     return { error: "Failed to sign in with email" };
   }
 
-  // create user in users table
-  const { error: newUserError } = await createUser(client, email);
-
-  if (newUserError) {
-    return { error: newUserError.message };
-  }
-
   // generate a throwaway private key
   const newPk = Wallet.createRandom();
   const address = newPk.address;
@@ -81,6 +74,13 @@ export async function joinAction(
 
   if (businessError) {
     return { error: businessError.message };
+  }
+
+  // create user in users table
+  const { error: newUserError } = await createUser(client, email, business.id);
+
+  if (newUserError) {
+    return { error: newUserError.message };
   }
 
   // Try to create a unique slug
@@ -118,6 +118,7 @@ export async function joinAction(
     accounts: [account],
     invite_code: inviteCode,
     image: null,
+    display: "amount",
   });
 
   if (placeError) {
