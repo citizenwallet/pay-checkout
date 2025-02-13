@@ -384,8 +384,8 @@ export default function Menu({
             )}
             {!loading && (
               <Image
-                src={profile?.image ?? place?.image ?? "/shop.png"}
-                alt={profile?.name ?? place?.name ?? "Shop"}
+                src={place?.image ?? profile?.image ?? "/shop.png"}
+                alt={place?.name ?? profile?.name ?? "Shop"}
                 width={80}
                 height={80}
                 className="rounded-full h-16 w-16 object-cover"
