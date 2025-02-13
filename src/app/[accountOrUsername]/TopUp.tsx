@@ -80,7 +80,8 @@ export default function TopUpSelector({
         placeId,
         {},
         "Top up",
-        amount
+        amount,
+        connectedAccount ?? address
       );
       if (error || !data) {
         console.error(error);

@@ -237,7 +237,8 @@ export default function Menu({
         place.id,
         {},
         description,
-        amount
+        amount,
+        null
       );
       if (error) {
         console.error(error);
@@ -250,7 +251,8 @@ export default function Menu({
         place.id,
         selectedItems,
         description,
-        totalPrice
+        totalPrice,
+        null
       );
       if (error) {
         console.error(error);
