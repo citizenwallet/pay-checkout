@@ -23,6 +23,7 @@ export interface Order {
   description: string;
   tx_hash: string | null;
   type: "web" | "app" | "terminal" | null;
+  account: string | null;
 }
 
 export const createOrder = async (
@@ -145,4 +146,25 @@ export const getOrdersByPlace = async (
     )
     .order("created_at", { ascending: false })
     .range(offset, offset + limit);
+};
+
+export const getOrdersByAccount = async (
+  client: SupabaseClient,
+  account: string,
+  limit: number = 10,
+  offset: number = 0,
+  placeId?: number
+): Promise<PostgrestResponse<Order>> => {
+  let query = client
+    .from("orders")
+    .select("*", { count: "exact" })
+    .eq("account", account);
+
+  if (placeId !== undefined) {
+    query = query.eq("place_id", placeId);
+  }
+
+  return query
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
 };

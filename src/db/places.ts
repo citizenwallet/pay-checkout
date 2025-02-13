@@ -18,6 +18,7 @@ export interface Place {
   terminal_id: number | null;
   image: string | null;
   description: string | null;
+  display: "amount" | "menu" | "amountAndMenu" | "topup";
 }
 
 export type NewPlace = Omit<
@@ -112,12 +113,15 @@ export const createPlace = async (
 export const getAllPlaces = async (
   client: SupabaseClient
 ): Promise<
-  Pick<Place, "id" | "name" | "slug" | "image" | "accounts" | "description">[]
+  Pick<
+    Place,
+    "id" | "name" | "slug" | "image" | "accounts" | "description" | "display"
+  >[]
 > => {
   const placesQuery = client
     .from("places")
-    .select("id, name, slug, image, accounts ,description")
-    .order("id", { ascending: true });
+    .select("id, name, slug, image, accounts ,description, display")
+    .order("name", { ascending: true });
 
   const { data, error } = await placesQuery;
 

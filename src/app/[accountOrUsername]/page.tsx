@@ -13,6 +13,7 @@ import { Metadata } from "next";
 import { getPlaceWithProfile } from "@/lib/place";
 import { redirect } from "next/navigation";
 import { getOrder, Order } from "@/db/orders";
+import TopUpSelector from "./TopUp";
 
 export async function generateMetadata({
   params,
@@ -75,6 +76,7 @@ export default async function Page({
 }: {
   params: Promise<{ accountOrUsername: string }>;
   searchParams: Promise<{
+    account?: string;
     orderId?: string;
     sigAuthAccount?: string;
     sigAuthExpiry?: string;
@@ -84,6 +86,7 @@ export default async function Page({
 }) {
   const { accountOrUsername } = await params;
   const {
+    account,
     orderId,
     sigAuthAccount,
     sigAuthExpiry,
@@ -107,6 +110,7 @@ export default async function Page({
     <div>
       <Suspense fallback={<Menu config={Config} loading />}>
         <PlacePage
+          account={account}
           accountOrUsername={accountOrUsername}
           sigAuthAccount={parsedSigAuthAccount}
           sigAuthExpiry={sigAuthExpiry}
@@ -120,6 +124,7 @@ export default async function Page({
 }
 
 async function PlacePage({
+  account,
   accountOrUsername,
   sigAuthAccount,
   sigAuthExpiry,
@@ -127,6 +132,7 @@ async function PlacePage({
   sigAuthRedirect,
   orderId,
 }: {
+  account?: string;
   accountOrUsername: string;
   sigAuthAccount?: string;
   sigAuthExpiry?: string;
@@ -164,6 +170,9 @@ async function PlacePage({
       // You might want to handle this error case appropriately
     }
   }
+  if (account) {
+    connectedAccount = account;
+  }
 
   let connectedProfile: ProfileWithTokenId | null = null;
   if (connectedAccount) {
@@ -196,6 +205,17 @@ async function PlacePage({
     if (orderData) {
       pendingOrder = orderData;
     }
+  }
+
+  if (place.display === "topup") {
+    return (
+      <TopUpSelector
+        connectedAccount={connectedAccount}
+        accountOrUsername={accountOrUsername}
+        connectedProfile={connectedProfile}
+        placeId={place.id}
+      />
+    );
   }
 
   return (
