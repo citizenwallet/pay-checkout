@@ -72,7 +72,10 @@ export default function TopUpSelector({
     try {
       setLoading(true);
 
-      const amount = parseFloat(customAmount) * 100;
+      let amount = parseFloat(customAmount) * 100;
+      if (selectedAmount) {
+        amount = selectedAmount * 100;
+      }
       const { data, error } = await generateOrder(
         placeId,
         {},
