@@ -203,11 +203,22 @@ export default function TopUpSelector({
                 />
               </div>
               <Input
+                key="customAmount"
                 type="text"
-                id="customAmount"
                 value={customAmount}
                 onChange={handleCustomAmountChange}
-                className="pl-8"
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter") {
+                    return;
+                  }
+
+                  if (!isValidEthereumAddress(address) || !finalAmount) {
+                    return;
+                  }
+
+                  handleSubmit(e);
+                }}
+                className="pl-12"
                 placeholder="Enter amount"
               />
             </div>

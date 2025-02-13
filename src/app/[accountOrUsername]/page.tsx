@@ -213,6 +213,7 @@ async function PlacePage({
         connectedAccount={connectedAccount}
         accountOrUsername={accountOrUsername}
         connectedProfile={connectedProfile}
+        sigAuthRedirect={sigAuthRedirect}
         placeId={place.id}
       />
     );
