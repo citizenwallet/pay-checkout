@@ -81,7 +81,8 @@ export default function TopUpSelector({
         {},
         "Top up",
         amount,
-        connectedAccount ?? address
+        connectedAccount ?? address,
+        connectedAccount ? "app" : "web"
       );
       if (error || !data) {
         console.error(error);

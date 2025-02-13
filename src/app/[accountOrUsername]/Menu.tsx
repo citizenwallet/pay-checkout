@@ -238,7 +238,8 @@ export default function Menu({
         {},
         description,
         amount,
-        null
+        null,
+        connectedAccount ? "app" : "web"
       );
       if (error) {
         console.error(error);
@@ -252,7 +253,8 @@ export default function Menu({
         selectedItems,
         description,
         totalPrice,
-        null
+        null,
+        connectedAccount ? "app" : "web"
       );
       if (error) {
         console.error(error);
@@ -261,7 +263,15 @@ export default function Menu({
 
       return data;
     }
-  }, [place, noItems, customAmount, selectedItems, description, totalPrice]);
+  }, [
+    place,
+    noItems,
+    customAmount,
+    selectedItems,
+    description,
+    totalPrice,
+    connectedAccount,
+  ]);
 
   const handlePay = useCallback(
     async (customOrder?: Order) => {

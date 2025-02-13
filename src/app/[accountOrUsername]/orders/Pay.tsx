@@ -77,7 +77,8 @@ export default function Pay({ baseUrl, placeId, currencyLogo }: PayProps) {
       {},
       description,
       parsedAmount,
-      null
+      null,
+      "web"
     );
     if (error || !data) {
       console.error(error);

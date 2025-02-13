@@ -19,21 +19,22 @@ export type ExchangeDirection = "sent" | "received"; // to denote '+' or '-' val
 
 export async function getProfileMapFromTransactionHashes(
   supabase: SupabaseClient,
-  hashes: string[]
+  hashes: string[],
+  direction: "from" | "to" = "from"
 ): Promise<{ [key: string]: AProfile }> {
   const { data } = await supabase
     .from("a_transactions")
     .select(
       `
       *,
-      from_profile:a_profiles!Transactions_from_fkey(*)
+      ${direction}_profile:a_profiles!Transactions_${direction}_fkey(*)
     `
     )
     .in("hash", hashes);
 
   if (!data) return {};
   return data.reduce((acc, row) => {
-    acc[row.hash] = row.from_profile as AProfile;
+    acc[row.hash] = row[`${direction}_profile`] as AProfile;
     return acc;
   }, {} as { [key: string]: AProfile });
 }

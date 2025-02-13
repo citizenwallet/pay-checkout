@@ -114,7 +114,8 @@ async function OrdersPage({
     profiles = await loadProfileMapFromHashesAction(
       (data ?? [])
         .filter((order) => order.tx_hash != null && order.tx_hash != "")
-        .map((order) => order.tx_hash!)
+        .map((order) => order.tx_hash!),
+      place?.display === "topup" ? "to" : "from"
     );
   }
 

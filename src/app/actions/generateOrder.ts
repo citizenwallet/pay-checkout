@@ -10,7 +10,8 @@ export async function generateOrder(
   items: { [key: number]: number },
   description: string,
   total: number,
-  account: string | null
+  account: string | null,
+  type: "web" | "app" | "terminal" | null
 ): Promise<ActionResponse<number>> {
   const client = getServiceRoleClient();
 
@@ -33,7 +34,8 @@ export async function generateOrder(
     total,
     validItems.map((item) => ({ id: item.id, quantity: items[item.id] })),
     description,
-    account
+    account,
+    type
   );
   if (orderError) {
     return { error: orderError.message };

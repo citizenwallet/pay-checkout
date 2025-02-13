@@ -72,6 +72,7 @@ export default function Bank({ placeId, placeSlug, currencyLogo }: BankProps) {
       {},
       description,
       parsedAmount,
+      null,
       null
     );
     if (error || !data) {

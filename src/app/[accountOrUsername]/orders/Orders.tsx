@@ -72,7 +72,8 @@ export default function VendorOrders({
         loadProfileMapFromHashesAction(
           data
             .filter((order) => order.tx_hash != null && order.tx_hash != "")
-            .map((order) => order.tx_hash!)
+            .map((order) => order.tx_hash!),
+          place?.display === "topup" ? "to" : "from"
         ).then((newProfiles) => {
           setProfiles(newProfiles);
         });
@@ -83,7 +84,7 @@ export default function VendorOrders({
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [placeId]);
+  }, [placeId, place?.display]);
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
