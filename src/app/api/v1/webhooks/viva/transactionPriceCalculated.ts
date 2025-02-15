@@ -21,7 +21,7 @@ export const transactionPriceCalculated = async (
   const { data: orders, error: orderError } =
     await getTerminalOrderByTransactionId(client, TransactionId);
 
-  if (orderError || !orders) {
+  if (orderError || !orders || orders.length === 0) {
     const { data: order, error: orderError } = await createTerminalFeeOrder(
       client,
       totalCommission,
