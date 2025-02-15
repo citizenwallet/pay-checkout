@@ -6,8 +6,6 @@ import Stripe from "stripe";
 export const chargeUpdated = async (stripe: Stripe, event: Stripe.Event) => {
   const charge = event.data.object as Stripe.Charge;
 
-  console.log("Charge updated", charge);
-
   const orderId = parseInt(charge.metadata?.orderId ?? "0");
   if (!orderId || isNaN(orderId)) {
     return NextResponse.json({ error: "No orderId" }, { status: 400 });
