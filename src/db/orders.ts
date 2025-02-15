@@ -72,6 +72,40 @@ export const createTerminalOrder = async (
     .single();
 };
 
+export const createTerminalFeeOrder = async (
+  client: SupabaseClient,
+  fees: number,
+  description: string
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client
+    .from("orders")
+    .insert({
+      place_id: 0,
+      items: [],
+      total: 0,
+      fees,
+      due: 0,
+      status: "paid",
+      description,
+      type: "terminal",
+    })
+    .select()
+    .single();
+};
+
+export const updateOrderTotal = async (
+  client: SupabaseClient,
+  placeId: number,
+  orderId: number,
+  total: number
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client
+    .from("orders")
+    .update({ place_id: placeId, total })
+    .eq("id", orderId)
+    .single();
+};
+
 export const updateOrder = async (
   client: SupabaseClient,
   orderId: number,
