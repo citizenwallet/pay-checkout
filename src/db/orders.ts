@@ -63,7 +63,7 @@ export const createTerminalOrder = async (
       place_id: placeId,
       items: [],
       total,
-      due: total,
+      due: 0,
       status: "paid",
       description,
       type: "terminal",
@@ -90,6 +90,17 @@ export const getOrder = async (
   orderId: number
 ): Promise<PostgrestSingleResponse<Order>> => {
   return client.from("orders").select().eq("id", orderId).single();
+};
+
+export const getTerminalOrderByTransactionId = async (
+  client: SupabaseClient,
+  transactionId: string
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client
+    .from("orders")
+    .select()
+    .eq("description", `Order: ${transactionId}`)
+    .single();
 };
 
 export const completeOrder = async (
