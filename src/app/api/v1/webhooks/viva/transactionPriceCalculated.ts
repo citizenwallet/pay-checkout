@@ -8,13 +8,15 @@ export const transactionPriceCalculated = async (
   const { TransactionId, TotalCommission = 0 } = data;
 
   const client = getServiceRoleClient();
-  const { data: order, error: orderError } =
+  const { data: orders, error: orderError } =
     await getTerminalOrderByTransactionId(client, TransactionId);
 
-  if (orderError || !order) {
+  if (orderError || !orders) {
     console.error("Error getting order", orderError);
     return;
   }
 
-  await updateOrderFees(client, order.id, TotalCommission * 100);
+  for (const order of orders) {
+    await updateOrderFees(client, order.id, TotalCommission * 100);
+  }
 };

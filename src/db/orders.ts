@@ -95,12 +95,11 @@ export const getOrder = async (
 export const getTerminalOrderByTransactionId = async (
   client: SupabaseClient,
   transactionId: string
-): Promise<PostgrestSingleResponse<Order>> => {
+): Promise<PostgrestResponse<Order>> => {
   return client
     .from("orders")
     .select()
-    .eq("description", `Order: ${transactionId}`)
-    .single();
+    .eq("description", `Order: ${transactionId}`);
 };
 
 export const completeOrder = async (
