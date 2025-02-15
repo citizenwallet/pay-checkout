@@ -103,6 +103,14 @@ export const completeOrder = async (
     .single();
 };
 
+export const updateOrderFees = async (
+  client: SupabaseClient,
+  orderId: number,
+  fees: number
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client.from("orders").update({ fees }).eq("id", orderId).single();
+};
+
 export const cancelOrder = async (
   client: SupabaseClient,
   orderId: number
