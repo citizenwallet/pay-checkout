@@ -7,6 +7,8 @@ export const transactionPriceCalculated = async (
 ) => {
   const { TransactionId, TotalCommission = 0 } = data;
 
+  console.log("TransactionId", TransactionId);
+
   const client = getServiceRoleClient();
   const { data: orders, error: orderError } =
     await getTerminalOrderByTransactionId(client, TransactionId);
@@ -15,6 +17,8 @@ export const transactionPriceCalculated = async (
     console.error("Error getting order", orderError);
     return;
   }
+
+  console.log("Orders", orders);
 
   for (const order of orders) {
     await updateOrderFees(client, order.id, TotalCommission * 100);
