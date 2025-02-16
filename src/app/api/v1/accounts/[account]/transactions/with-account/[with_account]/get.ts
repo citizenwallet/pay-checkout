@@ -1,8 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getServiceRoleClient } from "@/db";
-import {
-  getTransactionsBetweenAccounts
-} from "@/db/transactions";
+import { getTransactionsBetweenAccounts } from "@/db/transactions";
 
 /**
  * GET /api/v1/accounts/[account]/transactions/with-account/[with_account]
@@ -38,7 +36,6 @@ import {
  * }
  */
 
-
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ account: string; with_account: string }> }
@@ -56,9 +53,6 @@ export async function GET(
   const client = getServiceRoleClient();
 
   try {
-    console.log("account", account);
-    console.log("with_account", with_account);
-
     const transactions = await getTransactionsBetweenAccounts(
       client,
       account,

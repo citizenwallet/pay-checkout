@@ -19,6 +19,7 @@ export interface Place {
   image: string | null;
   description: string | null;
   display: "amount" | "menu" | "amountAndMenu" | "topup";
+  hidden: boolean;
 }
 
 export type NewPlace = Omit<
@@ -99,6 +100,7 @@ export const searchPlaces = async (
   return client
     .from("places")
     .select("id, name, slug")
+    .eq("hidden", false)
     .ilike("name", `%${query}%`);
 };
 
@@ -121,6 +123,7 @@ export const getAllPlaces = async (
   const placesQuery = client
     .from("places")
     .select("id, name, slug, image, accounts ,description, display")
+    .eq("hidden", false)
     .order("name", { ascending: true });
 
   const { data, error } = await placesQuery;

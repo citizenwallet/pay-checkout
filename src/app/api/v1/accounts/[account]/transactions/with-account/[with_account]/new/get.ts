@@ -61,10 +61,6 @@ export async function GET(
   const client = getServiceRoleClient();
 
   try {
-    console.log("account", account);
-    console.log("with_account", with_account);
-    console.log("fromDate", fromDate.toISOString());
-
     const transactions = await getNewTransactionsBetweenAccounts(
       client,
       account,
