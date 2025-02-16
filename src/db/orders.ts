@@ -55,6 +55,7 @@ export const createTerminalOrder = async (
   client: SupabaseClient,
   placeId: number,
   total: number,
+  fees: number,
   description: string
 ): Promise<PostgrestSingleResponse<Order>> => {
   return client
@@ -64,6 +65,7 @@ export const createTerminalOrder = async (
       items: [],
       total,
       due: 0,
+      fees,
       status: "paid",
       description,
       type: "terminal",

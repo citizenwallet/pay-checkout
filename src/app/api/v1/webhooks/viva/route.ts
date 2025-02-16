@@ -3,10 +3,9 @@ import {
   VIVA_EVENT_TYPES,
   VivaEvent,
   VivaTransactionPaymentCreated,
-  VivaTransactionPriceCalculated,
 } from "@/viva";
 import { transactionPaymentCreated } from "./transactionPaymentCreated";
-import { transactionPriceCalculated } from "./transactionPriceCalculated";
+import { getMessagesConfigToken } from "@/viva/messages";
 
 function isAllowedIP(ip: string): boolean {
   const allowedIPs = [
@@ -45,18 +44,7 @@ export async function GET() {
     `${process.env.VIVA_MERCHANT_ID}:${process.env.VIVA_API_KEY}`
   ).toString("base64");
 
-  const response = await fetch(
-    `https://www.vivapayments.com/api/messages/config/token`,
-    {
-      headers: {
-        Authorization: `Basic ${basicAuth}`,
-      },
-    }
-  );
-
-  const data = await response.json();
-
-  const verificationKey = data["Key"];
+  const verificationKey = await getMessagesConfigToken(basicAuth);
   if (!verificationKey) {
     return NextResponse.json({ error: "No verification key" }, { status: 500 });
   }
@@ -91,11 +79,6 @@ export async function POST(request: Request) {
     case VIVA_EVENT_TYPES.TRANSACTION_PAYMENT_CREATED:
       await transactionPaymentCreated(
         body.EventData as VivaTransactionPaymentCreated
-      );
-      break;
-    case VIVA_EVENT_TYPES.TRANSACTION_PRICE_CALCULATED:
-      await transactionPriceCalculated(
-        body.EventData as VivaTransactionPriceCalculated
       );
       break;
   }

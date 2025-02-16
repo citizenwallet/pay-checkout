@@ -1,8 +1,4 @@
-import {
-  attachTxHashToOrder,
-  getTerminalOrderByTransactionId,
-  updateOrderTotal,
-} from "@/db/orders";
+import { attachTxHashToOrder } from "@/db/orders";
 import { getServiceRoleClient } from "@/db";
 import { BundlerService } from "@citizenwallet/sdk";
 import { createTerminalOrder } from "@/db/orders";
@@ -14,6 +10,7 @@ import { CommunityConfig } from "@citizenwallet/sdk";
 import { Wallet } from "ethers";
 import { NextResponse } from "next/server";
 import Config from "@/cw/community.json";
+import { getTransaction } from "@/viva/transactions";
 
 export const transactionPaymentCreated = async (
   data: VivaTransactionPaymentCreated
@@ -26,6 +23,19 @@ export const transactionPaymentCreated = async (
 
   console.log("amount", amount);
 
+  const basicAuth = Buffer.from(
+    `${process.env.VIVA_MERCHANT_ID}:${process.env.VIVA_API_KEY}`
+  ).toString("base64");
+
+  const transaction = await getTransaction(basicAuth, TransactionId);
+
+  if (!transaction) {
+    console.error("Transaction not found", TransactionId);
+    return NextResponse.json({ received: true });
+  }
+
+  const commission = Number((transaction.Commission * 100).toFixed(0));
+
   const client = getServiceRoleClient();
   const { data: place, error: placeError } = await getPlaceByTerminalId(
     client,
@@ -37,36 +47,16 @@ export const transactionPaymentCreated = async (
     return NextResponse.json({ received: true });
   }
 
-  const { data: terminalOrder, error: terminalOrderError } =
-    await getTerminalOrderByTransactionId(client, TransactionId);
+  const { data: order, error: orderError } = await createTerminalOrder(
+    client,
+    place.id,
+    amount,
+    commission,
+    `Order: ${TransactionId}`
+  );
 
-  let orderId: number | null = null;
-  if (!terminalOrderError && terminalOrder && terminalOrder.length > 0) {
-    console.error("Terminal order already exists", terminalOrder);
-
-    // orders are potentially unassigned here, so we pass the place id as well and update it
-    for (const order of terminalOrder) {
-      await updateOrderTotal(client, place.id, order.id, amount);
-      orderId = order.id;
-    }
-  } else {
-    const { data: order, error: orderError } = await createTerminalOrder(
-      client,
-      place.id,
-      amount,
-      `Order: ${TransactionId}`
-    );
-
-    if (orderError || !order) {
-      console.error("Error creating terminal order", orderError);
-      return NextResponse.json({ received: true });
-    }
-
-    orderId = order.id;
-  }
-
-  if (!orderId) {
-    console.error("No order id");
+  if (orderError || !order) {
+    console.error("Error creating terminal order", orderError);
     return NextResponse.json({ received: true });
   }
 
@@ -111,5 +101,5 @@ export const transactionPaymentCreated = async (
     description
   );
 
-  await attachTxHashToOrder(client, orderId, txHash);
+  await attachTxHashToOrder(client, order.id, txHash);
 };
