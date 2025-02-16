@@ -119,6 +119,7 @@ export async function joinAction(
     invite_code: inviteCode,
     image: null,
     display: "amount",
+    hidden: true,
   });
 
   if (placeError) {
