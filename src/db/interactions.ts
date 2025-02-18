@@ -39,14 +39,14 @@ export const INTERACTIONS_SELECT_QUERY = `
     username,
     name,
     description,
+    image
+  ),
+  with_place:places!place_id (
+    id,
+    name,
+    slug,
     image,
-    place:places (
-      id,
-      name,
-      slug,
-      image,
-      description
-    )
+    description
   )
 ` as const;
 
