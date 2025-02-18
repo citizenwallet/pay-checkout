@@ -6,7 +6,6 @@ import {
   CommunityConfig,
   getProfileFromAddress,
   ProfileWithTokenId,
-  verifyAccountOwnership,
 } from "@citizenwallet/sdk";
 import { getItemsForPlace } from "@/db/items";
 import { Metadata } from "next";
@@ -149,20 +148,6 @@ async function PlacePage({
     try {
       if (new Date().getTime() > new Date(sigAuthExpiry).getTime()) {
         throw new Error("Signature expired");
-      }
-
-      const message = `Signature auth for ${sigAuthAccount} with expiry ${sigAuthExpiry} and redirect ${encodeURIComponent(
-        sigAuthRedirect
-      )}`;
-
-      const isOwner = await verifyAccountOwnership(
-        community,
-        sigAuthAccount,
-        message,
-        sigAuthSignature
-      );
-      if (!isOwner) {
-        throw new Error("Invalid signature");
       }
       connectedAccount = sigAuthAccount;
     } catch (e) {
