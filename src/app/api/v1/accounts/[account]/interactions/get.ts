@@ -40,19 +40,13 @@ export async function GET(
   const { account } = await context.params;
 
   if (!account) {
-    return NextResponse.json(
-      { error: "No account" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "No account" }, { status: 400 });
   }
 
   const client = getServiceRoleClient();
 
   try {
-    const interactions = await getInteractionsOfAccount(
-      client,
-      account
-    );
+    const interactions = await getInteractionsOfAccount(client, account);
 
     return NextResponse.json({ interactions }, { status: 200 });
   } catch (error) {

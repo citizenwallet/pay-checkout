@@ -19,7 +19,7 @@ export interface AInteraction {
   >;
   with_place: Pick<
     Place,
-    "id" | "name" | "slug" | "image" | "description"
+    "id" | "name" | "slug" | "image" | "description" | "display" | "accounts"
   > | null; // nullable
 }
 
@@ -46,7 +46,9 @@ export const INTERACTIONS_SELECT_QUERY = `
     name,
     slug,
     image,
-    description
+    description,
+    display,
+    accounts
   )
 ` as const;
 
@@ -86,48 +88,21 @@ export async function getNewInteractionsOfAccount(
   return data.map((rawData) => createAInteraction(rawData, account));
 }
 
-export type UpdateableInteractionFields = {
-  new_interaction?: boolean;
-  // Add other updatable fields here
-};
-export async function updateInteractionOfAccount(
+export async function setInteractionAsRead(
   supabase: SupabaseClient,
   account: string,
-  interactionId: string,
-  updates: UpdateableInteractionFields
-): Promise<AInteraction> {
-  if (Object.keys(updates).length === 0) {
-    throw new Error("No fields to update");
-  }
-
-  const { data: existingInteraction, error: findError } = await supabase
+  interactionId: string
+): Promise<boolean> {
+  const { error } = await supabase
     .from("a_interactions")
-    .select("*")
+    .update({ new_interaction: false })
     .eq("id", interactionId)
     .eq("account", account)
     .single();
 
-  if (findError || !existingInteraction) {
-    throw new Error("Interaction not found or access denied");
-  }
+  if (error) return false;
 
-  const updateData = {
-    ...updates,
-    updated_at: new Date().toISOString(),
-  };
-
-  const { data, error } = await supabase
-    .from("a_interactions")
-    .update(updateData)
-    .eq("id", interactionId)
-    .eq("account", account)
-    .select(INTERACTIONS_SELECT_QUERY)
-    .single();
-
-  if (error) throw error;
-  if (!data) throw new Error("Failed to update interaction");
-
-  return createAInteraction(data, account);
+  return true;
 }
 
 type RawInteractionData = {
@@ -135,6 +110,7 @@ type RawInteractionData = {
   new_interaction: boolean;
   transaction: unknown;
   with_profile: unknown;
+  with_place: unknown;
 };
 
 function createAInteraction(
@@ -149,24 +125,19 @@ function createAInteraction(
   const with_profile = rawData.with_profile as unknown as Pick<
     AProfile,
     "account" | "username" | "name" | "description" | "image"
-  > & {
-    place: Pick<Place, "id" | "name" | "slug" | "image" | "description"> | null;
-  };
+  >;
 
-  const with_place = with_profile.place;
+  const with_place = rawData.with_place as Pick<
+    Place,
+    "id" | "name" | "slug" | "image" | "description" | "display" | "accounts"
+  > | null;
 
   return {
     id: rawData.id,
     exchange_direction: transaction.from === account ? "sent" : "received",
     new_interaction: rawData.new_interaction,
     transaction,
-    with_profile: {
-      account: with_profile.account,
-      username: with_profile.username,
-      name: with_profile.name,
-      description: with_profile.description,
-      image: with_profile.image,
-    },
+    with_profile,
     with_place,
   };
 }
