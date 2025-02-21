@@ -3,7 +3,6 @@ import { getServiceRoleClient } from "@/db";
 import { BundlerService } from "@citizenwallet/sdk";
 import { createTerminalOrder } from "@/db/orders";
 import { getPlaceByTerminalId } from "@/db/places";
-import { formatCurrencyNumber } from "@/lib/currency";
 import { getAccountAddress } from "@citizenwallet/sdk";
 import { VivaTransactionPaymentCreated } from "@/viva";
 import { CommunityConfig } from "@citizenwallet/sdk";
@@ -47,12 +46,14 @@ export const transactionPaymentCreated = async (
     return NextResponse.json({ received: true });
   }
 
+  const description = `Order: ${TransactionId}`;
+
   const { data: order, error: orderError } = await createTerminalOrder(
     client,
     place.id,
     amount,
     commission,
-    `Order: ${TransactionId}`
+    description
   );
 
   if (orderError || !order) {
@@ -73,10 +74,6 @@ export const transactionPaymentCreated = async (
   const community = new CommunityConfig(Config);
 
   const intAmount = amount;
-
-  const description = `Received ${
-    community.primaryToken.symbol
-  } ${formatCurrencyNumber(intAmount)} from ${place.name}`;
 
   const senderAccount = await getAccountAddress(community, signer.address);
   if (!senderAccount) {
