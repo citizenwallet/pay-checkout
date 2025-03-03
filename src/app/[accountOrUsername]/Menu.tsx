@@ -110,7 +110,7 @@ export default function Menu({
   const [descriptionInputRef, setDescriptionInputRef] =
     useState<HTMLTextAreaElement | null>(null);
 
-  const noItems = items.length === 0;
+  const noItems = items.length === 0 || place?.display === "amount";
 
   useEffect(() => {
     if (noItems && customAmountInputRef) {
