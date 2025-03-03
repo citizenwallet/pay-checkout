@@ -12,6 +12,7 @@ export interface Item {
   price: number;
   vat: number;
   category: string;
+  hidden: boolean;
 }
 
 export const getItemsForPlace = async (
@@ -22,5 +23,6 @@ export const getItemsForPlace = async (
     .from("pos_items")
     .select("*")
     .eq("place_id", placeId)
+    .eq("hidden", false)
     .order("order", { ascending: true });
 };
