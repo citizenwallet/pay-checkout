@@ -40,6 +40,13 @@ export const getPlaceByUsername = async (
   return client.from("places").select("*").eq("slug", username).maybeSingle();
 };
 
+export const getPlaceIdByUsername = async (
+  client: SupabaseClient,
+  username: string
+): Promise<PostgrestSingleResponse<{ id: number } | null>> => {
+  return client.from("places").select("id").eq("slug", username).maybeSingle();
+};
+
 export const getPlacesByBusinessId = async (
   client: SupabaseClient,
   businessId: number
@@ -68,6 +75,16 @@ export const getPlacesByAccount = async (
     .contains("accounts", JSON.stringify([account]));
 };
 
+export const getPlaceIdsByAccount = async (
+  client: SupabaseClient,
+  account: string
+): Promise<PostgrestResponse<{ id: number }>> => {
+  return client
+    .from("places")
+    .select("id")
+    .contains("accounts", JSON.stringify([account]));
+};
+
 export const getPlaceById = async (
   client: SupabaseClient,
   id: number
@@ -89,6 +106,17 @@ export const getPlaceByInviteCode = async (
   return client
     .from("places")
     .select("*")
+    .eq("invite_code", inviteCode)
+    .maybeSingle();
+};
+
+export const getPlaceIdByInviteCode = async (
+  client: SupabaseClient,
+  inviteCode: string
+): Promise<PostgrestSingleResponse<{ id: number } | null>> => {
+  return client
+    .from("places")
+    .select("id")
     .eq("invite_code", inviteCode)
     .maybeSingle();
 };

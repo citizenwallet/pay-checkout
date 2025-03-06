@@ -2,37 +2,6 @@ import { NextResponse, NextRequest } from "next/server";
 import { getServiceRoleClient } from "@/db";
 import { getInteractionsOfAccount } from "@/db/interactions";
 
-/**
- * GET /api/v1/accounts/[account]/interactions
- *
- * Returns the interactions for a given account with other users or places.
- *
- * @param account - The public address of the user requesting their interactions
- *
- * @returns {Object} Response
- * @returns {Object} Response.interactions - The interactions data if found
- * @returns {string} Response.error - Error message if request fails
- * @returns {number} Response.status - HTTP status code if request fails
- *
- * @example
- * // Success Response
- * {
- *   interactions: [
- *     {
- *       id: "...",
- *       transaction_id: "...",
- *       created_at: "..."
- *     }
- *   ]
- * }
- *
- * // Error Response
- * {
- *   error: "No account",
- *   status: 400
- * }
- */
-
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ account: string }> }

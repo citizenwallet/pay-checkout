@@ -1,6 +1,12 @@
 import "server-only";
 
-import { getPlaceByInviteCode, Place } from "@/db/places";
+import {
+  getPlaceByInviteCode,
+  getPlaceIdByInviteCode,
+  getPlaceIdByUsername,
+  getPlaceIdsByAccount,
+  Place,
+} from "@/db/places";
 
 import { getPlacesByAccount } from "@/db/places";
 import { getPlaceByUsername } from "@/db/places";
@@ -96,4 +102,28 @@ export const getPlace = async (
   }
 
   return { place, inviteCode };
+};
+
+export const getPlaceId = async (
+  client: SupabaseClient,
+  accountOrUsername: string
+): Promise<number | null> => {
+  let id: number | null = null;
+  if (accountOrUsername.startsWith("0x")) {
+    const { data } = await getPlaceIdsByAccount(client, accountOrUsername);
+    id = data?.[0]?.id ?? null;
+  } else if (accountOrUsername.startsWith("invite-")) {
+    const { data } = await getPlaceIdByInviteCode(client, accountOrUsername);
+
+    if (!data) {
+      return null;
+    }
+
+    id = data.id;
+  } else {
+    const { data } = await getPlaceIdByUsername(client, accountOrUsername);
+    id = data?.id ?? null;
+  }
+
+  return id;
 };
