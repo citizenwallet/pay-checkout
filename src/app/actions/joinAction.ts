@@ -11,7 +11,8 @@ import { getAccountAddress, CommunityConfig } from "@citizenwallet/sdk";
 import Config from "@/cw/community.json";
 import { createSlug, generateRandomString } from "@/lib/utils";
 import { createUser, getUserByEmail } from "@/db/users";
-import { signInWithEmail } from "@/auth";
+// import { signInWithEmail } from "@/auth";
+import { sendMailAction } from "./sendMailAction";
 // import { uploadImage } from "@/storage/uploads";
 
 export async function joinAction(
@@ -40,11 +41,18 @@ export async function joinAction(
   }
 
   // magic link login
-  const userData = await signInWithEmail(client, email, inviteCode);
+  // const userData = await signInWithEmail(client, email, inviteCode);
 
-  if (!userData) {
-    return { error: "Failed to sign in with email" };
+  // if (!userData) {
+  //   return { error: "Failed to sign in with email" };
+  // }
+
+  // send email
+  const result = await sendMailAction(email,data.name,inviteCode);
+  if (!result) {
+    return { error: "Failed to send email" };
   }
+
 
   // generate a throwaway private key
   const newPk = Wallet.createRandom();
@@ -69,6 +77,7 @@ export async function joinAction(
       account,
       email: data.email,
       phone: data.phone,
+      invite_code: inviteCode,
     }
   );
 
