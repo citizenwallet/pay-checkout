@@ -453,7 +453,11 @@ export default function Menu({
                   ))}
                 {!loading && showAmountAndMenu && (
                   <button
-                    className="px-4 py-2 rounded-full whitespace-nowrap"
+                    className={`px-4 py-2 rounded-full whitespace-nowrap ${
+                      activeCategory === "Custom"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-gray-100"
+                    }`}
                     onClick={() => scrollToCategory("Custom")}
                   >
                     Custom
