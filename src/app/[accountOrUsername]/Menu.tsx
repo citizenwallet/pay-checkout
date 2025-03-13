@@ -2,9 +2,8 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
-import { Loader2, PlusIcon, ShoppingCart, X } from "lucide-react";
+import { Loader2, ShoppingCart, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Place } from "@/db/places";
 import {
   ProfileWithTokenId,
@@ -23,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { formatAddress } from "@/lib/address";
 import { Order } from "@/db/orders";
+import MenuItem from "@/components/menu-item";
 
 interface VendorPageProps {
   config: Config;
@@ -65,6 +65,8 @@ export default function Menu({
   const categoryRefs = useRef<{ [key: string]: HTMLDivElement }>({});
   const headerRef = useRef<HTMLDivElement>(null);
 
+  const [menuCustomAmount, setMenuCustomAmount] = useState<boolean>(false);
+
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [customAmount, setCustomAmount] = useState<string>("");
   const [description, setDescription] = useState<string>("");
@@ -84,6 +86,10 @@ export default function Menu({
     });
   };
 
+  const handleMenuCustomAmount = () => {
+    setMenuCustomAmount(!menuCustomAmount);
+  };
+
   const totalItems = Object.values(selectedItems).reduce(
     (sum, count) => sum + count,
     0
@@ -92,6 +98,14 @@ export default function Menu({
     (sum, item) => sum + (selectedItems[item.id] || 0) * item.price,
     0
   );
+
+  const [customAmountInputRef, setCustomAmountInputRef] =
+    useState<HTMLInputElement | null>(null);
+  const [descriptionInputRef, setDescriptionInputRef] =
+    useState<HTMLTextAreaElement | null>(null);
+
+  const noItems = items.length === 0 || place?.display === "amount";
+  const showAmountAndMenu = place?.display === "amountAndMenu";
 
   const itemsByCategory = items.reduce(
     (acc: { [key: string]: Item[] }, item) => {
@@ -104,13 +118,6 @@ export default function Menu({
     },
     {}
   );
-
-  const [customAmountInputRef, setCustomAmountInputRef] =
-    useState<HTMLInputElement | null>(null);
-  const [descriptionInputRef, setDescriptionInputRef] =
-    useState<HTMLTextAreaElement | null>(null);
-
-  const noItems = items.length === 0 || place?.display === "amount";
 
   useEffect(() => {
     if (noItems && customAmountInputRef) {
@@ -175,20 +182,22 @@ export default function Menu({
       setLoadingOrder(true);
 
       try {
-        let linkDescription = noItems
-          ? description
-          : Object.keys(selectedItems).reduce((acc, id, index) => {
-              return `${acc}${index === 0 ? "" : ", "}${`${
-                items.find((item) => item.id === parseInt(id))?.name
-              } x ${selectedItems[parseInt(id)]}`}`;
-            }, "");
+        let linkDescription =
+          noItems || menuCustomAmount
+            ? description
+            : Object.keys(selectedItems).reduce((acc, id, index) => {
+                return `${acc}${index === 0 ? "" : ", "}${`${
+                  items.find((item) => item.id === parseInt(id))?.name
+                } x ${selectedItems[parseInt(id)]}`}`;
+              }, "");
         if (customOrder) {
           linkDescription = customOrder.description;
         }
 
-        let price = noItems
-          ? (parseFloat(customAmount) * 100).toString()
-          : totalPrice.toString();
+        let price =
+          noItems || menuCustomAmount
+            ? (parseFloat(customAmount) * 100).toString()
+            : totalPrice.toString();
         if (customOrder) {
           price = customOrder.total.toString();
         }
@@ -216,6 +225,7 @@ export default function Menu({
       description,
       items,
       noItems,
+      menuCustomAmount,
       place?.accounts,
       router,
       selectedItems,
@@ -231,7 +241,7 @@ export default function Menu({
       return;
     }
 
-    if (noItems && customAmount) {
+    if ((noItems || menuCustomAmount) && customAmount) {
       const amount = parseFloat(customAmount) * 100;
       const { data, error } = await generateOrder(
         place.id,
@@ -266,6 +276,7 @@ export default function Menu({
   }, [
     place,
     noItems,
+    menuCustomAmount,
     customAmount,
     selectedItems,
     description,
@@ -400,17 +411,17 @@ export default function Menu({
             {!loading && (
               <div>
                 <h1 className="text-2xl font-bold">
-                  {profile?.name ?? place?.name ?? "Shop"}
+                  {place?.name ?? profile?.name ?? "Shop"}
                 </h1>
                 <p className="text-sm opacity-90">
-                  {profile?.description ?? ""}
+                  {place?.description ?? profile?.description ?? ""}
                 </p>
               </div>
             )}
           </div>
         </header>
 
-        {!noItems && (
+        {!noItems && !menuCustomAmount && (
           <div
             className={cn(
               "sticky bg-white z-10 border-b",
@@ -440,6 +451,14 @@ export default function Menu({
                       {category}
                     </button>
                   ))}
+                {!loading && showAmountAndMenu && (
+                  <button
+                    className="px-4 py-2 rounded-full whitespace-nowrap"
+                    onClick={() => scrollToCategory("Custom")}
+                  >
+                    Custom
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -458,7 +477,7 @@ export default function Menu({
         )}
         {!loading && (
           <main className="p-4 pb-12 space-y-4">
-            {noItems && (
+            {(noItems || menuCustomAmount) && (
               <div className="flex-1 flex flex-col items-center justify-center text-center text-lg min-h-[50vh]">
                 <div className="w-full max-w-xs space-y-2">
                   <div className="text-lg mb-4">Enter an amount to pay</div>
@@ -508,10 +527,21 @@ export default function Menu({
                       </>
                     )}
                   </Button>
+                  {showAmountAndMenu && menuCustomAmount && (
+                    <Button
+                      className="w-full"
+                      size="lg"
+                      variant="secondary"
+                      onClick={handleMenuCustomAmount}
+                    >
+                      Cancel
+                    </Button>
+                  )}
                 </div>
               </div>
             )}
             {!noItems &&
+              !menuCustomAmount &&
               Object.entries(itemsByCategory).map(
                 ([category, categoryItems]) => (
                   <div
@@ -523,77 +553,34 @@ export default function Menu({
                   >
                     <h2 className="text-xl font-semibold mb-4">{category}</h2>
                     {categoryItems.map((item) => (
-                      <Card
+                      <MenuItem
                         key={item.id}
-                        className={`${
-                          selectedItems[item.id] ? "border-primary" : ""
-                        } mb-4`}
-                      >
-                        <CardContent className="flex justify-start items-center gap-2 p-2">
-                          {item.image && (
-                            <div className="pr-2 border-r">
-                              <Image
-                                src={item.image}
-                                alt={item.name}
-                                width={80}
-                                height={80}
-                                className="rounded-md w-20 h-20 object-cover cursor-pointer"
-                                onClick={() => setSelectedImage(item.image!)}
-                              />
-                            </div>
-                          )}
-                          <div className="flex flex-1 flex-col justify-center items-start gap-2 min-h-20">
-                            <p className="text-lg font-bold">{item.name}</p>
-                            <p className="text-sm">{item.description}</p>
-                          </div>
-                          <div className="flex flex-col justify-between items-end gap-2 h-20">
-                            <div className="flex items-center gap-2">
-                              <CurrencyLogo logo={currencyLogo} size={24} />
-                              <p className="text-lg font-bold">
-                                {formatCurrencyNumber(item.price)}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {!selectedItems[item.id] ? (
-                                <Button
-                                  variant="secondary"
-                                  onClick={() => adjustItemQuantity(item.id, 1)}
-                                >
-                                  <PlusIcon className="h-4 w-4" /> Add to Cart
-                                </Button>
-                              ) : (
-                                <div className="flex items-center gap-2">
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    onClick={() =>
-                                      adjustItemQuantity(item.id, -1)
-                                    }
-                                  >
-                                    -
-                                  </Button>
-                                  <span className="min-w-[2rem] text-center">
-                                    {selectedItems[item.id]}
-                                  </span>
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    onClick={() =>
-                                      adjustItemQuantity(item.id, 1)
-                                    }
-                                  >
-                                    +
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+                        item={item}
+                        currencyLogo={currencyLogo}
+                        selectedItems={selectedItems}
+                        adjustItemQuantity={adjustItemQuantity}
+                        onImageClick={setSelectedImage}
+                      />
                     ))}
                   </div>
                 )
               )}
+            {!noItems && showAmountAndMenu && !menuCustomAmount && (
+              <div
+                key="Custom"
+                id={`category-Custom`}
+                ref={(el) => {
+                  if (el) categoryRefs.current["Custom"] = el;
+                }}
+              >
+                <h2 className="text-xl font-semibold mb-4">Custom</h2>
+                <div className="flex justify-center">
+                  <Button variant="secondary" onClick={handleMenuCustomAmount}>
+                    Enter Custom Amount
+                  </Button>
+                </div>
+              </div>
+            )}
           </main>
         )}
 
