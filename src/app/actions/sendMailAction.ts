@@ -3,7 +3,7 @@
 import { getServiceRoleClient } from "@/db";
 import { createOtp } from "@/db/otp";
 import { sendRegistationEmail } from "@/services/brevo";
-import { generateOtp } from "@/utils/generateotp";
+import { generateOtp } from "@/utils/otp";
 import jwt from "jsonwebtoken";
 
 export async function sendMailAction(
@@ -24,17 +24,17 @@ export async function sendMailAction(
 }
 
 export async function createLinkAction(
-  Otp: number,
+  otp: number,
   inviteCode: string,
   email: string
 ) {
-  const secretKey = process.env.JWT_SECRET as string;
+  const secretKey = process.env.JWT_KEY as string;
 
   if (!secretKey) {
-    throw new Error("JWT_SECRET is not defined in environment variables.");
+    throw new Error("JWT_KEY is not defined in environment variables.");
   }
   // Create JWT token with email & OTP
-  const token = jwt.sign({ email, otp: Otp }, secretKey, { expiresIn: "10m" });
+  const token = jwt.sign({ email, otp: otp }, secretKey, { expiresIn: "10m" });
 
   const link =
     process.env.NEXT_PUBLIC_BASE_URL +
