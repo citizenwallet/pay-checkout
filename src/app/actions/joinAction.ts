@@ -11,9 +11,7 @@ import { getAccountAddress, CommunityConfig } from "@citizenwallet/sdk";
 import Config from "@/cw/community.json";
 import { createSlug, generateRandomString } from "@/lib/utils";
 import { createUser, getUserByEmail } from "@/db/users";
-// import { signInWithEmail } from "@/auth";
 import { sendMailAction } from "./sendMailAction";
-// import { uploadImage } from "@/storage/uploads";
 
 export async function joinAction(
   inviteCode: string,
@@ -21,15 +19,6 @@ export async function joinAction(
   //   image?: File
 ) {
   const client = getServiceRoleClient();
-
-  //   let imageUrl = null;
-  //   if (image) {
-  //     const { url, error: uploadError } = await uploadImage(image, "businesses");
-  //     if (uploadError) {
-  //       return { error: `Failed to upload image: ${uploadError.message}` };
-  //     }
-  //     imageUrl = url;
-  //   }
 
   const email = data.email;
 
@@ -40,19 +29,11 @@ export async function joinAction(
     return { error: `User ${email} already exists` };
   }
 
-  // magic link login
-  // const userData = await signInWithEmail(client, email, inviteCode);
-
-  // if (!userData) {
-  //   return { error: "Failed to sign in with email" };
-  // }
-
   // send email
-  const result = await sendMailAction(email,data.name,inviteCode);
+  const result = await sendMailAction(email, data.name, inviteCode);
   if (!result) {
     return { error: "Failed to send email" };
   }
-
 
   // generate a throwaway private key
   const newPk = Wallet.createRandom();
