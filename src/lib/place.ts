@@ -1,6 +1,7 @@
 import "server-only";
 
 import {
+  getPlaceById,
   getPlaceByInviteCode,
   getPlaceIdByInviteCode,
   getPlaceIdByUsername,
@@ -58,6 +59,21 @@ export const getPlaceWithProfile = async (
           place.slug
         )
       : null;
+  } else if (!isNaN(parseInt(accountOrUsername))) {
+    const { data } = await getPlaceById(client, parseInt(accountOrUsername));
+    if (!data) {
+      return { place: null, profile: null, inviteCode };
+    }
+
+    place = data;
+
+    profile = place
+      ? await getProfileFromUsername(
+          process.env.IPFS_DOMAIN!,
+          community,
+          place.slug
+        )
+      : null;
   } else {
     const { data } = await getPlaceByUsername(client, accountOrUsername);
     place = data ?? null;
@@ -96,6 +112,13 @@ export const getPlace = async (
     }
 
     place = data;
+  } else if (!isNaN(parseInt(accountOrUsername))) {
+    const { data } = await getPlaceById(client, parseInt(accountOrUsername));
+    if (!data) {
+      return { place: null, inviteCode };
+    }
+
+    place = data;
   } else {
     const { data } = await getPlaceByUsername(client, accountOrUsername);
     place = data ?? null;
@@ -115,6 +138,13 @@ export const getPlaceId = async (
   } else if (accountOrUsername.startsWith("invite-")) {
     const { data } = await getPlaceIdByInviteCode(client, accountOrUsername);
 
+    if (!data) {
+      return null;
+    }
+
+    id = data.id;
+  } else if (!isNaN(parseInt(accountOrUsername))) {
+    const { data } = await getPlaceById(client, parseInt(accountOrUsername));
     if (!data) {
       return null;
     }
