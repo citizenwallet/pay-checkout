@@ -38,7 +38,7 @@ export async function createLinkAction(
 
   const link =
     process.env.NEXT_PUBLIC_BASE_URL +
-    "/onboarding?invite_code=" +
+    "/onboarding/vat?invite_code=" +
     inviteCode +
     "&otpToken=" +
     token;
