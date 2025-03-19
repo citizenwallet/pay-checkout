@@ -36,11 +36,7 @@ export async function createLinkAction(
   // Create JWT token with email & OTP
   const token = jwt.sign({ email, otp: otp }, secretKey, { expiresIn: "10m" });
 
-  const link =
-    process.env.NEXT_PUBLIC_BASE_URL +
-    "/onboarding/vat?invite_code=" +
-    inviteCode +
-    "&otpToken=" +
-    token;
+  const link = `${process.env.NEXT_PUBLIC_BASE_URL}/onboarding/vat?invite_code=${inviteCode}&otpToken=${token}`;
+
   return link;
 }
