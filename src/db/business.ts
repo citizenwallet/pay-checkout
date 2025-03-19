@@ -12,6 +12,8 @@ export interface Business {
   account: string | null;
   email: string | null;
   phone: string | null;
+  invite_code: string | null;
+
 }
 
 export type NewBusiness = Omit<Business, "id" | "created_at">;
