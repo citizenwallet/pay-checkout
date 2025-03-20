@@ -1,14 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import {
-  ArrowLeft,
-  CreditCard,
-  Loader2,
-  Minus,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { cancelOrderAction } from "@/app/actions/cancelOrder";
+import { confirmPurchaseAction } from "@/app/actions/confirmPurchase";
+import CurrencyLogo from "@/components/currency-logo";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,13 +11,18 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useRouter } from "next/navigation";
-import CurrencyLogo from "@/components/currency-logo";
 import { Item } from "@/db/items";
 import { Order } from "@/db/orders";
 import { formatCurrencyNumber } from "@/lib/currency";
-import { confirmPurchaseAction } from "@/app/actions/confirmPurchase";
-import { cancelOrderAction } from "@/app/actions/cancelOrder";
+import {
+  ArrowLeft,
+  CreditCard,
+  Minus,
+  Plus,
+  Trash2
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 interface Props {
   accountOrUsername: string;
@@ -43,7 +42,7 @@ export default function Component({
 }: Props) {
   const router = useRouter();
 
-  const [loading, setLoading] = useState(false);
+  // const [loading, setLoading] = useState(false);
   const [cancelled, setCancelled] = useState(false);
 
   const [cartItems, setCartItems] = useState<Order["items"]>(
@@ -65,8 +64,8 @@ export default function Component({
   const total = !items
     ? 0
     : order?.items.length === 0
-    ? order?.total ?? 0
-    : cartItems.reduce((sum, cartItem) => {
+      ? order?.total ?? 0
+      : cartItems.reduce((sum, cartItem) => {
         const item = items[cartItem.id];
         if (!item) return sum;
         return sum + item.price * cartItem.quantity;
@@ -77,8 +76,8 @@ export default function Component({
   const vat = !items
     ? 0
     : order?.items.length === 0
-    ? (order?.total ?? 0) * vatPercent
-    : cartItems.reduce((sum, cartItem) => {
+      ? (order?.total ?? 0) * vatPercent
+      : cartItems.reduce((sum, cartItem) => {
         const item = items[cartItem.id];
         if (!item) return sum;
         // Calculate VAT portion from the inclusive price
@@ -90,28 +89,28 @@ export default function Component({
 
   const totalExcludingVat = total - vat;
 
-  const handleConfirm = async () => {
-    if (!order) return;
+  // const handleConfirm = async () => {
+  //   if (!order) return;
 
-    setLoading(true);
+  //   setLoading(true);
 
-    try {
-      const session = await confirmPurchaseAction(
-        accountOrUsername,
-        order.id,
-        total,
-        cartItems
-      );
+  //   try {
+  //     const session = await confirmPurchaseAction(
+  //       accountOrUsername,
+  //       order.id,
+  //       total,
+  //       cartItems
+  //     );
 
-      if (session?.url) {
-        router.push(session.url);
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     if (session?.url) {
+  //       router.push(session.url);
+  //     }
+  //   } catch (error) {
+  //     console.error(error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const handleCancelOrder = async () => {
     if (!order) {
@@ -136,9 +135,9 @@ export default function Component({
 
   const noItems = order?.items.length === 0;
 
-  const disableConfirm = noItems
-    ? order?.total === 0
-    : cartItems.length === 0 || loading;
+  // const disableConfirm = noItems
+  //   ? order?.total === 0
+  //   : cartItems.length === 0 || loading;
 
   if (cancelled) {
     return <div>Order cancelled</div>;
@@ -246,7 +245,8 @@ export default function Component({
           >
             Cancel Order
           </Button>
-          <Button
+
+          {/* <Button
             disabled={disableConfirm}
             onClick={handleConfirm}
             className="w-full h-14 text-lg"
@@ -257,7 +257,16 @@ export default function Component({
             ) : (
               <CreditCard className="h-4 w-4 ml-2" />
             )}
-          </Button>
+          </Button> */}
+
+          <button
+            className="flex items-center justify-between px-4 py-3 bg-gray-200 border border-gray-300 rounded-md hover:bg-gray-300 transition-colors ">
+            <div className="flex items-center gap-2">
+              <CreditCard className="w-5 h-5" />
+              <span className="font-medium">Credit Card</span>
+            </div>
+
+          </button>
         </CardFooter>
       </Card>
     </div>
