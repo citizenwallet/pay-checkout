@@ -51,6 +51,28 @@ export const createOrder = async (
     .single();
 };
 
+export const createPartnerOrder = async (
+  client: SupabaseClient,
+  placeId: number,
+  total: number,
+  items: { id: number; quantity: number }[],
+  description: string
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client
+    .from("orders")
+    .insert({
+      place_id: placeId,
+      items,
+      total,
+      due: total,
+      status: "pending",
+      description,
+      type: "web",
+    })
+    .select()
+    .single();
+};
+
 export const createTerminalOrder = async (
   client: SupabaseClient,
   placeId: number,
