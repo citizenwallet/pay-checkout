@@ -1,81 +1,62 @@
-"use client";
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { getServiceRoleClient } from "@/db";
+import { getOrder } from "@/db/orders";
+import dynamic from "next/dynamic";
+import { Suspense } from "react";
+const Bancontact = dynamic(() => import("./Bancontact"));
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useStripe } from "@stripe/react-stripe-js";
-import { getClientSecretAction } from "@/app/actions/paymentProcess";
+export default async function BancontactPayment({
+    params
+}: {
+    params: Promise<{ accountOrUsername: string, orderId: number }>
+}) {
 
-export default function BancontactPayment() {
-    const stripe = useStripe();
-    const router = useRouter();
-    const [message, setMessage] = useState<string>("");
-    const [clientSecret, setClientSecret] = useState<string | null>(null);
-    const [name, setName] = useState<string>("");
+    const { orderId, accountOrUsername } = await params;
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+                <Card className="mx-auto max-w-lg">
+                    <CardHeader className="flex flex-row items-center justify-start gap-4">
+                        <CardTitle className="text-2xl font-bold">
+                            Pay with Bancontact
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="divide-y divide-gray-200 space-y-4">
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                        </ul>
+                    </CardContent>
+                </Card>
+            </div>
+        }>
+            <AsyncPage orderId={orderId} accountOrUsername={accountOrUsername} />
+        </Suspense>
+    )
+}
 
-    useEffect(() => {
-        const fetchClientSecret = async () => {
-            try {
-                const clientSecret = await getClientSecretAction(100);
-                setClientSecret(clientSecret);
-            } catch (error: unknown) {
-                if (error instanceof Error) {
-                    setMessage(error.message);
-                } else {
-                    setMessage("An unknown error occurred.");
-                }
-            }
-        };
+async function AsyncPage({
+    orderId,
+    accountOrUsername
+}: {
+    orderId: number,
+    accountOrUsername: string
+}) {
 
-        fetchClientSecret();
-    }, []);
+    const client = getServiceRoleClient();
+    const { data, error } = await getOrder(client, orderId);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!stripe || !clientSecret) return;
-
-        const { error, paymentIntent } = await stripe.confirmBancontactPayment(clientSecret, {
-            payment_method: {
-                billing_details: {
-                    name: name || "Anonymous",
-                },
-            },
-            return_url: `${window.location.origin}/success`,
-        });
-
-
-        if (error) {
-            setMessage(error.message || "Payment failed.");
-        } else if (paymentIntent?.status === "succeeded") {
-            setMessage("Payment Successful!");
-            router.push("/success");
-        }
-    };
+    if (error) {
+        return <div>Error: {error.message}</div>;
+    }
 
     return (
-        <div className="p-6 max-w-md mx-auto bg-white shadow-lg rounded-lg">
-            <h1 className="text-2xl font-bold mb-4 text-center">Pay with Bancontact</h1>
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Name (Optional)
-                    </label>
-                    <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 bg-gray-50"
-                        placeholder="Enter your name"
-                    />
-                </div>
-                <button
-                    type="submit"
-                    className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded w-full transition-all disabled:bg-gray-400"
-                    disabled={!stripe || !clientSecret}
-                >
-                    Pay with Bancontact
-                </button>
-            </form>
-            {message && <p className="text-red-500 mt-4 text-center">{message}</p>}
-        </div>
-    );
+        <Bancontact total={data?.total ?? 0} orderId={orderId} accountOrUsername={accountOrUsername} />
+    )
 }
