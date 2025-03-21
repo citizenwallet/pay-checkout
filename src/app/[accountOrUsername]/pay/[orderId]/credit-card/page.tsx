@@ -7,9 +7,9 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { getServiceRoleClient } from "@/db";
 import { getOrder } from "@/db/orders";
+import dynamic from "next/dynamic";
 import { Suspense } from "react";
-import CreditCard from "./credit-card";
-
+const CreditCard = dynamic(() => import("./credit-card"));
 
 export default async function CreditCardPayment({ params }: { params: Promise<{ accountOrUsername: string, orderId: number }> }) {
 
