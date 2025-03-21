@@ -1,7 +1,6 @@
 "use client";
 
 import { cancelOrderAction } from "@/app/actions/cancelOrder";
-import { confirmPurchaseAction } from "@/app/actions/confirmPurchase";
 import CurrencyLogo from "@/components/currency-logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,13 +15,16 @@ import { Order } from "@/db/orders";
 import { formatCurrencyNumber } from "@/lib/currency";
 import {
   ArrowLeft,
+  BuildingIcon,
   CreditCard,
   Minus,
   Plus,
   Trash2
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import PayElement from "./PayElement";
 import { useState } from "react";
+
 
 interface Props {
   accountOrUsername: string;
@@ -48,6 +50,8 @@ export default function Component({
   const [cartItems, setCartItems] = useState<Order["items"]>(
     order?.items ?? []
   );
+
+
 
   const updateQuantity = (id: number, change: number) => {
     setCartItems(
@@ -89,29 +93,6 @@ export default function Component({
 
   const totalExcludingVat = total - vat;
 
-  // const handleConfirm = async () => {
-  //   if (!order) return;
-
-  //   setLoading(true);
-
-  //   try {
-  //     const session = await confirmPurchaseAction(
-  //       accountOrUsername,
-  //       order.id,
-  //       total,
-  //       cartItems
-  //     );
-
-  //     if (session?.url) {
-  //       router.push(session.url);
-  //     }
-  //   } catch (error) {
-  //     console.error(error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   const handleCancelOrder = async () => {
     if (!order) {
       return;
@@ -135,9 +116,8 @@ export default function Component({
 
   const noItems = order?.items.length === 0;
 
-  // const disableConfirm = noItems
-  //   ? order?.total === 0
-  //   : cartItems.length === 0 || loading;
+
+
 
   if (cancelled) {
     return <div>Order cancelled</div>;
@@ -211,6 +191,7 @@ export default function Component({
           </ul>
         </CardContent>
         <CardFooter className="flex flex-col items-stretch">
+
           {!noItems && (
             <div className="flex justify-between items-center mb-4">
               <span className="text-lg font-normal">
@@ -246,27 +227,23 @@ export default function Component({
             Cancel Order
           </Button>
 
-          {/* <Button
-            disabled={disableConfirm}
-            onClick={handleConfirm}
-            className="w-full h-14 text-lg"
-          >
-            Pay{" "}
-            {loading ? (
-              <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-            ) : (
-              <CreditCard className="h-4 w-4 ml-2" />
-            )}
-          </Button> */}
-
-          <button
-            className="flex items-center justify-between px-4 py-3 bg-gray-200 border border-gray-300 rounded-md hover:bg-gray-300 transition-colors ">
+          <Button onClick={() => router.push(`/${accountOrUsername}/pay/${order?.id}/credit-card`)}
+            className="w-full h-14 text-lg mb-4 flex items-center ">
             <div className="flex items-center gap-2">
               <CreditCard className="w-5 h-5" />
               <span className="font-medium">Credit Card</span>
             </div>
+          </Button>
 
-          </button>
+          <Button onClick={() => router.push(`/${accountOrUsername}/pay/${order?.id}/bancontact`)}
+            className="w-full h-14 text-lg mb-4 flex items-center ">
+            <div className="flex items-center gap-2">
+              <BuildingIcon className="w-5 h-5" />
+              <span className="font-medium">Bancontact</span>
+            </div>
+          </Button>
+
+          <PayElement total={total} accountOrUsername={accountOrUsername} orderId={order?.id ?? 0} />
         </CardFooter>
       </Card>
     </div>
