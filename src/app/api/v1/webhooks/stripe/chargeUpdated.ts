@@ -3,6 +3,7 @@ import {
   attachProcessorTxToOrder,
   attachTxHashToOrder,
   getOrder,
+  orderNeedsMinting,
   updateOrderFees,
 } from "@/db/orders";
 import {
@@ -147,6 +148,13 @@ export const chargeUpdated = async (stripe: Stripe, event: Stripe.Event) => {
   );
 
   await attachTxHashToOrder(client, orderId, txHash);
+
+  try {
+    await bundler.awaitSuccess(txHash);
+  } catch (error) {
+    console.error("Error when minting", error);
+    await orderNeedsMinting(client, orderId);
+  }
 
   return NextResponse.json({ received: true });
 };

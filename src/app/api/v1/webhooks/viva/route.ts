@@ -77,10 +77,9 @@ export async function POST(request: Request) {
 
   switch (body.EventTypeId) {
     case VIVA_EVENT_TYPES.TRANSACTION_PRICE_CALCULATED:
-      await transactionPriceCalculated(
+      return transactionPriceCalculated(
         body.EventData as VivaTransactionPriceCalculated
       );
-      break;
   }
 
   return NextResponse.json({ received: true });

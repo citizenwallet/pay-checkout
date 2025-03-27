@@ -6,7 +6,7 @@ import {
   SupabaseClient,
 } from "@supabase/supabase-js";
 
-export type OrderStatus = "pending" | "paid" | "cancelled";
+export type OrderStatus = "pending" | "paid" | "cancelled" | "needs_minting";
 
 export interface Order {
   id: number;
@@ -189,6 +189,17 @@ export const cancelOrder = async (
   return client
     .from("orders")
     .update({ status: "cancelled" })
+    .eq("id", orderId)
+    .single();
+};
+
+export const orderNeedsMinting = async (
+  client: SupabaseClient,
+  orderId: number
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client
+    .from("orders")
+    .update({ status: "needs_minting", tx_hash: null })
     .eq("id", orderId)
     .single();
 };

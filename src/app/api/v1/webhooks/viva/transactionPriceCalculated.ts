@@ -1,4 +1,4 @@
-import { attachTxHashToOrder } from "@/db/orders";
+import { attachTxHashToOrder, orderNeedsMinting } from "@/db/orders";
 import { getServiceRoleClient } from "@/db";
 import { BundlerService } from "@citizenwallet/sdk";
 import { createTerminalOrder } from "@/db/orders";
@@ -119,4 +119,13 @@ export const transactionPriceCalculated = async (
   );
 
   await attachTxHashToOrder(client, order.id, txHash);
+
+  try {
+    await bundler.awaitSuccess(txHash);
+  } catch (error) {
+    console.error("Error when minting", error);
+    await orderNeedsMinting(client, order.id);
+  }
+
+  return NextResponse.json({ received: true });
 };
