@@ -122,4 +122,6 @@ export const chargeUpdated = async (stripe: Stripe, event: Stripe.Event) => {
   );
 
   await attachTxHashToOrder(client, orderId, txHash);
+
+  return NextResponse.json({ received: true });
 };

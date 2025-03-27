@@ -67,4 +67,6 @@ export const checkoutSessionCompleted = async (event: Stripe.Event) => {
   } catch (error) {
     console.error(error);
   }
+
+  return NextResponse.json({ received: true });
 };
