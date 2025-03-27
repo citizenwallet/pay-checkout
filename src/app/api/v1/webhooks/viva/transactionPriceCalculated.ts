@@ -12,6 +12,7 @@ import Config from "@/cw/community.json";
 import { getVivaTransaction } from "@/viva/transactions";
 import { getTerminalIdFromOrderCode } from "@/viva/terminal";
 import { getVivaPosByIdSuffix } from "@/db/pos";
+import { createOrderProcessorTx } from "@/db/ordersProcessorTx";
 
 export const transactionPriceCalculated = async (
   data: VivaTransactionPriceCalculated
@@ -58,14 +59,19 @@ export const transactionPriceCalculated = async (
     return NextResponse.json({ received: true });
   }
 
-  const description = `Order: ${TransactionId}`;
+  const { data: processorTx, error: processorTxError } =
+    await createOrderProcessorTx(client, "viva", TransactionId);
+  if (processorTxError || !processorTx) {
+    console.error("Error creating processor tx", processorTxError);
+  }
 
   const { data: order, error: orderError } = await createTerminalOrder(
     client,
     place.id,
     amount,
     commission,
-    description
+    pos.id,
+    processorTx?.id || null
   );
 
   if (orderError || !order) {
@@ -109,8 +115,7 @@ export const transactionPriceCalculated = async (
     community.primaryToken.address,
     senderAccount,
     account,
-    `${mintAmount / 100}`,
-    description
+    `${mintAmount / 100}`
   );
 
   await attachTxHashToOrder(client, order.id, txHash);

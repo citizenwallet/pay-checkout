@@ -79,7 +79,8 @@ export const createTerminalOrder = async (
   placeId: number,
   total: number,
   fees: number,
-  description: string
+  posId: string,
+  processorTxId: number | null
 ): Promise<PostgrestSingleResponse<Order>> => {
   return client
     .from("orders")
@@ -90,8 +91,9 @@ export const createTerminalOrder = async (
       due: 0,
       fees,
       status: "paid",
-      description,
+      pos: posId,
       type: "terminal",
+      processor_tx: processorTxId,
     })
     .select()
     .single();
@@ -199,6 +201,18 @@ export const attachTxHashToOrder = async (
   return client
     .from("orders")
     .update({ tx_hash: txHash, status: "paid" })
+    .eq("id", orderId)
+    .single();
+};
+
+export const attachProcessorTxToOrder = async (
+  client: SupabaseClient,
+  orderId: number,
+  processorTxId: number
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client
+    .from("orders")
+    .update({ processor_tx: processorTxId })
     .eq("id", orderId)
     .single();
 };

@@ -1,5 +1,10 @@
 import { getServiceRoleClient } from "@/db";
-import { attachTxHashToOrder, getOrder, updateOrderFees } from "@/db/orders";
+import {
+  attachProcessorTxToOrder,
+  attachTxHashToOrder,
+  getOrder,
+  updateOrderFees,
+} from "@/db/orders";
 import {
   BundlerService,
   CommunityConfig,
@@ -12,6 +17,7 @@ import Config from "@/cw/community.json";
 import { formatCurrencyNumber } from "@/lib/currency";
 import { getItemsForPlace } from "@/db/items";
 import { summarizeItemsForDescription } from "@/lib/items";
+import { createOrderProcessorTx } from "@/db/ordersProcessorTx";
 
 export const chargeUpdated = async (stripe: Stripe, event: Stripe.Event) => {
   const charge = event.data.object as Stripe.Charge;
@@ -95,6 +101,25 @@ export const chargeUpdated = async (stripe: Stripe, event: Stripe.Event) => {
   }
 
   await updateOrderFees(client, orderId, fees);
+
+  let paymentIntentId: string | null = null;
+  if (typeof charge.payment_intent === "string") {
+    paymentIntentId = charge.payment_intent;
+  } else if (typeof charge.payment_intent === "object") {
+    paymentIntentId = charge.payment_intent?.id || null;
+  }
+
+  if (paymentIntentId) {
+    const { data: processorTx, error: processorTxError } =
+      await createOrderProcessorTx(client, "stripe", paymentIntentId);
+    if (processorTxError || !processorTx) {
+      console.error("Error creating processor tx", processorTxError);
+    }
+
+    if (processorTx) {
+      await attachProcessorTxToOrder(client, orderId, processorTx.id);
+    }
+  }
 
   if (
     !process.env.FAUCET_PRIVATE_KEY ||
