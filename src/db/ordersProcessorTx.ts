@@ -16,7 +16,7 @@ export const createOrderProcessorTx = async (
   processor_tx_id: string
 ) => {
   return client
-    .from("order_processor_tx")
+    .from("orders_processor_tx")
     .insert({
       type,
       processor_tx_id,
