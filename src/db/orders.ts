@@ -14,6 +14,7 @@ export interface Order {
   completed_at: string | null;
   total: number;
   due: number;
+  fees: number;
   place_id: number;
   items: {
     id: number;
