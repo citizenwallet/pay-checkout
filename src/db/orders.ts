@@ -274,3 +274,10 @@ export const getOrdersByAccount = async (
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 };
+
+export const deleteOrder = async (
+  client: SupabaseClient,
+  orderId: number
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client.from("orders").delete().eq("id", orderId).single();
+};
