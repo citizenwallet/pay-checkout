@@ -15,13 +15,28 @@ export const chargeUpdated = async (stripe: Stripe, event: Stripe.Event) => {
     return;
   }
 
-  const balanceTransaction = await stripe.balanceTransactions.retrieve(
-    charge.balance_transaction.toString()
-  );
+  let fees = 0;
+  switch (typeof charge.balance_transaction) {
+    case "string": {
+      const balanceTransaction = await stripe.balanceTransactions.retrieve(
+        charge.balance_transaction
+      );
+
+      fees = balanceTransaction.fee;
+      break;
+    }
+    case "object": {
+      const balanceTransaction: Stripe.BalanceTransaction =
+        charge.balance_transaction;
+
+      if (balanceTransaction.fee) {
+        fees = balanceTransaction.fee;
+      }
+      break;
+    }
+  }
 
   const client = getServiceRoleClient();
-
-  const fees = balanceTransaction.fee;
 
   await updateOrderFees(client, orderId, fees);
 };
