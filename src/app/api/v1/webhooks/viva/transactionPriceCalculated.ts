@@ -11,7 +11,7 @@ import { NextResponse } from "next/server";
 import Config from "@/cw/community.json";
 import { getVivaTransaction } from "@/viva/transactions";
 import { getTerminalIdFromOrderCode } from "@/viva/terminal";
-import { getPosByIdSuffix } from "@/db/pos";
+import { getVivaPosByIdSuffix } from "@/db/pos";
 
 export const transactionPriceCalculated = async (
   data: VivaTransactionPriceCalculated
@@ -22,7 +22,10 @@ export const transactionPriceCalculated = async (
 
   const client = getServiceRoleClient();
 
-  const { data: pos, error } = await getPosByIdSuffix(client, terminalIdSuffix);
+  const { data: pos, error } = await getVivaPosByIdSuffix(
+    client,
+    terminalIdSuffix
+  );
   if (!pos || error) {
     console.error("Pos not found", terminalIdSuffix);
     return NextResponse.json({ received: true });

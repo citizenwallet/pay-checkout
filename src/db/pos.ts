@@ -18,7 +18,7 @@ export interface Pos {
   is_active: boolean;
 }
 
-export const getPosByIdSuffix = async (
+export const getVivaPosByIdSuffix = async (
   client: SupabaseClient,
   idSuffix: string
 ): Promise<PostgrestSingleResponse<Pos | null>> => {
@@ -26,5 +26,7 @@ export const getPosByIdSuffix = async (
     .from("pos")
     .select("*")
     .like("id", `%${idSuffix}`)
+    .eq("type", "viva")
+    .eq("is_active", true)
     .maybeSingle();
 };
