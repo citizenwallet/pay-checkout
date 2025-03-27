@@ -19,10 +19,12 @@ export const chargeUpdated = async (stripe: Stripe, event: Stripe.Event) => {
   // Log the metadata
   console.log("Charge Updated. Metadata:", charge.metadata);
 
-  const amount = charge.metadata?.amount;
+  const amount = charge.metadata?.netAmount || charge.metadata?.amount;
   if (!amount) {
     return NextResponse.json({ error: "No amount" }, { status: 400 });
   }
+
+  const netAmount: string | undefined = charge.metadata?.netAmount;
 
   const account = charge.metadata?.account;
   if (!account) {
@@ -64,10 +66,9 @@ export const chargeUpdated = async (stripe: Stripe, event: Stripe.Event) => {
     }
   }
 
-  const intAmount = parseInt(amount);
-  let netAmount = intAmount - fees;
-  if (netAmount < 0) {
-    netAmount = 0;
+  let toMint = netAmount ? parseInt(netAmount) : parseInt(amount) - fees;
+  if (toMint < 0) {
+    toMint = 0;
   }
 
   const community = new CommunityConfig(Config);
@@ -76,7 +77,7 @@ export const chargeUpdated = async (stripe: Stripe, event: Stripe.Event) => {
 
   let description = `Received ${
     community.primaryToken.symbol
-  } ${formatCurrencyNumber(intAmount)}`;
+  } ${formatCurrencyNumber(toMint)}`;
 
   try {
     const { data: order } = await getOrder(client, orderId);
@@ -116,7 +117,7 @@ export const chargeUpdated = async (stripe: Stripe, event: Stripe.Event) => {
     community.primaryToken.address,
     senderAccount,
     account,
-    `${netAmount / 100}`,
+    `${toMint / 100}`,
     description
   );
 
