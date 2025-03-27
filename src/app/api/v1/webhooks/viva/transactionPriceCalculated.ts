@@ -2,44 +2,53 @@ import { attachTxHashToOrder } from "@/db/orders";
 import { getServiceRoleClient } from "@/db";
 import { BundlerService } from "@citizenwallet/sdk";
 import { createTerminalOrder } from "@/db/orders";
-import { getPlaceByTerminalId } from "@/db/places";
+import { getPlaceById } from "@/db/places";
 import { getAccountAddress } from "@citizenwallet/sdk";
-import { VivaTransactionPaymentCreated } from "@/viva";
+import { VivaTransactionPriceCalculated } from "@/viva";
 import { CommunityConfig } from "@citizenwallet/sdk";
 import { Wallet } from "ethers";
 import { NextResponse } from "next/server";
 import Config from "@/cw/community.json";
-import { getTransaction } from "@/viva/transactions";
+import { getVivaTransaction } from "@/viva/transactions";
+import { getTerminalIdFromOrderCode } from "@/viva/terminal";
+import { getPosByIdSuffix } from "@/db/pos";
 
-export const transactionPaymentCreated = async (
-  data: VivaTransactionPaymentCreated
+export const transactionPriceCalculated = async (
+  data: VivaTransactionPriceCalculated
 ) => {
-  const { TerminalId, TransactionId, Amount = 0 } = data;
+  const { OrderCode, TransactionId, TotalCommission = 0.0 } = data;
 
-  console.log("Amount", Amount);
+  const terminalIdSuffix = await getTerminalIdFromOrderCode(OrderCode);
 
-  const amount = Number((Amount * 100).toFixed(0));
+  const client = getServiceRoleClient();
 
-  console.log("amount", amount);
+  const { data: pos, error } = await getPosByIdSuffix(client, terminalIdSuffix);
+  if (!pos || error) {
+    console.error("Pos not found", terminalIdSuffix);
+    return NextResponse.json({ received: true });
+  }
 
-  const basicAuth = Buffer.from(
-    `${process.env.VIVA_MERCHANT_ID}:${process.env.VIVA_API_KEY}`
-  ).toString("base64");
+  const { data: place, error: placeError } = await getPlaceById(
+    client,
+    pos.place_id
+  );
 
-  const transaction = await getTransaction(basicAuth, TransactionId);
+  const transaction = await getVivaTransaction(TransactionId);
 
   if (!transaction) {
     console.error("Transaction not found", TransactionId);
     return NextResponse.json({ received: true });
   }
 
-  const commission = Number((transaction.Commission * 100).toFixed(0));
+  const txAmount = transaction.originalAmount || 0.0;
+  const amount = Number((txAmount * 100).toFixed(0));
 
-  const client = getServiceRoleClient();
-  const { data: place, error: placeError } = await getPlaceByTerminalId(
-    client,
-    TerminalId
-  );
+  console.log("amount", amount);
+
+  const txCommission = TotalCommission || 0.0;
+  const commission = Number((txCommission * 100).toFixed(0));
+
+  console.log("commission", commission);
 
   if (placeError || !place) {
     console.error("Error getting place by terminal id", placeError);
@@ -73,7 +82,10 @@ export const transactionPaymentCreated = async (
 
   const community = new CommunityConfig(Config);
 
-  const intAmount = amount;
+  let mintAmount = amount - commission;
+  if (mintAmount < 0) {
+    mintAmount = 0;
+  }
 
   const senderAccount = await getAccountAddress(community, signer.address);
   if (!senderAccount) {
@@ -94,7 +106,7 @@ export const transactionPaymentCreated = async (
     community.primaryToken.address,
     senderAccount,
     account,
-    `${intAmount / 100}`,
+    `${mintAmount / 100}`,
     description
   );
 

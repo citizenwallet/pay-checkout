@@ -119,90 +119,33 @@ export interface VivaTransactionPriceCalculated {
   ResellerSourceName: string;
 }
 
-export interface VivaTransactionsResponse {
-  Transactions: VivaTransaction[];
-  ErrorCode: number;
-  ErrorText: string | null;
-  TimeStamp: string;
-  CorrelationId: string | null;
-  EventId: number;
-  Success: boolean;
-}
-
-interface VivaTransaction {
-  Fee: number;
-  BankId: string;
-  ParentId: string | null;
-  Switching: boolean;
-  Amount: number;
-  StatusId: string;
-  ChannelId: string;
-  MerchantId: string;
-  ResellerId: string | null;
-  InsDate: string;
-  CreatedBy: string | null;
-  TipAmount: number;
-  SourceCode: string;
-  TransactionId: string;
-  Commission: number;
-  PanEntryMode: string;
-  MerchantTrns: string | null;
-  CurrencyCode: string;
-  CustomerTrns: string | null;
-  IsManualRefund: boolean;
-  TargetPersonId: string | null;
-  AcquirerApproved: boolean;
-  SourceTerminalId: number;
-  RedeemedAmount: number;
-  AuthorizationId: string;
-  TotalInstallments: number;
-  CurrentInstallment: number;
-  ClearanceDate: string | null;
-  ConversionRate: number;
-  OriginalAmount: number;
-  ResellerSourceCode: string | null;
-  OriginalCurrencyCode: string;
-  RetrievalReferenceNumber: string;
-  Order: VivaTransactionOrder;
-  Payment: VivaTransactionPayment;
-  TransactionType: VivaTransactionType;
-  CreditCard: VivaTransactionCreditCard;
-  LoyaltyTransactions: unknown[];
-}
-
-interface VivaTransactionOrder {
-  OrderCode: number;
-  ChannelId: string;
-  ResellerId: string | null;
-  SourceCode: string;
-  Tags: unknown[];
-  RequestLang: string;
-  ResellerSourceCode: string | null;
-}
-
-interface VivaTransactionPayment {
-  Email: string | null;
-  Phone: string | null;
-  ChannelId: string;
-  FullName: string | null;
-  Installments: number;
-  RecurringSupport: boolean;
-}
-
-interface VivaTransactionType {
-  Name: string;
-  TransactionTypeId: number;
-}
-
-interface VivaTransactionCreditCard {
-  Token: string;
-  Number: string;
-  CountryCode: string;
-  IssuingBank: string;
-  CardHolderName: string | null;
-  ExpirationDate: string;
-  CardType: {
-    Name: string;
-    CardTypeId: number;
-  };
+export interface VivaTransaction {
+  email: string | null;
+  bankId: string;
+  amount: number;
+  switching: boolean;
+  orderCode: number;
+  statusId: string;
+  fullName: string | null;
+  insDate: string;
+  cardNumber: string;
+  sourceCode: string;
+  currencyCode: string;
+  customerTrns: string | null;
+  merchantTrns: string | null;
+  transactionTypeId: number;
+  recurringSupport: boolean;
+  totalInstallments: number;
+  cardCountryCode: string;
+  cardIssuingBank: string;
+  eventId: number | null;
+  currentInstallment: number;
+  conversionRate: number;
+  originalAmount: number;
+  cardUniqueReference: string;
+  originalCurrencyCode: string;
+  cardExpirationDate: string;
+  cardTypeId: number;
+  digitalWalletId: string | null;
+  loyaltyTransactions: unknown[];
 }
