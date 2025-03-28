@@ -85,3 +85,22 @@ export const generateCheckoutSession = async (
 
   return stripe.checkout.sessions.create(request);
 };
+
+export const getClientSecret = async (amount: number) => {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey) {
+    throw new Error("STRIPE_SECRET_KEY is not set");
+  }
+
+  const stripe = new Stripe(secretKey);
+
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount,
+    currency: "eur",
+    automatic_payment_methods: {
+      enabled: true,
+    },
+  });
+
+  return paymentIntent.client_secret;
+};

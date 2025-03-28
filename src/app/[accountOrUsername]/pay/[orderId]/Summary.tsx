@@ -1,14 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import {
-  ArrowLeft,
-  CreditCard,
-  Loader2,
-  Minus,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { cancelOrderAction } from "@/app/actions/cancelOrder";
+import CurrencyLogo from "@/components/currency-logo";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,13 +10,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useRouter } from "next/navigation";
-import CurrencyLogo from "@/components/currency-logo";
 import { Item } from "@/db/items";
 import { Order } from "@/db/orders";
 import { formatCurrencyNumber } from "@/lib/currency";
-import { confirmPurchaseAction } from "@/app/actions/confirmPurchase";
-import { cancelOrderAction } from "@/app/actions/cancelOrder";
+import {
+  ArrowLeft,
+  BuildingIcon,
+  CreditCard,
+  Minus,
+  Plus,
+  Trash2
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import PayElement from "./PayElement";
+import { useState } from "react";
+
 
 interface Props {
   accountOrUsername: string;
@@ -43,12 +44,14 @@ export default function Component({
 }: Props) {
   const router = useRouter();
 
-  const [loading, setLoading] = useState(false);
+  // const [loading, setLoading] = useState(false);
   const [cancelled, setCancelled] = useState(false);
 
   const [cartItems, setCartItems] = useState<Order["items"]>(
     order?.items ?? []
   );
+
+
 
   const updateQuantity = (id: number, change: number) => {
     setCartItems(
@@ -65,8 +68,8 @@ export default function Component({
   const total = !items
     ? 0
     : order?.items.length === 0
-    ? order?.total ?? 0
-    : cartItems.reduce((sum, cartItem) => {
+      ? order?.total ?? 0
+      : cartItems.reduce((sum, cartItem) => {
         const item = items[cartItem.id];
         if (!item) return sum;
         return sum + item.price * cartItem.quantity;
@@ -77,8 +80,8 @@ export default function Component({
   const vat = !items
     ? 0
     : order?.items.length === 0
-    ? (order?.total ?? 0) * vatPercent
-    : cartItems.reduce((sum, cartItem) => {
+      ? (order?.total ?? 0) * vatPercent
+      : cartItems.reduce((sum, cartItem) => {
         const item = items[cartItem.id];
         if (!item) return sum;
         // Calculate VAT portion from the inclusive price
@@ -89,29 +92,6 @@ export default function Component({
       }, 0);
 
   const totalExcludingVat = total - vat;
-
-  const handleConfirm = async () => {
-    if (!order) return;
-
-    setLoading(true);
-
-    try {
-      const session = await confirmPurchaseAction(
-        accountOrUsername,
-        order.id,
-        total,
-        cartItems
-      );
-
-      if (session?.url) {
-        router.push(session.url);
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCancelOrder = async () => {
     if (!order) {
@@ -136,9 +116,8 @@ export default function Component({
 
   const noItems = order?.items.length === 0;
 
-  const disableConfirm = noItems
-    ? order?.total === 0
-    : cartItems.length === 0 || loading;
+
+
 
   if (cancelled) {
     return <div>Order cancelled</div>;
@@ -212,6 +191,7 @@ export default function Component({
           </ul>
         </CardContent>
         <CardFooter className="flex flex-col items-stretch">
+
           {!noItems && (
             <div className="flex justify-between items-center mb-4">
               <span className="text-lg font-normal">
@@ -246,18 +226,24 @@ export default function Component({
           >
             Cancel Order
           </Button>
-          <Button
-            disabled={disableConfirm}
-            onClick={handleConfirm}
-            className="w-full h-14 text-lg"
-          >
-            Pay{" "}
-            {loading ? (
-              <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-            ) : (
-              <CreditCard className="h-4 w-4 ml-2" />
-            )}
+
+          <Button onClick={() => router.push(`/${accountOrUsername}/pay/${order?.id}/credit-card`)}
+            className="w-full h-14 text-lg mb-4 flex items-center ">
+            <div className="flex items-center gap-2">
+              <CreditCard className="w-5 h-5" />
+              <span className="font-medium">Credit Card</span>
+            </div>
           </Button>
+
+          <Button onClick={() => router.push(`/${accountOrUsername}/pay/${order?.id}/bancontact`)}
+            className="w-full h-14 text-lg mb-4 flex items-center ">
+            <div className="flex items-center gap-2">
+              <BuildingIcon className="w-5 h-5" />
+              <span className="font-medium">Bancontact</span>
+            </div>
+          </Button>
+
+          <PayElement total={total} accountOrUsername={accountOrUsername} orderId={order?.id ?? 0} />
         </CardFooter>
       </Card>
     </div>
