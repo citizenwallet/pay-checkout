@@ -33,7 +33,7 @@ export const createOrder = async (
   items: { id: number; quantity: number }[],
   description: string,
   account: string | null,
-  type: "web" | "app" | "terminal" | null
+  type: "web" | "app" | "terminal" | "pos" | null
 ): Promise<PostgrestSingleResponse<Order>> => {
   return client
     .from("orders")
@@ -225,4 +225,16 @@ export const getOrdersByAccount = async (
   return query
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
+};
+
+export const deleteOrder = async (
+  client: SupabaseClient,
+  orderId: number
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client
+    .from("orders")
+    .delete()
+    .eq("id", orderId)
+    .select()
+    .single();
 };

@@ -11,7 +11,7 @@ export async function generateOrder(
   description: string,
   total: number,
   account: string | null,
-  type: "web" | "app" | "terminal" | null
+  type: "web" | "app" | "terminal" | "pos" | null
 ): Promise<ActionResponse<number>> {
   const client = getServiceRoleClient();
 
