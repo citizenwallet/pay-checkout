@@ -12,7 +12,10 @@ import Config from "@/cw/community.json";
 import { getVivaTransaction } from "@/viva/transactions";
 import { getTerminalIdFromOrderCode } from "@/viva/terminal";
 import { getVivaPosByIdSuffix } from "@/db/pos";
-import { createOrderProcessorTx } from "@/db/ordersProcessorTx";
+import {
+  createOrderProcessorTx,
+  getOrderProcessorTx,
+} from "@/db/ordersProcessorTx";
 
 export const transactionPriceCalculated = async (
   data: VivaTransactionPriceCalculated
@@ -41,6 +44,16 @@ export const transactionPriceCalculated = async (
 
   if (!transaction) {
     console.error("Transaction not found", TransactionId);
+    return NextResponse.json({ received: true });
+  }
+
+  const { data: orderProcessorTx } = await getOrderProcessorTx(
+    client,
+    "viva",
+    TransactionId
+  );
+  if (orderProcessorTx) {
+    console.log("Order processor tx already exists", TransactionId);
     return NextResponse.json({ received: true });
   }
 

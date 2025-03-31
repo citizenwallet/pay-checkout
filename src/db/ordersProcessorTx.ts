@@ -24,3 +24,16 @@ export const createOrderProcessorTx = async (
     .select()
     .maybeSingle();
 };
+
+export const getOrderProcessorTx = async (
+  client: SupabaseClient,
+  type: ProcessorTxType,
+  processor_tx_id: string
+) => {
+  return client
+    .from("orders_processor_tx")
+    .select()
+    .eq("type", type)
+    .eq("processor_tx_id", processor_tx_id)
+    .maybeSingle();
+};

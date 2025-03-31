@@ -18,7 +18,10 @@ import Config from "@/cw/community.json";
 import { formatCurrencyNumber } from "@/lib/currency";
 import { getItemsForPlace } from "@/db/items";
 import { summarizeItemsForDescription } from "@/lib/items";
-import { createOrderProcessorTx } from "@/db/ordersProcessorTx";
+import {
+  createOrderProcessorTx,
+  getOrderProcessorTx,
+} from "@/db/ordersProcessorTx";
 
 export const chargeUpdated = async (stripe: Stripe, event: Stripe.Event) => {
   const charge = event.data.object as Stripe.Charge;
@@ -101,8 +104,6 @@ export const chargeUpdated = async (stripe: Stripe, event: Stripe.Event) => {
     console.error(error);
   }
 
-  await updateOrderFees(client, orderId, fees);
-
   let paymentIntentId: string | null = null;
   if (typeof charge.payment_intent === "string") {
     paymentIntentId = charge.payment_intent;
@@ -111,6 +112,16 @@ export const chargeUpdated = async (stripe: Stripe, event: Stripe.Event) => {
   }
 
   if (paymentIntentId) {
+    const { data: orderProcessorTx } = await getOrderProcessorTx(
+      client,
+      "stripe",
+      paymentIntentId
+    );
+    if (orderProcessorTx) {
+      console.log("Order processor tx already exists", paymentIntentId);
+      return NextResponse.json({ received: true });
+    }
+
     const { data: processorTx, error: processorTxError } =
       await createOrderProcessorTx(client, "stripe", paymentIntentId);
     if (processorTxError || !processorTx) {
@@ -121,6 +132,8 @@ export const chargeUpdated = async (stripe: Stripe, event: Stripe.Event) => {
       await attachProcessorTxToOrder(client, orderId, processorTx.id);
     }
   }
+
+  await updateOrderFees(client, orderId, fees);
 
   if (
     !process.env.FAUCET_PRIVATE_KEY ||
