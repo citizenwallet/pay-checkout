@@ -119,8 +119,39 @@ export interface VivaTransactionPriceCalculated {
   ResellerSourceName: string;
 }
 
-export interface VivaTransactionsResponse {
-  Transactions: VivaTransaction[];
+export interface VivaTransaction {
+  email: string | null;
+  bankId: string;
+  amount: number;
+  switching: boolean;
+  orderCode: number;
+  statusId: string;
+  fullName: string | null;
+  insDate: string;
+  cardNumber: string;
+  sourceCode: string;
+  currencyCode: string;
+  customerTrns: string | null;
+  merchantTrns: string | null;
+  transactionTypeId: number;
+  recurringSupport: boolean;
+  totalInstallments: number;
+  cardCountryCode: string;
+  cardIssuingBank: string;
+  eventId: number | null;
+  currentInstallment: number;
+  conversionRate: number;
+  originalAmount: number;
+  cardUniqueReference: string;
+  originalCurrencyCode: string;
+  cardExpirationDate: string;
+  cardTypeId: number;
+  digitalWalletId: string | null;
+  loyaltyTransactions: unknown[];
+}
+
+export interface VivaLegacyTransactionsResponse {
+  Transactions: VivaFullTransaction[];
   ErrorCode: number;
   ErrorText: string | null;
   TimeStamp: string;
@@ -129,7 +160,7 @@ export interface VivaTransactionsResponse {
   Success: boolean;
 }
 
-interface VivaTransaction {
+interface VivaFullTransaction {
   Fee: number;
   BankId: string;
   ParentId: string | null;

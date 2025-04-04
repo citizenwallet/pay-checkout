@@ -4,10 +4,11 @@
         "description": "A community for the city of Brussels",
         "url": "https://pay.brussels",
         "alias": "wallet.pay.brussels",
+        "logo": "https://assets.citizenwallet.xyz/wallet-config/_images/wallet.pay.brussels.png",
         "custom_domain": "wallet.pay.brussels",
-        "logo": "https://wallet.pay.brussels/uploads/logo.svg",
+        "hidden": false,
         "theme": {
-            "primary": "#3431c4"
+            "primary": "#4a90e2"
         },
         "profile": {
             "address": "0x56Cc38bDa01bE6eC6D854513C995f6621Ee71229",
@@ -78,8 +79,10 @@
     "plugins": [
         {
             "name": "Top Up",
-            "icon": "https://wallet.pay.brussels/uploads/logo.svg",
-            "url": "https://topup.citizenspring.earth/wallet.pay.brussels"
+            "icon": "https://assets.citizenwallet.xyz/wallet-config/_images/wallet.pay.brussels.png",
+            "url": "https://checkout.pay.brussels/topup",
+            "action": "topup",
+            "signature": true
         }
     ],
     "config_location": "https://wallet.pay.brussels/config/community.json",
