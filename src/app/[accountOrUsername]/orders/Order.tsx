@@ -104,7 +104,7 @@ export function OrderCard({
                       alt={orderProfile.name}
                       width={20}
                       height={20}
-                      className="rounded-full"
+                      className="rounded-full h-6 w-6 object-cover"
                     />
                     <p className="text-sm">
                       {orderProfile.name || orderProfile.username}
