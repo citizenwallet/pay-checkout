@@ -114,9 +114,7 @@ export async function POST(
       return NextResponse.json({ error: orderError.message }, { status: 500 });
     }
 
-    console.log("orderData", orderData);
-
-    return NextResponse.json({ orderId: orderData.id }, { status: 200 });
+    return NextResponse.json(orderData, { status: 200 });
   } catch (err) {
     console.error("Error in generate-order API:", err);
     return NextResponse.json(
