@@ -132,7 +132,7 @@ export async function POST(
 function isValidRequestData(
   accountOrUsername: string,
   items: { id: number; quantity: number }[],
-  description: string,
+  description: string | null,
   total: number,
   account: string | null,
   txHash: string
@@ -140,7 +140,7 @@ function isValidRequestData(
   return (
     typeof accountOrUsername === "string" &&
     Array.isArray(items) &&
-    typeof description === "string" &&
+    (description === null || typeof description === "string") &&
     typeof total === "number" &&
     (account === null || typeof account === "string") &&
     (txHash !== null || typeof txHash === "string")
