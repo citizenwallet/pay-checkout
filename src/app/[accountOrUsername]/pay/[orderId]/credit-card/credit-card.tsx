@@ -1,160 +1,171 @@
-
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useStripe, useElements, CardNumberElement, CardCvcElement, CardExpiryElement } from "@stripe/react-stripe-js";
-import { getClientSecretAction } from "@/app/actions/paymentProcess";
 import {
-    Card,
-    CardContent,
-    CardFooter,
-    CardHeader,
-    CardTitle,
+  useStripe,
+  useElements,
+  Elements,
+  CardElement,
+} from "@stripe/react-stripe-js";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cancelOrderAction } from "@/app/actions/cancelOrder";
+import { loadStripe } from "@stripe/stripe-js";
+import { Order } from "@/db/orders";
+import { formatCurrencyNumber } from "@/lib/currency";
+import CurrencyLogo from "@/components/currency-logo";
 
+if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+  throw new Error("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set");
+}
 
-export default function CreditCard({ total, orderId, accountOrUsername }: { total: number, orderId: number, accountOrUsername: string }) {
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+);
 
-    const stripe = useStripe();
-    const elements = useElements();
-    const router = useRouter();
-    const [message, setMessage] = useState<string>("");
-    const [clientSecret, setClientSecret] = useState<string | null>(null);
-    const [cancelled, setCancelled] = useState(false);
+export default function CreditCard({
+  clientSecret,
+  order,
+  accountOrUsername,
+  currencyLogo,
+}: {
+  clientSecret: string;
+  order: Order;
+  accountOrUsername: string;
+  currencyLogo: string;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string>("");
 
-    useEffect(() => {
+  useEffect(() => {
+    if (!elements) return;
 
-        const fetchClientSecret = async () => {
-            try {
-                const clientSecret = await getClientSecretAction(total);
-                setClientSecret(clientSecret);
-            } catch (error: unknown) {
-                if (error instanceof Error) {
-                    setMessage(error.message);
-                } else {
-                    setMessage("An unknown error occurred.");
-                }
-            }
-        };
-
-        fetchClientSecret();
-    }, [total]);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!stripe || !elements || !clientSecret) return;
-
-        // Get the individual card elements
-        const cardNumber = elements.getElement(CardNumberElement);
-        const cardExpiry = elements.getElement(CardExpiryElement);
-        const cardCvc = elements.getElement(CardCvcElement);
-
-        if (!cardNumber || !cardExpiry || !cardCvc) {
-            console.log("One or more card elements are missing");
-            return;
-        }
-
-        const { error } = await stripe.confirmCardPayment(clientSecret, {
-            payment_method: {
-                card: cardNumber,
-            },
-        });
-
-        if (error) {
-            setMessage(error.message || "Payment failed.");
-        } else {
-            setMessage("Payment Successful!");
-            router.push(`/${accountOrUsername}/pay/${orderId}/success`);
-
-        }
-    };
-
-    const handleBack = async () => {
-        router.back();
+    let cardElement = elements.getElement(CardElement);
+    if (!cardElement) {
+      cardElement = elements.create("card", {
+        hidePostalCode: true,
+        disableLink: true,
+      });
     }
 
-    const handleCancelOrder = async () => {
-        if (!total) {
-            return;
-        }
-        await cancelOrderAction(orderId);
-        setCancelled(true);
-    };
+    cardElement.mount("#card-element");
+  }, [elements]);
 
-    if (cancelled) {
-        return <div>Order cancelled</div>;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!stripe || !elements || !clientSecret) return;
+
+    setLoading(true);
+
+    // Get the CardElement
+    const cardElement = elements.getElement(CardElement);
+
+    if (!cardElement) {
+      console.log("Card element is missing");
+      return;
     }
 
+    const { error, paymentIntent } = await stripe.confirmCardPayment(
+      clientSecret,
+      {
+        payment_method: {
+          card: cardElement,
+        },
+      }
+    );
 
-    return (
-        <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+    if (error) {
+      setMessage(error.message || "Payment failed.");
+      setLoading(false);
+      return;
+    }
 
+    if (paymentIntent?.status === "succeeded") {
+      setLoading(false);
 
-            <Card className="mx-auto max-w-lg">
-                <CardHeader className="flex flex-row items-center justify-start gap-4">
+      router.push(`/${accountOrUsername}/pay/${order.id}/success`);
+      return;
+    }
 
-                    <ArrowLeft onClick={handleBack} className="cursor-pointer mt-1.5" />
+    console.log("Payment intent status:", paymentIntent?.status);
+    setLoading(false);
+  };
 
-                    <CardTitle className="text-2xl font-bold">Enter Credit Card Details</CardTitle>
-                </CardHeader>
-                <CardContent>
+  const handleBack = async () => {
+    router.back();
+  };
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="max-w-md mx-auto p-6">
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Card Number
-                                    </label>
-                                    <CardNumberElement
-                                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 bg-gray-50"
-                                    />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Expiration Date
-                                        </label>
-                                        <CardExpiryElement
-                                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 bg-gray-50"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            CVC
-                                        </label>
-                                        <CardCvcElement
-                                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 bg-gray-50"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <Button
-                            type="submit"
-                            className="w-full h-14 text-lg mb-4 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded transition-all disabled:bg-gray-400"
-                            disabled={!stripe || !clientSecret}
-                        >
-                            Pay Now
-                        </Button>
-                        <Button
-                            variant="outline"
-                            onClick={handleCancelOrder}
-                            className="w-full h-14 text-lg mb-4"
-                        >
-                            Cancel Order
-                        </Button>
-                    </form>
+  const handleCancelOrder = async () => {
+    await cancelOrderAction(order.id);
 
-                </CardContent>
-                <CardFooter className="flex flex-col items-stretch">
-                    {message && <p className="text-red-500 mt-4 text-center">{message}</p>}
-                </CardFooter>
-            </Card>
-        </div>
-    )
+    router.replace(`/${accountOrUsername}`);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+      <Card className="mx-auto max-w-lg">
+        <CardHeader className="flex flex-row items-center justify-start gap-4">
+          <ArrowLeft onClick={handleBack} className="cursor-pointer mt-1.5" />
+
+          <CardTitle className="text-2xl font-bold">
+            Enter Credit Card Details
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col justify-center items-center gap-4">
+          <Elements
+            stripe={stripePromise}
+            options={{
+              clientSecret,
+              appearance: {
+                theme: "stripe",
+              },
+              loader: "auto",
+            }}
+          >
+            <form id="payment-form" onSubmit={handleSubmit} className="w-full">
+              <div
+                id="card-element"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 bg-gray-50"
+              />
+              <Button
+                type="submit"
+                className="w-full h-14 text-lg mb-4  text-white py-2 px-4 rounded transition-all disabled:bg-gray-400 mt-4"
+                disabled={!stripe || !clientSecret}
+              >
+                Pay <CurrencyLogo logo={currencyLogo} size={20} />{" "}
+                <b>{formatCurrencyNumber(order.total)}</b>
+                {loading && <Loader2 className="ml-2 animate-spin" />}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCancelOrder}
+                className="w-full h-14 text-lg mb-4"
+              >
+                Cancel Order
+              </Button>
+            </form>
+          </Elements>
+        </CardContent>
+
+        <CardFooter className="flex flex-col items-stretch">
+          {message && (
+            <p className="text-red-500 mt-4 text-center">{message}</p>
+          )}
+        </CardFooter>
+      </Card>
+    </div>
+  );
 }

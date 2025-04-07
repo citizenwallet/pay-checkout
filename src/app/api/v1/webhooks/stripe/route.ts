@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { checkoutSessionCompleted } from "./checkoutSessionCompleted";
 import { chargeUpdated } from "./chargeUpdated";
+import { paymentIntentSucceeded } from "./paymentIntentSucceeded";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -33,9 +34,12 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
+  console.log("Event:", event);
   switch (event.type) {
     case "checkout.session.completed":
       return checkoutSessionCompleted(event);
+    case "payment_intent.succeeded":
+      return paymentIntentSucceeded(event);
     case "charge.updated":
       return chargeUpdated(stripe, event);
   }

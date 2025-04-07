@@ -19,12 +19,14 @@ import {
   CreditCard,
   Minus,
   Plus,
-  Trash2
+  Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import PayElement from "./PayElement";
 import { useState } from "react";
-
+import { useStripe } from "@stripe/react-stripe-js";
+import { getClientSecretAction } from "@/app/actions/paymentProcess";
+import { Separator } from "@/components/ui/separator";
 
 interface Props {
   accountOrUsername: string;
@@ -42,16 +44,14 @@ export default function Component({
   currencyLogo,
   customOrderId,
 }: Props) {
+  const stripe = useStripe();
   const router = useRouter();
 
-  // const [loading, setLoading] = useState(false);
   const [cancelled, setCancelled] = useState(false);
 
   const [cartItems, setCartItems] = useState<Order["items"]>(
     order?.items ?? []
   );
-
-
 
   const updateQuantity = (id: number, change: number) => {
     setCartItems(
@@ -68,8 +68,8 @@ export default function Component({
   const total = !items
     ? 0
     : order?.items.length === 0
-      ? order?.total ?? 0
-      : cartItems.reduce((sum, cartItem) => {
+    ? order?.total ?? 0
+    : cartItems.reduce((sum, cartItem) => {
         const item = items[cartItem.id];
         if (!item) return sum;
         return sum + item.price * cartItem.quantity;
@@ -80,8 +80,8 @@ export default function Component({
   const vat = !items
     ? 0
     : order?.items.length === 0
-      ? (order?.total ?? 0) * vatPercent
-      : cartItems.reduce((sum, cartItem) => {
+    ? (order?.total ?? 0) * vatPercent
+    : cartItems.reduce((sum, cartItem) => {
         const item = items[cartItem.id];
         if (!item) return sum;
         // Calculate VAT portion from the inclusive price
@@ -106,6 +106,44 @@ export default function Component({
     }
   };
 
+  const handleBancontact = async () => {
+    if (!stripe) return;
+
+    if (!order) return;
+
+    try {
+      const clientSecret = await getClientSecretAction(
+        accountOrUsername,
+        order.id,
+        total
+      );
+
+      if (!clientSecret) {
+        throw new Error("No client secret");
+      }
+
+      const { error, paymentIntent } = await stripe.confirmBancontactPayment(
+        clientSecret,
+        {
+          payment_method: {
+            billing_details: {
+              name: "Anonymous",
+            },
+          },
+          return_url: `${window.location.origin}/${accountOrUsername}/pay/${order.id}/success`,
+        }
+      );
+
+      if (error) {
+        throw new Error(error.message);
+      } else if (paymentIntent?.status === "succeeded") {
+        router.push(`/${accountOrUsername}/pay/${order.id}/success`);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const handleBack = async () => {
     if (order) {
       await handleCancelOrder();
@@ -115,9 +153,6 @@ export default function Component({
   };
 
   const noItems = order?.items.length === 0;
-
-
-
 
   if (cancelled) {
     return <div>Order cancelled</div>;
@@ -191,7 +226,6 @@ export default function Component({
           </ul>
         </CardContent>
         <CardFooter className="flex flex-col items-stretch">
-
           {!noItems && (
             <div className="flex justify-between items-center mb-4">
               <span className="text-lg font-normal">
@@ -219,6 +253,45 @@ export default function Component({
               {formatCurrencyNumber(total)}
             </span>
           </div>
+          <Separator className="my-4" />
+
+          {/* <Button
+            onClick={handleBancontact}
+            className="flex items-center gap-2 w-full h-14 text-white"
+          >
+            <span className="font-medium text-lg">Pay with</span>
+            <CurrencyLogo logo={currencyLogo} size={24} />
+            <span className="font-medium text-lg">Brussels Pay</span>
+          </Button>
+
+          <Separator className="my-4" /> */}
+
+          <Button
+            onClick={handleBancontact}
+            className="flex items-center gap-2 w-full h-14 mb-2 bg-slate-900 hover:bg-slate-700 text-white "
+          >
+            <BuildingIcon className="w-5 h-5" />
+            <span className="font-medium text-lg">Bancontact</span>
+          </Button>
+
+          <PayElement
+            total={total}
+            accountOrUsername={accountOrUsername}
+            orderId={order?.id ?? 0}
+          />
+
+          <Button
+            onClick={() =>
+              router.push(`/${accountOrUsername}/pay/${order?.id}/credit-card`)
+            }
+            className="flex items-center gap-2 w-full h-14 bg-slate-900 hover:bg-slate-700 text-white"
+          >
+            <CreditCard className="w-5 h-5" />
+            <span className="font-medium text-lg">Credit Card</span>
+          </Button>
+
+          <Separator className="my-4" />
+
           <Button
             variant="outline"
             onClick={handleCancelOrder}
@@ -226,24 +299,6 @@ export default function Component({
           >
             Cancel Order
           </Button>
-
-          <Button onClick={() => router.push(`/${accountOrUsername}/pay/${order?.id}/credit-card`)}
-            className="w-full h-14 text-lg mb-4 flex items-center ">
-            <div className="flex items-center gap-2">
-              <CreditCard className="w-5 h-5" />
-              <span className="font-medium">Credit Card</span>
-            </div>
-          </Button>
-
-          <Button onClick={() => router.push(`/${accountOrUsername}/pay/${order?.id}/bancontact`)}
-            className="w-full h-14 text-lg mb-4 flex items-center ">
-            <div className="flex items-center gap-2">
-              <BuildingIcon className="w-5 h-5" />
-              <span className="font-medium">Bancontact</span>
-            </div>
-          </Button>
-
-          <PayElement total={total} accountOrUsername={accountOrUsername} orderId={order?.id ?? 0} />
         </CardFooter>
       </Card>
     </div>
