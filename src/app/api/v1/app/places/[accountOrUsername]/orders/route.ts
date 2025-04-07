@@ -6,11 +6,11 @@ import { getPlaceId } from "@/lib/place";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { accountOrUsername: string } }
+  { params }: { params: Promise<{ accountOrUsername: string }> }
 ) {
   try {
     // Extract the accountOrUsername from the params object
-    const accountOrUsername = params.accountOrUsername;
+    const { accountOrUsername } = await params;
 
     const body = await request.json();
     const { items = [], description, total, account, txHash } = body;
