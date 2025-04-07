@@ -2,54 +2,18 @@ import { NextResponse, NextRequest } from "next/server";
 import { getServiceRoleClient } from "@/db";
 import { createAppOrder } from "@/db/orders";
 import { getItemsForPlace } from "@/db/items";
+import { getPlaceId } from "@/lib/place";
 
-/**
- * POST /api/v1/accounts/[account]/orders/createOrder
- *
- * Creates a new order for a specific place with the given items and details.
- *
- * @param {Object} request - The Next.js request object containing the order details
- * @param {Object} request.body - The request body containing order information
- * @param {number} request.body.placeId - The ID of the place where the order is being created
- * @param {Array} request.body.items - Array of items in the order
- * @param {string} request.body.description - Description of the order
- * @param {number} request.body.total - Total amount of the order
- * @param {string|null} request.body.account - The account address associated with the order
- * @param {string|null} request.body.type - The type of order (web, app, terminal, or pos)
- *
- * @returns {Object} Response object containing either:
- *   - Success: { data: { id: number } } with status 200
- *   - Error: { error: string, status: number } with appropriate error status
- *
- * @example
- * // Request body
- * {
- *   "placeId": 123,
- *   "items": [
- *     { "id": 456, "quantity": 2 }
- *   ],
- *   "description": "Coffee and pastry",
- *   "total": 25.50,
- *   "account": "0x...",
- *   "type": "web"
- * }
- *
- * // Success Response
- * {
- *   "data": { "id": 789 }
- * }
- *
- * // Error Response
- * {
- *   "error": "Invalid request data",
- *   "status": 400
- * }
- */
-
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { accountOrUsername: string } }
+) {
   try {
+    // Extract the accountOrUsername from the params object
+    const accountOrUsername = params.accountOrUsername;
+
     const body = await request.json();
-    const { placeId, items = [], description, total, account, txHash } = body;
+    const { items = [], description, total, account, txHash } = body;
 
     const sigAuthAccount = request.headers.get("x-sigauth-account");
     const sigAuthExpiry = request.headers.get("x-sigauth-expiry");
@@ -88,7 +52,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (
-      !isValidRequestData(placeId, items, description, total, account, txHash)
+      !isValidRequestData(
+        accountOrUsername,
+        items,
+        description,
+        total,
+        account,
+        txHash
+      )
     ) {
       return NextResponse.json(
         { error: "Invalid request data" },
@@ -104,6 +75,11 @@ export async function POST(request: NextRequest) {
     }
 
     const client = getServiceRoleClient();
+
+    const placeId = await getPlaceId(client, accountOrUsername);
+    if (!placeId) {
+      return NextResponse.json({ error: "Place not found" }, { status: 404 });
+    }
 
     const { data: availableItems, error } = await getItemsForPlace(
       client,
@@ -154,7 +130,7 @@ export async function POST(request: NextRequest) {
  * Validates the request data types and format
  */
 function isValidRequestData(
-  placeId: number,
+  accountOrUsername: string,
   items: { id: number; quantity: number }[],
   description: string,
   total: number,
@@ -162,7 +138,7 @@ function isValidRequestData(
   txHash: string
 ): boolean {
   return (
-    typeof placeId === "number" &&
+    typeof accountOrUsername === "string" &&
     Array.isArray(items) &&
     typeof description === "string" &&
     typeof total === "number" &&
