@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import {
   VIVA_EVENT_TYPES,
   VivaEvent,
-  VivaTransactionPaymentCreated,
+  VivaTransactionPriceCalculated,
 } from "@/viva";
-import { transactionPaymentCreated } from "./transactionPaymentCreated";
 import { getMessagesConfigToken } from "@/viva/messages";
+import { transactionPriceCalculated } from "./transactionPriceCalculated";
 
 function isAllowedIP(ip: string): boolean {
   const allowedIPs = [
@@ -76,11 +76,10 @@ export async function POST(request: Request) {
   console.log("Viva webhook body", body);
 
   switch (body.EventTypeId) {
-    case VIVA_EVENT_TYPES.TRANSACTION_PAYMENT_CREATED:
-      await transactionPaymentCreated(
-        body.EventData as VivaTransactionPaymentCreated
+    case VIVA_EVENT_TYPES.TRANSACTION_PRICE_CALCULATED:
+      return transactionPriceCalculated(
+        body.EventData as VivaTransactionPriceCalculated
       );
-      break;
   }
 
   return NextResponse.json({ received: true });

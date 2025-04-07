@@ -35,11 +35,9 @@ export async function POST(request: Request) {
   }
   switch (event.type) {
     case "checkout.session.completed":
-      await checkoutSessionCompleted(event);
-      break;
+      return checkoutSessionCompleted(event);
     case "charge.updated":
-      await chargeUpdated(stripe, event);
-      break;
+      return chargeUpdated(stripe, event);
   }
 
   return NextResponse.json({ received: true });

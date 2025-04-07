@@ -61,6 +61,7 @@ export const generateTopUpCheckoutSession = async (
     placeId: place.id,
     orderId,
     amount,
+    netAmount: amount,
   };
 
   const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [

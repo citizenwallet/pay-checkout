@@ -104,7 +104,7 @@ export function OrderCard({
                       alt={orderProfile.name}
                       width={20}
                       height={20}
-                      className="rounded-full"
+                      className="rounded-full h-6 w-6 object-cover"
                     />
                     <p className="text-sm">
                       {orderProfile.name || orderProfile.username}
@@ -120,12 +120,39 @@ export function OrderCard({
             {format(new Date(order.created_at), "MMM d, yyyy HH:mm")}
           </span>
         </div>
-        <div className="space-y-1">
-          <p className="flex items-center gap-1">
-            Total: <CurrencyLogo logo={currencyLogo} size={18} />
-            {formatCurrencyNumber(order.total)}
-          </p>
-          {order.description && (
+        <div className="w-full space-y-1">
+          <div className="flex justify-between items-center gap-1">
+            Paid:{" "}
+            <div className="flex items-center gap-1">
+              <CurrencyLogo logo={currencyLogo} size={18} />
+              {formatCurrencyNumber(order.total)}
+            </div>
+          </div>
+          <div className="flex justify-between items-center gap-1">
+            3rd Party Fees{order.fees === 0 ? " 😎" : " ✈️"}:{" "}
+            <div
+              className={cn(
+                "flex items-center gap-1",
+                order.fees === 0 ? "line-through" : "text-red-500"
+              )}
+            >
+              {order.fees > 0 && order.total > 0 && (
+                <span className="text-sm text-gray-500">
+                  ({((order.fees / order.total) * 100).toFixed(2)}%)
+                </span>
+              )}
+              <CurrencyLogo logo={currencyLogo} size={18} />
+              {formatCurrencyNumber(order.fees)}
+            </div>
+          </div>
+          <div className="flex justify-between items-center gap-1 text-lg font-bold">
+            Net:{" "}
+            <div className="flex items-center gap-1">
+              <CurrencyLogo logo={currencyLogo} size={18} />
+              {formatCurrencyNumber(order.total - order.fees)}
+            </div>
+          </div>
+          {order.description && order.items.length === 0 && (
             <p className="text-sm text-gray-500">{order.description}</p>
           )}
           {order.items.length > 0 && (

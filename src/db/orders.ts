@@ -6,7 +6,7 @@ import {
   SupabaseClient,
 } from "@supabase/supabase-js";
 
-export type OrderStatus = "pending" | "paid" | "cancelled";
+export type OrderStatus = "pending" | "paid" | "cancelled" | "needs_minting";
 
 export interface Order {
   id: number;
@@ -14,6 +14,7 @@ export interface Order {
   completed_at: string | null;
   total: number;
   due: number;
+  fees: number;
   place_id: number;
   items: {
     id: number;
@@ -33,7 +34,7 @@ export const createOrder = async (
   items: { id: number; quantity: number }[],
   description: string,
   account: string | null,
-  type: "web" | "app" | "terminal" | null
+  type: "web" | "app" | "terminal" | "pos" | null
 ): Promise<PostgrestSingleResponse<Order>> => {
   return client
     .from("orders")
@@ -51,12 +52,61 @@ export const createOrder = async (
     .single();
 };
 
+export const createAppOrder = async (
+  client: SupabaseClient,
+  placeId: number,
+  total: number,
+  items: { id: number; quantity: number }[],
+  description: string,
+  account: string | null,
+  txHash: string
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client
+    .from("orders")
+    .insert({
+      place_id: placeId,
+      items,
+      total,
+      due: 0,
+      status: "paid",
+      description,
+      account,
+      type: "app",
+      tx_hash: txHash,
+    })
+    .select()
+    .single();
+};
+
+export const createPartnerOrder = async (
+  client: SupabaseClient,
+  placeId: number,
+  total: number,
+  items: { id: number; quantity: number }[],
+  description: string
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client
+    .from("orders")
+    .insert({
+      place_id: placeId,
+      items,
+      total,
+      due: total,
+      status: "pending",
+      description,
+      type: "web",
+    })
+    .select()
+    .single();
+};
+
 export const createTerminalOrder = async (
   client: SupabaseClient,
   placeId: number,
   total: number,
   fees: number,
-  description: string
+  posId: string,
+  processorTxId: number | null
 ): Promise<PostgrestSingleResponse<Order>> => {
   return client
     .from("orders")
@@ -67,8 +117,9 @@ export const createTerminalOrder = async (
       due: 0,
       fees,
       status: "paid",
-      description,
+      pos: posId,
       type: "terminal",
+      processor_tx: processorTxId,
     })
     .select()
     .single();
@@ -168,6 +219,17 @@ export const cancelOrder = async (
     .single();
 };
 
+export const orderNeedsMinting = async (
+  client: SupabaseClient,
+  orderId: number
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client
+    .from("orders")
+    .update({ status: "needs_minting", tx_hash: null })
+    .eq("id", orderId)
+    .single();
+};
+
 export const attachTxHashToOrder = async (
   client: SupabaseClient,
   orderId: number,
@@ -176,6 +238,18 @@ export const attachTxHashToOrder = async (
   return client
     .from("orders")
     .update({ tx_hash: txHash, status: "paid" })
+    .eq("id", orderId)
+    .single();
+};
+
+export const attachProcessorTxToOrder = async (
+  client: SupabaseClient,
+  orderId: number,
+  processorTxId: number
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client
+    .from("orders")
+    .update({ processor_tx: processorTxId })
     .eq("id", orderId)
     .single();
 };
@@ -225,4 +299,11 @@ export const getOrdersByAccount = async (
   return query
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
+};
+
+export const deleteOrder = async (
+  client: SupabaseClient,
+  orderId: number
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client.from("orders").delete().eq("id", orderId).select().single();
 };
