@@ -52,6 +52,32 @@ export const createOrder = async (
     .single();
 };
 
+export const createAppOrder = async (
+  client: SupabaseClient,
+  placeId: number,
+  total: number,
+  items: { id: number; quantity: number }[],
+  description: string,
+  account: string | null,
+  txHash: string
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client
+    .from("orders")
+    .insert({
+      place_id: placeId,
+      items,
+      total,
+      due: 0,
+      status: "paid",
+      description,
+      account,
+      type: "app",
+      tx_hash: txHash,
+    })
+    .select()
+    .single();
+};
+
 export const createPartnerOrder = async (
   client: SupabaseClient,
   placeId: number,
@@ -279,10 +305,5 @@ export const deleteOrder = async (
   client: SupabaseClient,
   orderId: number
 ): Promise<PostgrestSingleResponse<Order>> => {
-  return client
-    .from("orders")
-    .delete()
-    .eq("id", orderId)
-    .select()
-    .single();
+  return client.from("orders").delete().eq("id", orderId).select().single();
 };
