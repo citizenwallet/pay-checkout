@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getServiceRoleClient } from "@/db";
-import { completeOrder } from "@/db/orders";
+import { completeOrder, getOrder } from "@/db/orders";
 import { getPlace } from "@/lib/place";
 
 import Stripe from "stripe";
@@ -106,7 +106,17 @@ export const getClientSecret = async (
     throw new Error("Place not found");
   }
 
-  const account = place.accounts[0];
+  const { data: order } = await getOrder(client, orderId);
+
+  if (!order || !order.account) {
+    throw new Error("Order not found");
+  }
+
+  let account = place.accounts[0];
+  if (place.display === "topup") {
+    // top ups should be given to the order account
+    account = order.account;
+  }
 
   const baseDomain = process.env.BASE_DOMAIN;
   if (!baseDomain) {
@@ -122,6 +132,7 @@ export const getClientSecret = async (
     forward_url: `https://${baseDomain}/api/v1/webhooks/stripe`,
   };
   if (place.display === "topup") {
+    // top ups shouldn't be charged fees
     metadata.netAmount = amount;
   }
 
