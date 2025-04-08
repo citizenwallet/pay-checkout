@@ -121,6 +121,9 @@ export const getClientSecret = async (
     amount,
     forward_url: `https://${baseDomain}/api/v1/webhooks/stripe`,
   };
+  if (place.display === "topup") {
+    metadata.netAmount = amount;
+  }
 
   const paymentIntent = await stripe.paymentIntents.create({
     amount,
