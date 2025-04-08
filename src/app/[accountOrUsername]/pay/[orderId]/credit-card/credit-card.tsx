@@ -56,6 +56,19 @@ export default function CreditCard({
       cardElement = elements.create("card", {
         hidePostalCode: true,
         disableLink: true,
+        style: {
+          base: {
+            fontSize: "16px",
+            color: "#32325d",
+            "::placeholder": {
+              color: "#aab7c4",
+            },
+          },
+          invalid: {
+            color: "#fa755a",
+            iconColor: "#fa755a",
+          },
+        },
       });
     }
 
@@ -137,7 +150,7 @@ export default function CreditCard({
             <form id="payment-form" onSubmit={handleSubmit} className="w-full">
               <div
                 id="card-element"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 bg-gray-50"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 bg-gray-50 text-base"
               />
               <Button
                 type="submit"
