@@ -11,10 +11,13 @@ import Config from "@/cw/community.json";
 
 export default async function CreditCardPayment({
   params,
+  searchParams,
 }: {
   params: Promise<{ accountOrUsername: string; orderId: number }>;
+  searchParams: Promise<{ close?: string }>;
 }) {
   const { orderId, accountOrUsername } = await params;
+  const { close } = await searchParams;
 
   return (
     <Suspense
@@ -36,7 +39,11 @@ export default async function CreditCardPayment({
         </div>
       }
     >
-      <AsyncPage orderId={orderId} accountOrUsername={accountOrUsername} />
+      <AsyncPage
+        orderId={orderId}
+        accountOrUsername={accountOrUsername}
+        close={close}
+      />
     </Suspense>
   );
 }
@@ -44,9 +51,11 @@ export default async function CreditCardPayment({
 async function AsyncPage({
   orderId,
   accountOrUsername,
+  close,
 }: {
   orderId: number;
   accountOrUsername: string;
+  close?: string;
 }) {
   const client = getServiceRoleClient();
   const { data, error } = await getOrder(client, orderId);
@@ -72,6 +81,7 @@ async function AsyncPage({
       order={data}
       accountOrUsername={accountOrUsername}
       currencyLogo={community.community.logo}
+      closeUrl={close}
     />
   );
 }

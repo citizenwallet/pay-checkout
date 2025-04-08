@@ -36,11 +36,13 @@ export default function CreditCard({
   order,
   accountOrUsername,
   currencyLogo,
+  closeUrl,
 }: {
   clientSecret: string;
   order: Order;
   accountOrUsername: string;
   currencyLogo: string;
+  closeUrl?: string;
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -108,7 +110,7 @@ export default function CreditCard({
     if (paymentIntent?.status === "succeeded") {
       setLoading(false);
 
-      router.push(`/${accountOrUsername}/pay/${order.id}/success`);
+      router.push(closeUrl || `/${accountOrUsername}/pay/${order.id}/success`);
       return;
     }
 
@@ -122,6 +124,11 @@ export default function CreditCard({
 
   const handleCancelOrder = async () => {
     await cancelOrderAction(order.id);
+
+    if (closeUrl) {
+      router.push(closeUrl);
+      return;
+    }
 
     router.replace(`/${accountOrUsername}`);
   };
