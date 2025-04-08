@@ -85,3 +85,51 @@ export const generateCheckoutSession = async (
 
   return stripe.checkout.sessions.create(request);
 };
+
+export const getClientSecret = async (
+  accountOrUsername: string,
+  orderId: number,
+  amount: number
+) => {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey) {
+    throw new Error("STRIPE_SECRET_KEY is not set");
+  }
+
+  const stripe = new Stripe(secretKey);
+
+  const client = getServiceRoleClient();
+
+  const { place } = await getPlace(client, accountOrUsername);
+
+  if (!place) {
+    throw new Error("Place not found");
+  }
+
+  const account = place.accounts[0];
+
+  const baseDomain = process.env.BASE_DOMAIN;
+  if (!baseDomain) {
+    throw new Error("BASE_DOMAIN is not set");
+  }
+
+  const metadata: Stripe.MetadataParam = {
+    account,
+    placeName: place.name,
+    placeId: place.id,
+    orderId,
+    amount,
+    forward_url: `https://${baseDomain}/api/v1/webhooks/stripe`,
+  };
+
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount,
+    currency: "eur",
+    automatic_payment_methods: {
+      enabled: true,
+    },
+    metadata,
+  });
+
+  return paymentIntent.client_secret;
+};

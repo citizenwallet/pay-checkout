@@ -74,11 +74,12 @@ async function AsyncPage({
   searchParams: Promise<{
     tx?: string;
     close?: string;
+    tax?: "yes" | "no";
     customOrderId?: string;
   }>;
 }) {
   const { accountOrUsername, orderId } = await params;
-  const { tx, close, customOrderId } = await searchParams;
+  const { tx, close, tax = "yes", customOrderId } = await searchParams;
 
   const client = getServiceRoleClient();
   const { data, error } = await getOrder(client, orderId);
@@ -139,6 +140,8 @@ async function AsyncPage({
       currencyLogo={community.community.logo}
       tx={tx}
       customOrderId={customOrderId}
+      closeUrl={close}
+      tax={tax}
     />
   );
 }
