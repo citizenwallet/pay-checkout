@@ -108,12 +108,12 @@ export const getClientSecret = async (
 
   const { data: order } = await getOrder(client, orderId);
 
-  if (!order || !order.account) {
+  if (!order) {
     throw new Error("Order not found");
   }
 
   let account = place.accounts[0];
-  if (place.display === "topup") {
+  if (place.display === "topup" && order.account) {
     // top ups should be given to the order account
     account = order.account;
   }
