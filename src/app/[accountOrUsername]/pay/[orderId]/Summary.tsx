@@ -48,9 +48,14 @@ export default function Component({
   closeUrl,
   tax,
 }: Props) {
+  console.log("closeUrl", closeUrl);
   const successUrl: string | null =
     closeUrl ||
-    `${window.location.origin}/${accountOrUsername}/pay/${order?.id}/success`;
+    `${
+      typeof window !== "undefined" && window.location.origin
+    }/${accountOrUsername}/pay/${order?.id}/success`;
+
+  console.log("successUrl", successUrl);
 
   const stripe = useStripe();
   const router = useRouter();
@@ -150,6 +155,19 @@ export default function Component({
     } catch (error) {
       console.error(error);
     }
+  };
+
+  const handleCreditCard = async () => {
+    if (!stripe) return;
+
+    if (!order) return;
+
+    let url = `/${accountOrUsername}/pay/${order?.id}/credit-card`;
+    if (closeUrl) {
+      url += `?close=${closeUrl}`;
+    }
+
+    router.push(url);
   };
 
   const handleBack = async () => {
@@ -290,11 +308,7 @@ export default function Component({
           />
 
           <Button
-            onClick={() =>
-              router.push(
-                `/${accountOrUsername}/pay/${order?.id}/credit-card?close=${closeUrl}`
-              )
-            }
+            onClick={handleCreditCard}
             className="flex items-center gap-2 w-full h-14 bg-slate-900 hover:bg-slate-700 text-white"
           >
             <CreditCard className="w-5 h-5" />
