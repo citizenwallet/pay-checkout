@@ -15,10 +15,12 @@ export default function PayElement({
   total,
   accountOrUsername,
   orderId,
+  closeUrl,
 }: {
   total: number;
   accountOrUsername: string;
   orderId: number;
+  closeUrl?: string;
 }) {
   const [message, setMessage] = useState<string>("");
   const [clientSecret, setClientSecret] = useState<string | null>(null);
@@ -47,7 +49,7 @@ export default function PayElement({
 
   const handleExpressCheckoutConfirm = async () => {
     setMessage("Payment Successful!");
-    router.push(`/${accountOrUsername}/pay/${orderId}/success`);
+    router.push(closeUrl || `/${accountOrUsername}/pay/${orderId}/success`);
   };
 
   return (
@@ -67,7 +69,7 @@ export default function PayElement({
             options={{
               buttonType: {
                 googlePay: "pay",
-                applePay: "check-out",
+                applePay: closeUrl ? "top-up" : "check-out",
               },
               wallets: {
                 applePay: "always",

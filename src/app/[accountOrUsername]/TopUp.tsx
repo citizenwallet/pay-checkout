@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { generateOrder } from "../actions/generateOrder";
-import { confirmTopUpAction } from "../actions/confirmTopUp";
 import { Loader2 } from "lucide-react";
 import { ProfileWithTokenId } from "@citizenwallet/sdk";
 
@@ -89,25 +88,12 @@ export default function TopUpSelector({
         return;
       }
 
-      let closeUrl: string | undefined;
+      let payUrl = `/${accountOrUsername}/pay/${data}`;
       if (sigAuthRedirect) {
-        closeUrl = `${sigAuthRedirect}/close`;
+        payUrl += `?tax=no&close=${sigAuthRedirect}/close`;
       }
 
-      const session = await confirmTopUpAction(
-        connectedAccount ?? address,
-        accountOrUsername,
-        data,
-        amount,
-        closeUrl
-      );
-
-      if (!session?.url) {
-        console.error(error);
-        return;
-      }
-
-      router.push(session.url);
+      router.push(payUrl);
     } catch (error) {
       console.error(error);
     } finally {

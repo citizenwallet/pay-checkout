@@ -35,6 +35,8 @@ interface Props {
   currencyLogo?: string;
   tx?: string;
   customOrderId?: string;
+  closeUrl?: string;
+  tax: "yes" | "no";
 }
 
 export default function Component({
@@ -43,7 +45,13 @@ export default function Component({
   items,
   currencyLogo,
   customOrderId,
+  closeUrl,
+  tax,
 }: Props) {
+  const successUrl: string | null =
+    closeUrl ||
+    `${window.location.origin}/${accountOrUsername}/pay/${order?.id}/success`;
+
   const stripe = useStripe();
   const router = useRouter();
 
@@ -130,14 +138,14 @@ export default function Component({
               name: "Anonymous",
             },
           },
-          return_url: `${window.location.origin}/${accountOrUsername}/pay/${order.id}/success`,
+          return_url: successUrl,
         }
       );
 
       if (error) {
         throw new Error(error.message);
       } else if (paymentIntent?.status === "succeeded") {
-        router.push(`/${accountOrUsername}/pay/${order.id}/success`);
+        router.push(successUrl);
       }
     } catch (error) {
       console.error(error);
@@ -226,7 +234,7 @@ export default function Component({
           </ul>
         </CardContent>
         <CardFooter className="flex flex-col items-stretch">
-          {!noItems && (
+          {!noItems && tax === "yes" && (
             <div className="flex justify-between items-center mb-4">
               <span className="text-lg font-normal">
                 Total (excluding VAT):
@@ -237,7 +245,7 @@ export default function Component({
               </span>
             </div>
           )}
-          {!noItems && (
+          {!noItems && tax === "yes" && (
             <div className="flex justify-between items-center mb-4">
               <span className="text-lg font-normal">VAT:</span>
               <span className="text-lg font-normal flex items-center gap-1">
@@ -278,11 +286,14 @@ export default function Component({
             total={total}
             accountOrUsername={accountOrUsername}
             orderId={order?.id ?? 0}
+            closeUrl={closeUrl}
           />
 
           <Button
             onClick={() =>
-              router.push(`/${accountOrUsername}/pay/${order?.id}/credit-card`)
+              router.push(
+                `/${accountOrUsername}/pay/${order?.id}/credit-card?close=${closeUrl}`
+              )
             }
             className="flex items-center gap-2 w-full h-14 bg-slate-900 hover:bg-slate-700 text-white"
           >
