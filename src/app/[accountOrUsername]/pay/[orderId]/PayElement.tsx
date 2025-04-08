@@ -44,8 +44,11 @@ export default function PayElement({
       }
     };
 
+    if (clientSecret) {
+      return;
+    }
     fetchClientSecret();
-  }, [accountOrUsername, orderId, total]);
+  }, [accountOrUsername, orderId, total, clientSecret]);
 
   const handleExpressCheckoutConfirm = async () => {
     setMessage("Payment Successful!");
