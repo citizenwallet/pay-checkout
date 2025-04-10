@@ -5,6 +5,8 @@ import {
   PostgrestSingleResponse,
   SupabaseClient,
 } from "@supabase/supabase-js";
+import { formatProfileImageLinks } from "@citizenwallet/sdk";
+import { Profile } from "@citizenwallet/sdk";
 
 export interface AProfile {
   created_at: string; // timestamp with time zone
@@ -37,11 +39,34 @@ export async function getProfilesByAccounts(
   supabase: SupabaseClient,
   accounts: string[]
 ): Promise<PostgrestResponse<AProfile>> {
-  return supabase
-    .from("a_profiles")
-    .select("*")
-    .in("account", accounts)
-    // .neq("token_id", null) // TODO: remove this
-    // .neq("token_id", "") // TODO: remove this
-    ;
+  return supabase.from("a_profiles").select("*").in("account", accounts);
+  // .neq("token_id", null) // TODO: remove this
+  // .neq("token_id", "") // TODO: remove this
 }
+
+export const insertAnonymousProfile = async (
+  client: SupabaseClient,
+  account: string
+): Promise<PostgrestSingleResponse<null>> => {
+  const defaultProfileImageIpfsHash =
+    process.env.DEFAULT_PROFILE_IMAGE_IPFS_HASH;
+  if (!defaultProfileImageIpfsHash) {
+    throw new Error("DEFAULT_PROFILE_IMAGE_IPFS_HASH is not set");
+  }
+
+  const ipfsDomain = process.env.IPFS_DOMAIN;
+  if (!ipfsDomain) {
+    throw new Error("IPFS_DOMAIN is not set");
+  }
+
+  const profile: Profile = formatProfileImageLinks(`https://${ipfsDomain}`, {
+    account,
+    username: "anonymous",
+    name: "Anonymous",
+    description: "This user does not have a profile",
+    image: defaultProfileImageIpfsHash,
+    image_medium: defaultProfileImageIpfsHash,
+    image_small: defaultProfileImageIpfsHash,
+  });
+  return client.from("profiles").insert(profile);
+};
