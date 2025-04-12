@@ -13,15 +13,6 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      {
-        source: "/.well-known/apple-developer-merchantid-domain-association",
-        headers: [
-          {
-            key: "content-type",
-            value: "application/json; charset=utf-8",
-          },
-        ],
-      },
     ];
   },
   images: {
