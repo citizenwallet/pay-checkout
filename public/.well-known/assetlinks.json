@@ -1,0 +1,14 @@
+[
+    {
+        "relation": [
+            "delegate_permission/common.handle_all_urls"
+        ],
+        "target": {
+            "namespace": "android_app",
+            "package_name": "brussels.pay.wallet2",
+            "sha256_cert_fingerprints": [
+                "77:F0:BC:DC:92:C3:4E:6D:37:9E:17:0F:BA:0E:D4:4A:0C:83:FA:ED:04:D6:1A:C5:1B:FE:12:79:DF:16:BF:9B"
+            ]
+        }
+    }
+]

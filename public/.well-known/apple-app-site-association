@@ -1,0 +1,24 @@
+{
+    "applinks": {
+        "apps": [],
+        "details": [
+            {
+                "appID": "4BUAJ4C92S.brussels.pay.wallet2",
+                "components": [
+                    {
+                        "/": "",
+                        "comment": "Matches the root URL"
+                    },
+                    {
+                        "#": "/*",
+                        "comment": "Matches any URL with hashes"
+                    },
+                    {
+                        "?": "*",
+                        "comment": "Matches any URL with query parameters"
+                    }
+                ]
+            }
+        ]
+    }
+}
