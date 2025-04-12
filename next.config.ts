@@ -2,6 +2,28 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  async headers() {
+    return [
+      {
+        source: "/.well-known/apple-app-site-association",
+        headers: [
+          {
+            key: "content-type",
+            value: "application/json; charset=utf-8",
+          },
+        ],
+      },
+      {
+        source: "/.well-known/apple-developer-merchantid-domain-association",
+        headers: [
+          {
+            key: "content-type",
+            value: "application/json; charset=utf-8",
+          },
+        ],
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {
