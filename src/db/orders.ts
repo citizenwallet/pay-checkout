@@ -88,6 +88,7 @@ export const completeAppOrder = async (
     .from("orders")
     .update({ status: "paid", due: 0, account, tx_hash: txHash })
     .eq("id", orderId)
+    .select()
     .single();
 };
 
