@@ -27,6 +27,7 @@ import { useState } from "react";
 import { useStripe } from "@stripe/react-stripe-js";
 import { getClientSecretAction } from "@/app/actions/paymentProcess";
 import { Separator } from "@/components/ui/separator";
+import Image from "next/image";
 
 interface Props {
   accountOrUsername: string;
@@ -48,7 +49,6 @@ export default function Component({
   closeUrl,
   tax,
 }: Props) {
-  console.log("closeUrl", closeUrl);
   const successUrl: string | null =
     closeUrl ||
     `${
@@ -61,6 +61,7 @@ export default function Component({
   const router = useRouter();
 
   const [cancelled, setCancelled] = useState(false);
+  const [showAppStoreLinks, setShowAppStoreLinks] = useState<boolean>(false);
 
   const [cartItems, setCartItems] = useState<Order["items"]>(
     order?.items ?? []
@@ -117,6 +118,35 @@ export default function Component({
     if (!customOrderId) {
       router.back();
     }
+  };
+
+  const handleBrusselsPay = async () => {
+    if (!order) return;
+
+    try {
+      setTimeout(() => {
+        setShowAppStoreLinks(true);
+      }, 250);
+      console.log(
+        "brusselspay://checkout.pay.brussels/" +
+          accountOrUsername +
+          "?orderId=" +
+          order.id
+      );
+      router.replace(
+        `brusselspay://checkout.pay.brussels/${accountOrUsername}?orderId=${order.id}`
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleAppStore = () => {
+    window.open(process.env.NEXT_PUBLIC_APP_STORE_URL, "_blank");
+  };
+
+  const handlePlayStore = () => {
+    window.open(process.env.NEXT_PUBLIC_PLAY_STORE_URL, "_blank");
   };
 
   const handleBancontact = async () => {
@@ -281,20 +311,58 @@ export default function Component({
           </div>
           <Separator className="my-4" />
 
-          {/* <Button
-            onClick={handleBancontact}
+          <Button
+            onClick={handleBrusselsPay}
             className="flex items-center gap-2 w-full h-14 text-white"
           >
             <span className="font-medium text-lg">Pay with</span>
             <CurrencyLogo logo={currencyLogo} size={24} />
             <span className="font-medium text-lg">Brussels Pay</span>
           </Button>
+          <div className="flex justify-center items-center gap-2 mt-2">
+            <p className="text-sm py-2 px-4 bg-green-300 text-green-900 rounded-full">
+              100% goes to vendor
+            </p>
+          </div>
+          {showAppStoreLinks && (
+            <div className="flex justify-center items-center gap-2 my-4">
+              <p className="text-lg">Install the App</p>
+            </div>
+          )}
+          {showAppStoreLinks && (
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={handleAppStore}
+                className="flex justify-center items-center gap-2 w-full h-14 bg-slate-900 hover:bg-slate-700 text-white"
+              >
+                <span className="font-medium text-lg">iOS</span>
+                <Image
+                  src="/app_store.svg"
+                  alt="App Store"
+                  width={24}
+                  height={24}
+                />
+              </Button>
+              <Button
+                onClick={handlePlayStore}
+                className="flex justify-center items-center gap-2 w-full h-14 bg-slate-900 hover:bg-slate-700 text-white"
+              >
+                <span className="font-medium text-lg">Android</span>
+                <Image
+                  src="/play_store.svg"
+                  alt="Google Play"
+                  width={24}
+                  height={24}
+                />
+              </Button>
+            </div>
+          )}
 
-          <Separator className="my-4" /> */}
+          <Separator className="my-4" />
 
           <Button
             onClick={handleBancontact}
-            className="flex items-center gap-2 w-full h-14 mb-2 bg-slate-900 hover:bg-slate-700 text-white "
+            className="flex items-center gap-2 w-full h-14 mb-2 bg-slate-900 hover:bg-slate-700 text-white"
           >
             <BuildingIcon className="w-5 h-5" />
             <span className="font-medium text-lg">Bancontact</span>
