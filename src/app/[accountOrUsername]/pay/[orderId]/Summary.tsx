@@ -133,8 +133,9 @@ export default function Component({
           "?orderId=" +
           order.id
       );
-      router.replace(
-        `brusselspay://checkout.pay.brussels/${accountOrUsername}?orderId=${order.id}`
+      window.open(
+        `brusselspay://checkout.pay.brussels/${accountOrUsername}?orderId=${order.id}`,
+        "_blank"
       );
     } catch (error) {
       console.error(error);
