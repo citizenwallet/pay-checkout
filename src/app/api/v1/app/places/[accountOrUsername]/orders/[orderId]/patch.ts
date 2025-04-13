@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getServiceRoleClient } from "@/db";
-import { completeAppOrder } from "@/db/orders";
+import { completeAppOrder, getOrder } from "@/db/orders";
 
 export async function PATCH(
   request: NextRequest,
@@ -60,18 +60,37 @@ export async function PATCH(
 
     const client = getServiceRoleClient();
 
-    const { data: orderData, error: orderError } = await completeAppOrder(
+    const { data: order, error: orderError } = await getOrder(
       client,
-      Number(orderId),
-      account,
-      txHash
+      Number(orderId)
     );
 
     if (orderError) {
       return NextResponse.json({ error: orderError.message }, { status: 500 });
     }
 
-    return NextResponse.json(orderData, { status: 200 });
+    if (!order) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    if (order.status !== "pending") {
+      return NextResponse.json(
+        { error: "Order is not pending" },
+        { status: 400 }
+      );
+    }
+
+    const { data: completedOrder, error: completedOrderError } =
+      await completeAppOrder(client, Number(orderId), account, txHash);
+
+    if (completedOrderError) {
+      return NextResponse.json(
+        { error: completedOrderError.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(completedOrder, { status: 200 });
   } catch (err) {
     console.error("Error in generate-order API:", err);
     return NextResponse.json(
