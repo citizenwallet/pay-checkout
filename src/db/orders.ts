@@ -78,6 +78,19 @@ export const createAppOrder = async (
     .single();
 };
 
+export const completeAppOrder = async (
+  client: SupabaseClient,
+  orderId: number,
+  account: string,
+  txHash: string
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client
+    .from("orders")
+    .update({ status: "paid", due: 0, account, tx_hash: txHash })
+    .eq("id", orderId)
+    .single();
+};
+
 export const createPartnerOrder = async (
   client: SupabaseClient,
   placeId: number,
