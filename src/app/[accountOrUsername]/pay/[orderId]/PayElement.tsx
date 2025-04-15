@@ -5,14 +5,12 @@ import {
   useElements,
   useStripe,
 } from "@stripe/react-stripe-js";
-import {
-  loadStripe,
-  StripeExpressCheckoutElementConfirmEvent,
-} from "@stripe/stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { cn } from "@/lib/utils";
 
 if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
   throw new Error("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set");
@@ -27,12 +25,17 @@ export default function PayElement({
   accountOrUsername,
   orderId,
   closeUrl,
+  showMethods,
 }: {
   total: number;
   accountOrUsername: string;
   orderId: number;
   closeUrl?: string;
+  showMethods: boolean;
 }) {
+  const [elementStatus, setElementStatus] = useState<
+    "loading" | "ready" | "unavailable"
+  >("loading");
   const [message, setMessage] = useState<string>("");
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const router = useRouter();
@@ -72,7 +75,18 @@ export default function PayElement({
   }
 
   return (
-    <div id="checkout-page" className="mb-2 min-h-12">
+    <div
+      id="checkout-page"
+      className={cn(
+        "mb-2",
+        elementStatus === "loading"
+          ? "min-h-12"
+          : elementStatus === "ready"
+          ? "min-h-12"
+          : "h-0 overflow-hidden",
+        showMethods ? "opacity-100" : "opacity-0"
+      )}
+    >
       <Elements
         stripe={stripePromise}
         options={{
@@ -89,6 +103,7 @@ export default function PayElement({
           closeUrl={closeUrl}
           setMessage={setMessage}
           router={router}
+          setElementStatus={setElementStatus}
         />
       </Elements>
       {message && <p className="text-red-500 mt-4 text-center">{message}</p>}
@@ -102,21 +117,19 @@ function CheckoutForm({
   closeUrl,
   setMessage,
   router,
+  setElementStatus,
 }: {
   accountOrUsername: string;
   orderId: number;
   closeUrl?: string;
   setMessage: (message: string) => void;
   router: AppRouterInstance;
+  setElementStatus: (status: "loading" | "ready" | "unavailable") => void;
 }) {
   const elements = useElements();
   const stripe = useStripe();
 
-  const handleExpressCheckoutConfirm = async (
-    event: StripeExpressCheckoutElementConfirmEvent
-  ) => {
-    console.log("event", event);
-
+  const handleExpressCheckoutConfirm = async () => {
     if (!stripe || !elements) {
       setMessage("Stripe has not been initialized.");
       return;
@@ -152,12 +165,26 @@ function CheckoutForm({
     }
   };
 
+  const handleExpressCheckoutReady = () => {
+    setTimeout(() => {
+      // check if there are buttons inside the element
+      const element = document.getElementById("express-checkout-element");
+
+      // get height of element
+      const height = element?.clientHeight ?? 0;
+
+      setElementStatus(height >= 50 ? "ready" : "unavailable");
+    }, 1000);
+  };
+
   return (
     <ExpressCheckoutElement
+      id="express-checkout-element"
       options={{
         buttonHeight: 50,
       }}
       onConfirm={handleExpressCheckoutConfirm}
+      onReady={handleExpressCheckoutReady}
     />
   );
 }
