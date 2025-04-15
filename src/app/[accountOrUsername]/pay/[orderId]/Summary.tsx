@@ -23,11 +23,12 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import PayElement from "./PayElement";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useStripe } from "@stripe/react-stripe-js";
 import { getClientSecretAction } from "@/app/actions/paymentProcess";
 import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
 
 interface Props {
   accountOrUsername: string;
@@ -60,12 +61,19 @@ export default function Component({
   const stripe = useStripe();
   const router = useRouter();
 
+  const [showMethods, setShowMethods] = useState<boolean>(false);
   const [cancelled, setCancelled] = useState(false);
   const [showAppStoreLinks, setShowAppStoreLinks] = useState<boolean>(false);
 
   const [cartItems, setCartItems] = useState<Order["items"]>(
     order?.items ?? []
   );
+
+  useEffect(() => {
+    setTimeout(() => {
+      setShowMethods(true);
+    }, 1000);
+  }, []);
 
   const updateQuantity = (id: number, change: number) => {
     setCartItems(
@@ -124,19 +132,26 @@ export default function Component({
     if (!order) return;
 
     try {
+      const appScheme = process.env.NEXT_PUBLIC_APP_SCHEME;
+      if (!appScheme) {
+        throw new Error("No app scheme");
+      }
+
+      let hasOpened = false;
+
       setTimeout(() => {
-        setShowAppStoreLinks(true);
+        if (!hasOpened) {
+          setShowAppStoreLinks(true);
+          return;
+        }
       }, 250);
-      console.log(
-        "brusselspay://checkout.pay.brussels/" +
-          accountOrUsername +
-          "?orderId=" +
-          order.id
-      );
+
       window.open(
-        `brusselspay://checkout.pay.brussels/${accountOrUsername}?orderId=${order.id}`,
+        `${appScheme}checkout.pay.brussels/${accountOrUsername}?orderId=${order.id}`,
         "_blank"
       );
+
+      hasOpened = true;
     } catch (error) {
       console.error(error);
     }
@@ -361,28 +376,42 @@ export default function Component({
 
           <Separator className="my-4" />
 
-          <Button
-            onClick={handleBancontact}
-            className="flex items-center gap-2 w-full h-14 mb-2 bg-slate-900 hover:bg-slate-700 text-white"
+          <div
+            className={cn(
+              "flex flex-col gap-2 transition-all duration-300",
+              showMethods ? "max-h-full" : "max-h-0 overflow-hidden"
+            )}
           >
-            <BuildingIcon className="w-5 h-5" />
-            <span className="font-medium text-lg">Bancontact</span>
-          </Button>
+            <Button
+              onClick={handleBancontact}
+              className={cn(
+                "flex items-center gap-2 w-full h-14 mb-2 bg-slate-900 hover:bg-slate-700 text-white transition-opacity duration-300",
+                showMethods ? "opacity-100" : "opacity-0"
+              )}
+            >
+              <BuildingIcon className="w-5 h-5" />
+              <span className="font-medium text-lg">Bancontact</span>
+            </Button>
 
-          <PayElement
-            total={total}
-            accountOrUsername={accountOrUsername}
-            orderId={order?.id ?? 0}
-            closeUrl={closeUrl}
-          />
+            <PayElement
+              total={total}
+              accountOrUsername={accountOrUsername}
+              orderId={order?.id ?? 0}
+              closeUrl={closeUrl}
+              showMethods={showMethods}
+            />
 
-          <Button
-            onClick={handleCreditCard}
-            className="flex items-center gap-2 w-full h-14 bg-slate-900 hover:bg-slate-700 text-white"
-          >
-            <CreditCard className="w-5 h-5" />
-            <span className="font-medium text-lg">Credit Card</span>
-          </Button>
+            <Button
+              onClick={handleCreditCard}
+              className={cn(
+                "flex items-center gap-2 w-full h-14 bg-slate-900 hover:bg-slate-700 text-white transition-opacity duration-300",
+                showMethods ? "opacity-100" : "opacity-0"
+              )}
+            >
+              <CreditCard className="w-5 h-5" />
+              <span className="font-medium text-lg">Credit Card</span>
+            </Button>
+          </div>
 
           <Separator className="my-4" />
 
