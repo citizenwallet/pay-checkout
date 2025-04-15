@@ -140,6 +140,11 @@ export const chargeRefunded = async (stripe: Stripe, event: Stripe.Event) => {
       console.error("Error updating order", updateError);
       return NextResponse.json({ received: true });
     }
+
+    if (order.status === "needs_minting") {
+      console.error("Order was already not minted, so no need to burn", order);
+      return NextResponse.json({ received: true });
+    }
   }
 
   if (

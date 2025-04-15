@@ -64,6 +64,11 @@ export const transactionReversalCreated = async (data: VivaTransactionData) => {
     return NextResponse.json({ received: true });
   }
 
+  if (order.status === "needs_minting") {
+    console.error("Order was already not minted, so no need to burn", order);
+    return NextResponse.json({ received: true });
+  }
+
   if (
     !process.env.FAUCET_PRIVATE_KEY ||
     process.env.FAUCET_PRIVATE_KEY === "DEV"
