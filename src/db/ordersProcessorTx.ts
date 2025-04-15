@@ -1,4 +1,4 @@
-import { SupabaseClient } from "@supabase/supabase-js";
+import { PostgrestSingleResponse, SupabaseClient } from "@supabase/supabase-js";
 import "server-only";
 
 export type ProcessorTxType = "viva" | "stripe";
@@ -14,7 +14,7 @@ export const createOrderProcessorTx = async (
   client: SupabaseClient,
   type: ProcessorTxType,
   processor_tx_id: string
-) => {
+): Promise<PostgrestSingleResponse<OrderProcessorTx | null>> => {
   return client
     .from("orders_processor_tx")
     .insert({
@@ -29,7 +29,7 @@ export const getOrderProcessorTx = async (
   client: SupabaseClient,
   type: ProcessorTxType,
   processor_tx_id: string
-) => {
+): Promise<PostgrestSingleResponse<OrderProcessorTx | null>> => {
   return client
     .from("orders_processor_tx")
     .select()

@@ -6,7 +6,13 @@ import {
   SupabaseClient,
 } from "@supabase/supabase-js";
 
-export type OrderStatus = "pending" | "paid" | "cancelled" | "needs_minting";
+export type OrderStatus =
+  | "pending"
+  | "paid"
+  | "cancelled"
+  | "needs_minting"
+  | "needs_burning"
+  | "refunded";
 
 export interface Order {
   id: number;
@@ -203,6 +209,17 @@ export const getTerminalOrderByTransactionId = async (
     .eq("description", `Order: ${transactionId}`);
 };
 
+export const getOrderByProcessorTxId = async (
+  client: SupabaseClient,
+  processorTxId: number
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client
+    .from("orders")
+    .select()
+    .eq("processor_tx", processorTxId)
+    .single();
+};
+
 export const completeOrder = async (
   client: SupabaseClient,
   orderId: number
@@ -210,6 +227,17 @@ export const completeOrder = async (
   return client
     .from("orders")
     .update({ status: "paid", due: 0, completed_at: new Date().toISOString() })
+    .eq("id", orderId)
+    .single();
+};
+
+export const refundOrder = async (
+  client: SupabaseClient,
+  orderId: number
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client
+    .from("orders")
+    .update({ status: "refunded" })
     .eq("id", orderId)
     .single();
 };
@@ -240,6 +268,17 @@ export const orderNeedsMinting = async (
   return client
     .from("orders")
     .update({ status: "needs_minting", tx_hash: null })
+    .eq("id", orderId)
+    .single();
+};
+
+export const orderNeedsBurning = async (
+  client: SupabaseClient,
+  orderId: number
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client
+    .from("orders")
+    .update({ status: "needs_burning" })
     .eq("id", orderId)
     .single();
 };

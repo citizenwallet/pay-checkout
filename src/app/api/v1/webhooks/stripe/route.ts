@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import { checkoutSessionCompleted } from "./checkoutSessionCompleted";
 import { chargeUpdated } from "./chargeUpdated";
 import { paymentIntentSucceeded } from "./paymentIntentSucceeded";
+import { chargeRefunded } from "./chargeRefunded";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -42,6 +43,8 @@ export async function POST(request: Request) {
       return paymentIntentSucceeded(event);
     case "charge.updated":
       return chargeUpdated(stripe, event);
+    case "charge.refunded":
+      return chargeRefunded(stripe, event);
   }
 
   return NextResponse.json({ received: true });
