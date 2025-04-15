@@ -135,19 +135,9 @@ export const chargeRefunded = async (stripe: Stripe, event: Stripe.Event) => {
     }
 
     // update the order to refunded
-    const { data: updatedOrder, error: updateError } = await refundOrder(
-      client,
-      orderId
-    );
+    const { error: updateError } = await refundOrder(client, orderId);
     if (updateError) {
       console.error("Error updating order", updateError);
-    }
-
-    if (updatedOrder?.status !== "refunded") {
-      console.error(
-        "Order is not refunded, something went wrong",
-        updatedOrder
-      );
       return NextResponse.json({ received: true });
     }
   }

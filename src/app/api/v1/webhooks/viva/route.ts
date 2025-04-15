@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 import {
   VIVA_EVENT_TYPES,
   VivaEvent,
+  VivaTransactionData,
   VivaTransactionPriceCalculated,
 } from "@/viva";
 import { getMessagesConfigToken } from "@/viva/messages";
 import { transactionPriceCalculated } from "./transactionPriceCalculated";
+import { transactionReversalCreated } from "./transactionReversalCreated";
 
 function isAllowedIP(ip: string): boolean {
   const allowedIPs = [
@@ -80,6 +82,8 @@ export async function POST(request: Request) {
       return transactionPriceCalculated(
         body.EventData as VivaTransactionPriceCalculated
       );
+    case VIVA_EVENT_TYPES.TRANSACTION_PAYMENT_REVERSED:
+      return transactionReversalCreated(body.EventData as VivaTransactionData);
   }
 
   return NextResponse.json({ received: true });

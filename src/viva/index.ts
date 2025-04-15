@@ -1,6 +1,7 @@
 export const VIVA_EVENT_TYPES = {
   TRANSACTION_PAYMENT_CREATED: 1796,
   TRANSACTION_PRICE_CALCULATED: 1799,
+  TRANSACTION_PAYMENT_REVERSED: 1797,
 } as const;
 
 export interface VivaEvent<T> {
@@ -17,7 +18,7 @@ export interface VivaEvent<T> {
   MessageTypeId: number;
 }
 
-export interface VivaTransactionPaymentCreated {
+export interface VivaTransactionData {
   Moto: boolean;
   BinId: number;
   IsDcc: boolean;
@@ -74,7 +75,7 @@ export interface VivaTransactionPaymentCreated {
   ConversionRate: number;
   CurrentInstallment: number;
   OriginalAmount: number;
-  Tags: unknown[];
+  Tags: string[];
   BillId: string | null;
   ConnectedAccountId: string | null;
   ResellerSourceCode: string | null;
@@ -94,9 +95,9 @@ export interface VivaTransactionPaymentCreated {
   ResponseEventId: string | null;
   ElectronicCommerceIndicator: string | null;
   OrderServiceId: number;
-  ApplicationIdentifierTerminal: string;
+  ApplicationIdentifierTerminal: string | null;
   IntegrationId: string | null;
-  DigitalWalletId: string | null;
+  DigitalWalletId: number | null;
   CardProductCategoryId: number;
   CardProductAccountTypeId: number;
   DccSessionId: string | null;
