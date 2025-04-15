@@ -31,6 +31,7 @@ export interface Order {
   tx_hash: string | null;
   type: "web" | "app" | "terminal" | null;
   account: string | null;
+  processor_tx: number | null;
 }
 
 export const createOrder = async (

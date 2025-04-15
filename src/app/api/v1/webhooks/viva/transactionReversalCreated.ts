@@ -15,17 +15,19 @@ import Config from "@/cw/community.json";
 import { getOrderProcessorTx } from "@/db/ordersProcessorTx";
 
 export const transactionReversalCreated = async (data: VivaTransactionData) => {
-  const { TransactionId, Amount } = data;
+  const { ParentId, TransactionId, Amount } = data;
+
+  const transactionId = ParentId || TransactionId;
 
   const client = getServiceRoleClient();
 
   const { data: processorTx, error } = await getOrderProcessorTx(
     client,
     "viva",
-    TransactionId
+    transactionId
   );
   if (!processorTx || error) {
-    console.error("Processor tx not found", TransactionId);
+    console.error("Processor tx not found", transactionId);
     return NextResponse.json({ received: true });
   }
 
