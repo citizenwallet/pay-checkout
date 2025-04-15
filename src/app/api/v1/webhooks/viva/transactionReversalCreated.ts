@@ -15,7 +15,7 @@ import Config from "@/cw/community.json";
 import { getOrderProcessorTx } from "@/db/ordersProcessorTx";
 
 export const transactionReversalCreated = async (data: VivaTransactionData) => {
-  const { ParentId, TransactionId, Amount } = data;
+  const { ParentId, TransactionId } = data;
 
   const transactionId = ParentId || TransactionId;
 
@@ -50,10 +50,6 @@ export const transactionReversalCreated = async (data: VivaTransactionData) => {
     order.place_id
   );
 
-  const amount = Number((Math.abs(Amount) * 100).toFixed(0));
-
-  console.log("amount", amount);
-
   if (placeError || !place) {
     console.error("Error getting place by terminal id", placeError);
     return NextResponse.json({ received: true });
@@ -83,7 +79,7 @@ export const transactionReversalCreated = async (data: VivaTransactionData) => {
 
   const community = new CommunityConfig(Config);
 
-  let toBurn = amount;
+  let toBurn = order.total - order.fees;
   if (toBurn < 0) {
     toBurn = 0;
   }
