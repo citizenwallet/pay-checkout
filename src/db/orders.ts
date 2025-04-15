@@ -243,6 +243,17 @@ export const refundOrder = async (
     .single();
 };
 
+export const refundOrderAndFees = async (
+  client: SupabaseClient,
+  orderId: number
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client
+    .from("orders")
+    .update({ status: "refunded", fees: 0 })
+    .eq("id", orderId)
+    .single();
+};
+
 export const updateOrderFees = async (
   client: SupabaseClient,
   orderId: number,

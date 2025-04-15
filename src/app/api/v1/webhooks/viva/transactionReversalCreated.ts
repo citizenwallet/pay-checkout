@@ -2,6 +2,7 @@ import {
   getOrderByProcessorTxId,
   orderNeedsBurning,
   refundOrder,
+  refundOrderAndFees,
 } from "@/db/orders";
 import { getServiceRoleClient } from "@/db";
 import { BundlerService } from "@citizenwallet/sdk";
@@ -15,7 +16,7 @@ import Config from "@/cw/community.json";
 import { getOrderProcessorTx } from "@/db/ordersProcessorTx";
 
 export const transactionReversalCreated = async (data: VivaTransactionData) => {
-  const { ParentId, TransactionId } = data;
+  const { ParentId, TransactionId, Amount } = data;
 
   const transactionId = ParentId || TransactionId;
 
@@ -55,11 +56,28 @@ export const transactionReversalCreated = async (data: VivaTransactionData) => {
     return NextResponse.json({ received: true });
   }
 
-  // update the order to refunded
-  const { error: updateError } = await refundOrder(client, order.id);
-  if (updateError) {
-    console.error("Error updating order", updateError);
-    return NextResponse.json({ received: true });
+  const amount = Number((Math.abs(Amount) * 100).toFixed(0));
+
+  let toBurn = order.total - order.fees;
+  if (toBurn < 0) {
+    toBurn = 0;
+  }
+
+  const fullRefund = amount === order.total;
+  if (fullRefund) {
+    // update the order to refunded
+    const { error: updateError } = await refundOrderAndFees(client, order.id);
+    if (updateError) {
+      console.error("Error updating order", updateError);
+      return NextResponse.json({ received: true });
+    }
+  } else {
+    // update the order to refunded
+    const { error: updateError } = await refundOrder(client, order.id);
+    if (updateError) {
+      console.error("Error updating order", updateError);
+      return NextResponse.json({ received: true });
+    }
   }
 
   if (order.status === "needs_minting") {
@@ -78,11 +96,6 @@ export const transactionReversalCreated = async (data: VivaTransactionData) => {
   const signer = new Wallet(process.env.FAUCET_PRIVATE_KEY!);
 
   const community = new CommunityConfig(Config);
-
-  let toBurn = order.total - order.fees;
-  if (toBurn < 0) {
-    toBurn = 0;
-  }
 
   const senderAccount = await getAccountAddress(community, signer.address);
   if (!senderAccount) {
