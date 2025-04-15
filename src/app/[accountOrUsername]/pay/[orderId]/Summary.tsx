@@ -39,6 +39,7 @@ interface Props {
   customOrderId?: string;
   closeUrl?: string;
   tax: "yes" | "no";
+  isTopUp?: boolean;
 }
 
 export default function Component({
@@ -49,6 +50,7 @@ export default function Component({
   customOrderId,
   closeUrl,
   tax,
+  isTopUp,
 }: Props) {
   const successUrl: string | null =
     closeUrl ||
@@ -325,21 +327,25 @@ export default function Component({
               {formatCurrencyNumber(total)}
             </span>
           </div>
-          <Separator className="my-4" />
+          {!isTopUp && <Separator className="my-4" />}
 
-          <Button
-            onClick={handleBrusselsPay}
-            className="flex items-center gap-2 w-full h-14 text-white"
-          >
-            <span className="font-medium text-lg">Pay with</span>
-            <CurrencyLogo logo={currencyLogo} size={24} />
-            <span className="font-medium text-lg">Brussels Pay</span>
-          </Button>
-          <div className="flex justify-center items-center gap-2 mt-2">
-            <p className="text-sm py-2 px-4 bg-green-300 text-green-900 rounded-full">
-              100% goes to vendor
-            </p>
-          </div>
+          {!isTopUp && (
+            <Button
+              onClick={handleBrusselsPay}
+              className="flex items-center gap-2 w-full h-14 text-white"
+            >
+              <span className="font-medium text-lg">Pay with</span>
+              <CurrencyLogo logo={currencyLogo} size={24} />
+              <span className="font-medium text-lg">Brussels Pay</span>
+            </Button>
+          )}
+          {!isTopUp && (
+            <div className="flex justify-center items-center gap-2 mt-2">
+              <p className="text-sm py-2 px-4 bg-green-300 text-green-900 rounded-full">
+                100% goes to vendor
+              </p>
+            </div>
+          )}
           {showAppStoreLinks && (
             <div className="flex justify-center items-center gap-2 my-4">
               <p className="text-lg">Install the App</p>

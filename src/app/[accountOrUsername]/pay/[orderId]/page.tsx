@@ -17,6 +17,7 @@ import {
 import { CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getPlace } from "@/lib/place";
 
 export default async function Page({
   params,
@@ -129,6 +130,11 @@ async function AsyncPage({
 
   const community = new CommunityConfig(Config);
 
+  const place = await getPlace(client, accountOrUsername);
+  if (!place.place) {
+    return <div>Error: Place not found</div>;
+  }
+
   return (
     <Summary
       accountOrUsername={accountOrUsername}
@@ -142,6 +148,7 @@ async function AsyncPage({
       customOrderId={customOrderId}
       closeUrl={close}
       tax={tax}
+      isTopUp={place.place?.display === "topup"}
     />
   );
 }
