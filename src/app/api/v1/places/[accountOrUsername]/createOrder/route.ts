@@ -2,8 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { getServiceRoleClient } from "@/db";
 import { createOrder } from "@/db/orders";
 import { getItemsForPlace } from "@/db/items";
-import { verifyConnectedHeaders } from "../../../pos/[account]/orders/route";
-import { CommunityConfig } from "@citizenwallet/sdk";
+import { CommunityConfig, generateConnectionMessage, verifyConnectedHeaders } from "@citizenwallet/sdk";
 import Config from "@/cw/community.json";
 
 /**
@@ -51,43 +50,28 @@ import Config from "@/cw/community.json";
 
 export async function POST(request: NextRequest) {
   let verifiedAccount: string | null = null;
-  let config: CommunityConfig;
+  // let config: CommunityConfig;
 
   try {
-    config = await new CommunityConfig(Config);
+    const community = new CommunityConfig(Config);
 
-    verifiedAccount = await verifyConnectedHeaders(config, request.headers);
+    console.log("community", community);
 
-  } catch (error: any) {
-    console.error("Signature verification error:", error);
+    console.log("request.headers", request.headers);
 
-    let status = 401;
-    let message = "Authentication failed.";
+    verifiedAccount = await verifyConnectedHeaders(community, request.headers);
 
-    if (error.message.includes("missing")) {
-      status = 400;
-      message = `Missing required signature headers: ${error.message}`;
-    } else if (error.message.includes("expired")) {
-      status = 401;
-      message = "Signature expired.";
-    } else if (error.message.includes("Invalid signature")) {
-      status = 401;
-      message = "Invalid signature or account ownership verification failed.";
-    } else {
-      message = error.message || "An unknown authentication error occurred.";
+    if (!verifiedAccount) {
+      return NextResponse.json({ error: "Account not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ error: message }, { status });
-  }
+    // } catch (error: any) {
+    //   console.error("Signature verification error:", error);
 
-  if (!verifiedAccount) {
-    return NextResponse.json(
-      { error: "Account verification failed." },
-      { status: 401 }
-    );
-  }
+    //   return NextResponse.json({ error: "Signature verification error:" }, { status: 412 });
+    // }
 
-  try {
+    // try {
     const body = await request.json();
     const { placeId, items, description, total, account, type } = body;
 
@@ -171,337 +155,6 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-// export async function POST(request: NextRequest) {
-//   try {
-//     const body = await request.json();
-//     const { placeId, items, description, total, account, type } = body;
-
-//     const sigAuthAccount = request.headers.get("x-sigauth-account");
-//     const sigAuthExpiry = request.headers.get("x-sigauth-expiry");
-//     const sigAuthSignature = request.headers.get("x-sigauth-signature");
-
-//     try {
-//       if (!sigAuthAccount || !sigAuthExpiry || !sigAuthSignature) {
-//         return NextResponse.json(
-//           { error: "Missing signature headers" },
-//           { status: 401 }
-//         );
-//       }
-
-//       const expiryTime = new Date(sigAuthExpiry).getTime();
-//       const currentTime = new Date().getTime();
-
-//       if (currentTime > expiryTime) {
-//         return NextResponse.json(
-//           { error: "Signature expired" },
-//           { status: 401 }
-//         );
-//       }
-
-//       if (account && account.toLowerCase() !== sigAuthAccount.toLowerCase()) {
-//         return NextResponse.json(
-//           { error: "Account mismatch" },
-//           { status: 401 }
-//         );
-//       }
-//     } catch (error) {
-//       console.error("Account verification error:", error);
-//       return NextResponse.json(
-//         { error: "Account verification failed" },
-//         { status: 401 }
-//       );
-//     }
-
-//     if (
-//       !isValidRequestData(placeId, items, description, total, account, type)
-//     ) {
-//       return NextResponse.json(
-//         { error: "Invalid request data" },
-//         { status: 400 }
-//       );
-//     }
-
-//     if (!isValidItemsFormat(items)) {
-//       return NextResponse.json(
-//         { error: "Invalid item format" },
-//         { status: 400 }
-//       );
-//     }
-
-//     const client = getServiceRoleClient();
-
-//     const { data: availableItems, error } = await getItemsForPlace(
-//       client,
-//       placeId
-//     );
-//     if (error) {
-//       return NextResponse.json({ error: error.message }, { status: 500 });
-//     }
-
-//     const availableItemIds = new Set(availableItems.map((item) => item.id));
-//     const invalidItem = items.find(
-//       (item: { id: number }) => !availableItemIds.has(item.id)
-//     );
-//     if (invalidItem) {
-//       return NextResponse.json(
-//         { error: "Invalid item ID: ${invalidItem.id}" },
-//         { status: 400 }
-//       );
-//     }
-
-//     const { data: orderData, error: orderError } = await createOrder(
-//       client,
-//       placeId,
-//       total,
-//       items,
-//       description,
-//       account,
-//       type
-//     );
-
-//     if (orderError) {
-//       return NextResponse.json({ error: orderError.message }, { status: 500 });
-//     }
-
-//     console.log("orderData", orderData);
-
-//     return NextResponse.json({ orderId: orderData.id }, { status: 200 });
-//   } catch (err) {
-//     console.error("Error in generate-order API:", err);
-//     return NextResponse.json(
-//       { error: "Internal Server Error" },
-//       { status: 500 }
-//     );
-//   }
-// }
-
-// export async function POST(request: NextRequest) {
-//     try {
-//       const body = await request.json();
-//       const { placeId, items, description, total, account, type } = body;
-
-//       const headers = new Headers({
-//         "x-sigauth-account": request.headers.get("x-sigauth-account") || "",
-//         "x-sigauth-expiry": request.headers.get("x-sigauth-expiry") || "",
-//         "x-sigauth-signature": request.headers.get("x-sigauth-signature") || "",
-//         "x-sigauth-redirect": request.headers.get("x-sigauth-redirect") || "",
-//       });
-//   console.log("BE 1");
-//       console.log(headers);
-
-//       let verifiedAccount: string | null = null;
-//       try {
-//         console.log("BE 1.1");
-//         const communityConfig = new CommunityConfig(Config);
-//         console.log("BE 1.2");
-//         verifiedAccount = await verifyConnectedHeaders(
-//           communityConfig,
-//           headers as any
-//         );
-//         console.log("BE 2");
-//         console.log("verifiedAccount", verifiedAccount);
-//         if (!verifiedAccount) {
-//           console.log("BE 3");
-//           console.log("ERROR");
-//           throw new Error("Signature verification failed.");
-//         }
-
-//         if (!account || account.toLowerCase() !== verifiedAccount.toLowerCase()) {
-//           console.warn(
-//             `Account mismatch: Body account '${account}' != Verified header account '${verifiedAccount}'`
-//           );
-//           return NextResponse.json(
-//             { error: "Account mismatch between body and signature" },
-//             { status: 401 }
-//           );
-//         }
-
-//         console.log(`Signature verified for account: ${verifiedAccount}`);
-
-//       } catch (error: any) {
-
-//         console.error("Signature verification error:", error.message);
-
-//         return NextResponse.json(
-//           { error: `Authentication failed: ${error.message}` },
-//           { status: 401 }
-//         );
-//       }
-
-//       if (
-//         !isValidRequestData(
-//           placeId,
-//           items,
-//           description,
-//           total,
-//           verifiedAccount,
-//           type
-//         )
-//       ) {
-//         return NextResponse.json(
-//           { error: "Invalid request data" },
-//           { status: 400 }
-//         );
-//       }
-
-//       if (!isValidItemsFormat(items)) {
-//         return NextResponse.json(
-//           { error: "Invalid item format" },
-//           { status: 400 }
-//         );
-//       }
-
-//       const client = getServiceRoleClient();
-
-//       const { data: availableItems, error } = await getItemsForPlace(
-//         client,
-//         placeId
-//       );
-//       if (error) {
-//         return NextResponse.json({ error: error.message }, { status: 500 });
-//       }
-
-//       const availableItemIds = new Set(availableItems.map((item) => item.id));
-//       const invalidItem = items.find(
-//         (item: { id: number }) => !availableItemIds.has(item.id)
-//       );
-//       if (invalidItem) {
-//         return NextResponse.json(
-//           { error: `Invalid item ID: ${invalidItem.id}` },
-//           { status: 400 }
-//         );
-//       }
-
-//       const { data: orderData, error: orderError } = await createOrder(
-//         client,
-//         placeId,
-//         total,
-//         items,
-//         description,
-//         verifiedAccount,
-//         type
-//       );
-
-//       if (orderError) {
-//         return NextResponse.json({ error: orderError.message }, { status: 500 });
-//       }
-
-//       console.log("orderData", orderData);
-
-//       return NextResponse.json({ orderId: orderData.id }, { status: 200 });
-//     } catch (err: any) {
-//       console.error("Error in generate-order API:", err);
-//       return NextResponse.json(
-//         { error: "Internal Server Error" },
-//         { status: 500 }
-//       );
-//     }
-//   }
-
-// export async function POST(request: NextRequest) {
-//   try {
-//     const body = await request.json();
-//     const { placeId, items, description, total, account, type } = body;
-
-//     const sigAuthAccount = request.headers.get("x-sigauth-account");
-//     const sigAuthExpiry = request.headers.get("x-sigauth-expiry");
-//     const sigAuthSignature = request.headers.get("x-sigauth-signature");
-
-//     try {
-//       if (!sigAuthAccount || !sigAuthExpiry || !sigAuthSignature) {
-//         return NextResponse.json(
-//           { error: "Missing signature headers" },
-//           { status: 401 }
-//         );
-//       }
-
-//       const expiryTime = new Date(sigAuthExpiry).getTime();
-//       const currentTime = new Date().getTime();
-
-//       if (currentTime > expiryTime) {
-//         return NextResponse.json(
-//           { error: "Signature expired" },
-//           { status: 401 }
-//         );
-//       }
-
-//       if (account && account.toLowerCase() !== sigAuthAccount.toLowerCase()) {
-//         return NextResponse.json(
-//           { error: "Account mismatch" },
-//           { status: 401 }
-//         );
-//       }
-//     } catch (error) {
-//       console.error("Account verification error:", error);
-//       return NextResponse.json(
-//         { error: "Account verification failed" },
-//         { status: 401 }
-//       );
-//     }
-
-//     if (
-//       !isValidRequestData(placeId, items, description, total, account, type)
-//     ) {
-//       return NextResponse.json(
-//         { error: "Invalid request data" },
-//         { status: 400 }
-//       );
-//     }
-
-//     if (!isValidItemsFormat(items)) {
-//       return NextResponse.json(
-//         { error: "Invalid item format" },
-//         { status: 400 }
-//       );
-//     }
-
-//     const client = getServiceRoleClient();
-
-//     const { data: availableItems, error } = await getItemsForPlace(
-//       client,
-//       placeId
-//     );
-//     if (error) {
-//       return NextResponse.json({ error: error.message }, { status: 500 });
-//     }
-
-//     const availableItemIds = new Set(availableItems.map((item) => item.id));
-//     const invalidItem = items.find(
-//       (item: { id: number }) => !availableItemIds.has(item.id)
-//     );
-//     if (invalidItem) {
-//       return NextResponse.json(
-//         { error: "Invalid item ID: ${invalidItem.id}" },
-//         { status: 400 }
-//       );
-//     }
-
-//     const { data: orderData, error: orderError } = await createOrder(
-//       client,
-//       placeId,
-//       total,
-//       items,
-//       description,
-//       account,
-//       type
-//     );
-
-//     if (orderError) {
-//       return NextResponse.json({ error: orderError.message }, { status: 500 });
-//     }
-
-//     console.log("orderData", orderData);
-
-//     return NextResponse.json({ orderId: orderData.id }, { status: 200 });
-//   } catch (err) {
-//     console.error("Error in generate-order API:", err);
-//     return NextResponse.json(
-//       { error: "Internal Server Error" },
-//       { status: 500 }
-//     );
-//   }
-// }
 
 /**
  * Validates the request data types and format
