@@ -366,6 +366,20 @@ export const getOrdersByAccount = async (
     .range(offset, offset + limit - 1);
 };
 
+export const getOrdersByStatus = async (
+  client: SupabaseClient,
+  status: OrderStatus,
+  limit: number = 10,
+  offset: number = 0
+): Promise<PostgrestResponse<Order>> => {
+  return client
+    .from("orders")
+    .select()
+    .eq("status", status)
+    .order("created_at", { ascending: true })
+    .range(offset, offset + limit - 1);
+};
+
 export const deleteOrder = async (
   client: SupabaseClient,
   orderId: number
