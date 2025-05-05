@@ -3,6 +3,9 @@ import { getServiceRoleClient } from "@/db";
 import { createAppOrder } from "@/db/orders";
 import { getItemsForPlace } from "@/db/items";
 import { getPlaceId } from "@/lib/place";
+import { verifyConnectedHeaders } from "@citizenwallet/sdk";
+import { CommunityConfig } from "@citizenwallet/sdk";
+import Config from "@/cw/community.json";
 
 export async function POST(
   request: NextRequest,
@@ -15,29 +18,19 @@ export async function POST(
     const body = await request.json();
     const { items = [], description, total, account, txHash } = body;
 
-    const sigAuthAccount = request.headers.get("x-sigauth-account");
-    const sigAuthExpiry = request.headers.get("x-sigauth-expiry");
-    const sigAuthSignature = request.headers.get("x-sigauth-signature");
-
     try {
-      if (!sigAuthAccount || !sigAuthExpiry || !sigAuthSignature) {
-        return NextResponse.json(
-          { error: "Missing signature headers" },
-          { status: 401 }
-        );
+      const community = new CommunityConfig(Config);
+
+      const verifiedAccount = await verifyConnectedHeaders(
+        community,
+        request.headers
+      );
+
+      if (!verifiedAccount) {
+        throw new Error("Invalid signature");
       }
 
-      const expiryTime = new Date(sigAuthExpiry).getTime();
-      const currentTime = new Date().getTime();
-
-      if (currentTime > expiryTime) {
-        return NextResponse.json(
-          { error: "Signature expired" },
-          { status: 401 }
-        );
-      }
-
-      if (account && account.toLowerCase() !== sigAuthAccount.toLowerCase()) {
+      if (account && account.toLowerCase() !== verifiedAccount.toLowerCase()) {
         return NextResponse.json(
           { error: "Account mismatch" },
           { status: 401 }
