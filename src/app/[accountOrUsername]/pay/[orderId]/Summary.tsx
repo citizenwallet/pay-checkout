@@ -29,6 +29,7 @@ import { getClientSecretAction } from "@/app/actions/paymentProcess";
 import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { installAppAction, openAppAction } from "./actions";
 
 interface Props {
   accountOrUsername: string;
@@ -142,6 +143,8 @@ export default function Component({
       let hasOpened = false;
 
       setTimeout(() => {
+        openAppAction(hasOpened);
+
         if (!hasOpened) {
           setShowAppStoreLinks(true);
           return;
@@ -160,10 +163,12 @@ export default function Component({
   };
 
   const handleAppStore = () => {
+    installAppAction("app-store");
     window.open(process.env.NEXT_PUBLIC_APP_STORE_URL, "_blank");
   };
 
   const handlePlayStore = () => {
+    installAppAction("play-store");
     window.open(process.env.NEXT_PUBLIC_PLAY_STORE_URL, "_blank");
   };
 
