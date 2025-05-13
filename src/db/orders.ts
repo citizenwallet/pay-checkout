@@ -41,7 +41,8 @@ export const createOrder = async (
   items: { id: number; quantity: number }[],
   description: string,
   account: string | null,
-  type: "web" | "app" | "terminal" | "pos" | null
+  type: "web" | "app" | "terminal" | "pos" | null = null,
+  posId: string | null = null
 ): Promise<PostgrestSingleResponse<Order>> => {
   return client
     .from("orders")
@@ -54,6 +55,7 @@ export const createOrder = async (
       description,
       account,
       type,
+      pos: posId,
     })
     .select()
     .single();

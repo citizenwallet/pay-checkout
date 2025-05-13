@@ -49,7 +49,7 @@ import { getItemsForPlace } from "@/db/items";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { placeId, items, description, total, account, type } = body;
+    const { placeId, items, description, total, account, posId, type } = body;
 
     const sigAuthAccount = request.headers.get("x-sigauth-account");
     const sigAuthExpiry = request.headers.get("x-sigauth-expiry");
@@ -131,7 +131,8 @@ export async function POST(request: NextRequest) {
       items,
       description,
       account,
-      type
+      type,
+      posId
     );
 
     if (orderError) {
