@@ -31,6 +31,8 @@ export interface Order {
   tx_hash: string | null;
   type: "web" | "app" | "terminal" | null;
   account: string | null;
+  payout_id: number | null;
+  pos: string | null;
   processor_tx: number | null;
 }
 
@@ -236,23 +238,37 @@ export const completeOrder = async (
 
 export const refundOrder = async (
   client: SupabaseClient,
-  orderId: number
+  orderId: number,
+  amount: number,
+  fees: number,
+  processorTxId: number | null
 ): Promise<PostgrestSingleResponse<Order>> => {
-  return client
-    .from("orders")
-    .update({ status: "refunded" })
-    .eq("id", orderId)
-    .single();
-};
+  const orderResponse = await getOrder(client, orderId);
+  const { data: order, error } = orderResponse;
+  if (error) {
+    throw new Error(error.message);
+  }
 
-export const refundOrderAndFees = async (
-  client: SupabaseClient,
-  orderId: number
-): Promise<PostgrestSingleResponse<Order>> => {
+  if (order.status === "refunded") {
+    return orderResponse;
+  }
+
   return client
     .from("orders")
-    .update({ status: "refunded", fees: 0 })
-    .eq("id", orderId)
+    .insert({
+      place_id: order.place_id,
+      items: order.items,
+      total: amount,
+      fees,
+      due: 0,
+      status: "refunded",
+      description: order.description,
+      type: order.type,
+      payout_id: order.payout_id,
+      pos: order.pos,
+      processor_tx: processorTxId,
+    })
+    .select()
     .single();
 };
 

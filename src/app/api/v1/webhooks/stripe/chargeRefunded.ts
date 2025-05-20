@@ -1,5 +1,6 @@
 import { getServiceRoleClient } from "@/db";
 import {
+  attachTxHashToOrder,
   getOrder,
   getOrderByProcessorTxId,
   orderNeedsBurning,
@@ -17,7 +18,10 @@ import Config from "@/cw/community.json";
 import { formatCurrencyNumber } from "@/lib/currency";
 import { getItemsForPlace } from "@/db/items";
 import { summarizeItemsForDescription } from "@/lib/items";
-import { getOrderProcessorTx } from "@/db/ordersProcessorTx";
+import {
+  createOrderProcessorTx,
+  getOrderProcessorTx,
+} from "@/db/ordersProcessorTx";
 
 export const chargeRefunded = async (stripe: Stripe, event: Stripe.Event) => {
   const charge = event.data.object as Stripe.Charge;
@@ -72,7 +76,7 @@ export const chargeRefunded = async (stripe: Stripe, event: Stripe.Event) => {
     }
   }
 
-  let toBurn = netAmount ? parseInt(netAmount) : parseInt(amount) - fees;
+  let toBurn = netAmount ? parseInt(netAmount) : parseInt(amount) + fees;
   if (toBurn < 0) {
     toBurn = 0;
   }
@@ -107,44 +111,73 @@ export const chargeRefunded = async (stripe: Stripe, event: Stripe.Event) => {
     paymentIntentId = charge.payment_intent?.id || null;
   }
 
-  if (paymentIntentId) {
-    const { data: orderProcessorTx } = await getOrderProcessorTx(
-      client,
-      "stripe",
-      paymentIntentId
-    );
-    if (!orderProcessorTx) {
-      console.log("Order processor tx does not exist", paymentIntentId);
-      return NextResponse.json({ received: true });
-    }
+  if (!paymentIntentId) {
+    console.error("No payment intent id");
+    return NextResponse.json({ received: true });
+  }
 
-    // find the order that has this processor tx
-    const { data: order, error: orderError } = await getOrderByProcessorTxId(
-      client,
-      orderProcessorTx.id
-    );
-    if (orderError || !order) {
-      console.error("Order does not exist", orderError);
-      return NextResponse.json({ received: true });
-    }
+  const { data: orderProcessorTx } = await getOrderProcessorTx(
+    client,
+    "stripe",
+    paymentIntentId
+  );
+  if (!orderProcessorTx) {
+    console.log("Order processor tx does not exist", paymentIntentId);
+    return NextResponse.json({ received: true });
+  }
 
-    // if the order is already refunded, do nothing
-    if (order.status === "refunded") {
-      console.error("Order is already refunded", orderError);
-      return NextResponse.json({ received: true });
-    }
+  // find the order that has this processor tx
+  const { data: order, error: orderError } = await getOrderByProcessorTxId(
+    client,
+    orderProcessorTx.id
+  );
+  if (orderError || !order) {
+    console.error("Order does not exist", orderError);
+    return NextResponse.json({ received: true });
+  }
 
-    // update the order to refunded
-    const { error: updateError } = await refundOrder(client, orderId);
-    if (updateError) {
-      console.error("Error updating order", updateError);
-      return NextResponse.json({ received: true });
-    }
+  // if the order is already refunded, do nothing
+  if (order.status === "refunded") {
+    console.error("Order is already refunded", orderError);
+    return NextResponse.json({ received: true });
+  }
 
-    if (order.status === "needs_minting") {
-      console.error("Order was already not minted, so no need to burn", order);
-      return NextResponse.json({ received: true });
-    }
+  const { data: refundOrderProcessorTx } = await getOrderProcessorTx(
+    client,
+    "stripe",
+    `${paymentIntentId}-refund`
+  );
+  if (refundOrderProcessorTx) {
+    console.log("Order processor tx already exists", paymentIntentId);
+    return NextResponse.json({ received: true });
+  }
+
+  const { data: createdProcessorTx, error: processorTxError } =
+    await createOrderProcessorTx(client, "stripe", `${paymentIntentId}-refund`);
+  if (processorTxError || !createdProcessorTx) {
+    console.error("Error creating processor tx", processorTxError);
+  }
+
+  // update the order to refunded
+  const { data: refundOrderData, error: updateError } = await refundOrder(
+    client,
+    orderId,
+    parseInt(amount),
+    fees,
+    createdProcessorTx!.id
+  );
+  if (updateError) {
+    console.error("Error updating order", updateError);
+    return NextResponse.json({ received: true });
+  }
+
+  if (order.status === "needs_minting") {
+    // If the order was already not minted, we only need to burn the fees
+    toBurn = fees;
+
+    description = `Refunded ${
+      community.primaryToken.symbol
+    } ${formatCurrencyNumber(toBurn)}`;
   }
 
   if (
@@ -172,11 +205,13 @@ export const chargeRefunded = async (stripe: Stripe, event: Stripe.Event) => {
     description
   );
 
+  await attachTxHashToOrder(client, refundOrderData.id, txHash);
+
   try {
     await bundler.awaitSuccess(txHash);
   } catch (error) {
-    console.error("Error when minting", error);
-    await orderNeedsBurning(client, orderId);
+    console.error("Error when burning", error);
+    await orderNeedsBurning(client, refundOrderData.id);
   }
 
   return NextResponse.json({ received: true });
