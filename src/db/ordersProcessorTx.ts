@@ -37,3 +37,10 @@ export const getOrderProcessorTx = async (
     .eq("processor_tx_id", processor_tx_id)
     .maybeSingle();
 };
+
+export const getProcessorTx = async (
+  client: SupabaseClient,
+  id: number
+): Promise<PostgrestSingleResponse<OrderProcessorTx | null>> => {
+  return client.from("orders_processor_tx").select().eq("id", id).maybeSingle();
+};
