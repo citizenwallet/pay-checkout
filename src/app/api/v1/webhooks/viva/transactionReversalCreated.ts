@@ -1,8 +1,8 @@
 import {
+  attachTxHashToOrder,
   getOrderByProcessorTxId,
   orderNeedsBurning,
   refundOrder,
-  refundOrderAndFees,
 } from "@/db/orders";
 import { getServiceRoleClient } from "@/db";
 import { BundlerService } from "@citizenwallet/sdk";
@@ -13,10 +13,13 @@ import { CommunityConfig } from "@citizenwallet/sdk";
 import { Wallet } from "ethers";
 import { NextResponse } from "next/server";
 import Config from "@/cw/community.json";
-import { getOrderProcessorTx } from "@/db/ordersProcessorTx";
+import {
+  createOrderProcessorTx,
+  getOrderProcessorTx,
+} from "@/db/ordersProcessorTx";
 
 export const transactionReversalCreated = async (data: VivaTransactionData) => {
-  const { ParentId, TransactionId, Amount } = data;
+  const { ParentId, TransactionId, Amount, TotalFee } = data;
 
   const transactionId = ParentId || TransactionId;
 
@@ -57,32 +60,45 @@ export const transactionReversalCreated = async (data: VivaTransactionData) => {
   }
 
   const amount = Number((Math.abs(Amount) * 100).toFixed(0));
+  const fees = Number((Math.abs(TotalFee) * 100).toFixed(0));
 
-  let toBurn = order.total - order.fees;
-  if (toBurn < 0) {
-    toBurn = 0;
-  }
-
-  const fullRefund = amount === order.total;
-  if (fullRefund) {
-    // update the order to refunded
-    const { error: updateError } = await refundOrderAndFees(client, order.id);
-    if (updateError) {
-      console.error("Error updating order", updateError);
-      return NextResponse.json({ received: true });
-    }
-  } else {
-    // update the order to refunded
-    const { error: updateError } = await refundOrder(client, order.id);
-    if (updateError) {
-      console.error("Error updating order", updateError);
-      return NextResponse.json({ received: true });
-    }
-  }
-
-  if (order.status === "needs_minting") {
-    console.error("Order was already not minted, so no need to burn", order);
+  const { data: orderProcessorTx } = await getOrderProcessorTx(
+    client,
+    "viva",
+    `${TransactionId}-refund`
+  );
+  if (orderProcessorTx) {
+    console.log("Order processor tx already exists", TransactionId);
     return NextResponse.json({ received: true });
+  }
+
+  const { data: createdProcessorTx, error: processorTxError } =
+    await createOrderProcessorTx(client, "viva", `${TransactionId}-refund`);
+  if (processorTxError || !createdProcessorTx) {
+    console.error("Error creating processor tx", processorTxError);
+  }
+
+  const { data: refundOrderData, error: updateError } = await refundOrder(
+    client,
+    order.id,
+    amount,
+    fees,
+    createdProcessorTx!.id
+  );
+  if (updateError) {
+    console.error("Error updating order", updateError);
+    return NextResponse.json({ received: true });
+  }
+
+  if (!refundOrderData) {
+    console.error("Error refunding order", refundOrderData);
+    return NextResponse.json({ received: true });
+  }
+
+  let toBurn = amount + fees;
+  if (order.status === "needs_minting") {
+    // If the order was already not minted, we only need to burn the fees
+    toBurn = fees;
   }
 
   if (
@@ -119,11 +135,13 @@ export const transactionReversalCreated = async (data: VivaTransactionData) => {
     `${toBurn / 100}`
   );
 
+  await attachTxHashToOrder(client, refundOrderData.id, txHash);
+
   try {
     await bundler.awaitSuccess(txHash);
   } catch (error) {
     console.error("Error when burning", error);
-    await orderNeedsBurning(client, order.id);
+    await orderNeedsBurning(client, refundOrderData.id);
   }
 
   return NextResponse.json({ received: true });

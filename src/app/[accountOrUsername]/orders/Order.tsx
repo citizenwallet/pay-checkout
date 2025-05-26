@@ -5,7 +5,7 @@ import { Order } from "@/db/orders";
 import { differenceInMinutes, format } from "date-fns";
 import { AProfile } from "@/db/profiles";
 import Image from "next/image";
-import { CheckCheck, Loader2 } from "lucide-react";
+import { ArrowLeftRightIcon, CheckCheck, Loader2 } from "lucide-react";
 import { Item } from "@/db/items";
 import CurrencyLogo from "@/components/currency-logo";
 import { formatCurrencyNumber } from "@/lib/currency";
@@ -14,6 +14,7 @@ import { ZeroAddress } from "ethers";
 
 const getOrderStatus = (order: Order) => {
   if (order.status === "paid") return "paid";
+  if (order.status === "refunded") return "refunded";
   if (order.status === "cancelled") return "cancelled";
   if (differenceInMinutes(new Date(), new Date(order.created_at)) > 15)
     return "cancelled";
@@ -24,6 +25,8 @@ const getStatusColor = (status: string) => {
   switch (status) {
     case "paid":
       return "bg-green-500 hover:bg-green-600";
+    case "refunded":
+      return "bg-slate-500 hover:bg-slate-600";
     case "cancelled":
       return "bg-red-500 hover:bg-red-600";
     default:
@@ -85,6 +88,8 @@ export function OrderCard({
         >
           {status === "pending" ? (
             <Loader2 className="animate-spin h-4 w-4" />
+          ) : status === "refunded" ? (
+            <ArrowLeftRightIcon className="w-4 h-4" />
           ) : (
             <CheckCheck className="w-4 h-4" />
           )}
@@ -147,7 +152,12 @@ export function OrderCard({
           </div>
           <div className="flex justify-between items-center gap-1 text-lg font-bold">
             Net:{" "}
-            <div className="flex items-center gap-1">
+            <div
+              className={cn(
+                "flex items-center gap-1",
+                order.status === "refunded" ? "line-through" : ""
+              )}
+            >
               <CurrencyLogo logo={currencyLogo} size={18} />
               {formatCurrencyNumber(order.total - order.fees)}
             </div>

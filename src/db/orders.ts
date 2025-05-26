@@ -12,7 +12,8 @@ export type OrderStatus =
   | "cancelled"
   | "needs_minting"
   | "needs_burning"
-  | "refunded";
+  | "refunded"
+  | "refund";
 
 export interface Order {
   id: number;
@@ -31,7 +32,10 @@ export interface Order {
   tx_hash: string | null;
   type: "web" | "app" | "terminal" | null;
   account: string | null;
+  payout_id: number | null;
+  pos: string | null;
   processor_tx: number | null;
+  refund_id: number | null;
 }
 
 export const createOrder = async (
@@ -236,24 +240,48 @@ export const completeOrder = async (
 
 export const refundOrder = async (
   client: SupabaseClient,
-  orderId: number
+  orderId: number,
+  amount: number,
+  fees: number,
+  processorTxId: number | null
 ): Promise<PostgrestSingleResponse<Order>> => {
-  return client
-    .from("orders")
-    .update({ status: "refunded" })
-    .eq("id", orderId)
-    .single();
-};
+  const orderResponse = await getOrder(client, orderId);
+  const { data: order, error } = orderResponse;
+  if (error) {
+    throw new Error(error.message);
+  }
 
-export const refundOrderAndFees = async (
-  client: SupabaseClient,
-  orderId: number
-): Promise<PostgrestSingleResponse<Order>> => {
-  return client
+  if (order.status === "refunded") {
+    return orderResponse;
+  }
+
+  const refundOrder = await client
     .from("orders")
-    .update({ status: "refunded", fees: 0 })
-    .eq("id", orderId)
+    .insert({
+      place_id: order.place_id,
+      items: order.items,
+      total: amount,
+      fees,
+      due: 0,
+      status: "refund",
+      description: order.description,
+      type: order.type,
+      payout_id: order.payout_id,
+      pos: order.pos,
+      processor_tx: processorTxId,
+    })
+    .select()
     .single();
+  const refundOrderId = refundOrder.data?.id;
+
+  if (refundOrder.error !== null && refundOrderId) {
+    await client
+      .from("orders")
+      .update({ status: "refunded", refund_id: refundOrderId })
+      .eq("id", orderId);
+  }
+
+  return refundOrder;
 };
 
 export const updateOrderFees = async (
@@ -341,7 +369,7 @@ export const getOrdersByPlace = async (
     .select()
     .eq("place_id", placeId)
     .or(
-      `status.eq.paid,and(status.eq.pending,created_at.gte.${fiveMinutesAgo})`
+      `status.in.(paid,refunded),and(status.eq.pending,created_at.gte.${fiveMinutesAgo})`
     )
     .order("created_at", { ascending: false })
     .range(offset, offset + limit);
