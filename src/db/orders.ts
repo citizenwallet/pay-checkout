@@ -34,6 +34,7 @@ export interface Order {
   payout_id: number | null;
   pos: string | null;
   processor_tx: number | null;
+  refund_id: number | null;
 }
 
 export const createOrder = async (
@@ -253,7 +254,7 @@ export const refundOrder = async (
     return orderResponse;
   }
 
-  return client
+  const refundOrder = await client
     .from("orders")
     .insert({
       place_id: order.place_id,
@@ -270,6 +271,16 @@ export const refundOrder = async (
     })
     .select()
     .single();
+  const refundOrderId = refundOrder.data?.id;
+
+  if (refundOrder.error !== null && refundOrderId) {
+    await client
+      .from("orders")
+      .update({ refund_id: refundOrderId })
+      .eq("id", orderId);
+  }
+
+  return refundOrder;
 };
 
 export const updateOrderFees = async (
