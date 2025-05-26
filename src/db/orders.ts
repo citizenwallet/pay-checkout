@@ -12,7 +12,8 @@ export type OrderStatus =
   | "cancelled"
   | "needs_minting"
   | "needs_burning"
-  | "refunded";
+  | "refunded"
+  | "refund";
 
 export interface Order {
   id: number;
@@ -262,7 +263,7 @@ export const refundOrder = async (
       total: amount,
       fees,
       due: 0,
-      status: "refunded",
+      status: "refund",
       description: order.description,
       type: order.type,
       payout_id: order.payout_id,
@@ -276,7 +277,7 @@ export const refundOrder = async (
   if (refundOrder.error !== null && refundOrderId) {
     await client
       .from("orders")
-      .update({ refund_id: refundOrderId })
+      .update({ status: "refunded", refund_id: refundOrderId })
       .eq("id", orderId);
   }
 
@@ -368,7 +369,7 @@ export const getOrdersByPlace = async (
     .select()
     .eq("place_id", placeId)
     .or(
-      `status.eq.paid,and(status.eq.pending,created_at.gte.${fiveMinutesAgo})`
+      `status.in.(paid,refunded),and(status.eq.pending,created_at.gte.${fiveMinutesAgo})`
     )
     .order("created_at", { ascending: false })
     .range(offset, offset + limit);
