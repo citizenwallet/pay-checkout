@@ -1,7 +1,10 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getServiceRoleClient } from "@/db";
-import { createOrder } from "@/db/orders";
+import { createOrder, deleteOrder } from "@/db/orders";
 import { getItemsForPlace } from "@/db/items";
+import { verifyConnectedHeaders } from "@citizenwallet/sdk";
+import { CommunityConfig } from "@citizenwallet/sdk";
+import Config from "@/cw/community.json";
 
 /**
  * POST /api/v1/accounts/[account]/orders/createOrder
@@ -51,33 +54,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { placeId, items, description, total, account, posId, type } = body;
 
-    const sigAuthAccount = request.headers.get("x-sigauth-account");
-    const sigAuthExpiry = request.headers.get("x-sigauth-expiry");
-    const sigAuthSignature = request.headers.get("x-sigauth-signature");
-
     try {
-      if (!sigAuthAccount || !sigAuthExpiry || !sigAuthSignature) {
-        return NextResponse.json(
-          { error: "Missing signature headers" },
-          { status: 401 }
-        );
-      }
+      const community = new CommunityConfig(Config);
 
-      const expiryTime = new Date(sigAuthExpiry).getTime();
-      const currentTime = new Date().getTime();
+      const verifiedAccount = await verifyConnectedHeaders(
+        community,
+        request.headers
+      );
 
-      if (currentTime > expiryTime) {
-        return NextResponse.json(
-          { error: "Signature expired" },
-          { status: 401 }
-        );
-      }
-
-      if (account && account.toLowerCase() !== sigAuthAccount.toLowerCase()) {
-        return NextResponse.json(
-          { error: "Account mismatch" },
-          { status: 401 }
-        );
+      if (!verifiedAccount) {
+        throw new Error("Invalid signature");
       }
     } catch (error) {
       console.error("Account verification error:", error);
@@ -144,6 +130,58 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ orderId: orderData.id }, { status: 200 });
   } catch (err) {
     console.error("Error in generate-order API:", err);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const orderId = searchParams.get("orderId");
+
+    if (!orderId) {
+      return NextResponse.json(
+        { error: "Missing orderId parameter" },
+        { status: 400 }
+      );
+    }
+
+    try {
+      const community = new CommunityConfig(Config);
+
+      const verifiedAccount = await verifyConnectedHeaders(
+        community,
+        request.headers
+      );
+
+      if (!verifiedAccount) {
+        throw new Error("Invalid signature");
+      }
+    } catch (error) {
+      console.error("Account verification error:", error);
+      return NextResponse.json(
+        { error: "Account verification failed" },
+        { status: 401 }
+      );
+    }
+
+    const client = getServiceRoleClient();
+
+    const { error } = await deleteOrder(client, parseInt(orderId));
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(
+      { message: `Order ${orderId} deleted successfully` },
+      { status: 200 }
+    );
+  } catch (err) {
+    console.error("Error in Delete Order API:", err);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

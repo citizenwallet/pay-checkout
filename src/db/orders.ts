@@ -91,6 +91,34 @@ export const createAppOrder = async (
     .single();
 };
 
+export const createPosOrder = async (
+  client: SupabaseClient,
+  placeId: number,
+  total: number,
+  items: { id: number; quantity: number }[],
+  description: string,
+  account: string | null,
+  posId: string | null = null,
+  txHash: string | null = null
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client
+    .from("orders")
+    .insert({
+      place_id: placeId,
+      items,
+      total,
+      due: 0,
+      status: "pending",
+      description,
+      account,
+      type: "pos",
+      pos: posId,
+      tx_hash: txHash,
+    })
+    .select()
+    .single();
+};
+
 export const completeAppOrder = async (
   client: SupabaseClient,
   orderId: number,
@@ -238,6 +266,24 @@ export const completeOrder = async (
     .single();
 };
 
+export const completePosOrder = async (
+  client: SupabaseClient,
+  orderId: number,
+  txHash: string
+): Promise<PostgrestSingleResponse<Order>> => {
+  return client
+    .from("orders")
+    .update({
+      status: "paid",
+      due: 0,
+      completed_at: new Date().toISOString(),
+      tx_hash: txHash,
+    })
+    .eq("id", orderId)
+    .select()
+    .single();
+};
+
 export const refundOrder = async (
   client: SupabaseClient,
   orderId: number,
@@ -369,7 +415,7 @@ export const getOrdersByPlace = async (
     .select()
     .eq("place_id", placeId)
     .or(
-      `status.in.(paid,refunded),and(status.eq.pending,created_at.gte.${fiveMinutesAgo})`
+      `status.in.(paid,refunded,needs_minting),and(status.eq.pending,created_at.gte.${fiveMinutesAgo})`
     )
     .order("created_at", { ascending: false })
     .range(offset, offset + limit);
