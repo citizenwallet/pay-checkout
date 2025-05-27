@@ -15,21 +15,31 @@ export async function PATCH(
     const { orderId } = await params;
 
     const body = await request.json();
-    const { account, txHash } = body;
+    const { account } = body;
+
+    const sigAuthAccount = request.headers.get("x-sigauth-account");
+    const sigAuthExpiry = request.headers.get("x-sigauth-expiry");
+    const sigAuthSignature = request.headers.get("x-sigauth-signature");
 
     try {
-      const community = new CommunityConfig(Config);
-
-      const verifiedAccount = await verifyConnectedHeaders(
-        community,
-        request.headers
-      );
-
-      if (!verifiedAccount) {
-        throw new Error("Invalid signature");
+      if (!sigAuthAccount || !sigAuthExpiry || !sigAuthSignature) {
+        return NextResponse.json(
+          { error: "Missing signature headers" },
+          { status: 401 }
+        );
       }
 
-      if (account && account.toLowerCase() !== verifiedAccount.toLowerCase()) {
+      const expiryTime = new Date(sigAuthExpiry).getTime();
+      const currentTime = new Date().getTime();
+
+      if (currentTime > expiryTime) {
+        return NextResponse.json(
+          { error: "Signature expired" },
+          { status: 401 }
+        );
+      }
+
+      if (account && account.toLowerCase() !== sigAuthAccount.toLowerCase()) {
         return NextResponse.json(
           { error: "Account mismatch" },
           { status: 401 }
@@ -43,7 +53,7 @@ export async function PATCH(
       );
     }
 
-    if (!isValidRequestData(orderId, account, txHash)) {
+    if (!isValidRequestData(orderId, account)) {
       return NextResponse.json(
         { error: "Invalid request data" },
         { status: 400 }
@@ -109,14 +119,9 @@ export async function PATCH(
   }
 }
 
-function isValidRequestData(
-  orderId: string,
-  account: string | null,
-  txHash: string
-): boolean {
+function isValidRequestData(orderId: string, account: string | null): boolean {
   return (
     typeof orderId === "string" &&
-    (account === null || typeof account === "string") &&
-    (txHash !== null || typeof txHash === "string")
+    (account === null || typeof account === "string")
   );
 }
