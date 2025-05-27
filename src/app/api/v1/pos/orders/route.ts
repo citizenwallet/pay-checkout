@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getServiceRoleClient } from "@/db";
-import { createOrder } from "@/db/orders";
+import { createPosOrder } from "@/db/orders";
 import { getItemsForPlace } from "@/db/items";
 import { verifyConnectedHeaders } from "@citizenwallet/sdk";
 import { CommunityConfig } from "@citizenwallet/sdk";
@@ -50,10 +50,19 @@ import { verifyPosAuth } from "../auth";
  * }
  */
 
+interface OrderRequest {
+  placeId: number;
+  items: { id: number; quantity: number }[];
+  description: string;
+  total: number;
+  posId: string;
+  type: "web" | "app" | "terminal" | "pos";
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { placeId, items, description, total, posId, type } = body;
+    const { placeId, items, description, total, posId } = body as OrderRequest;
 
     try {
       const community = new CommunityConfig(Config);
@@ -76,7 +85,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!isValidRequestData(placeId, items, description, total, type)) {
+    if (!isValidRequestData(placeId, items, description, total)) {
       return NextResponse.json(
         { error: "Invalid request data" },
         { status: 400 }
@@ -111,14 +120,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data: orderData, error: orderError } = await createOrder(
+    const { data: orderData, error: orderError } = await createPosOrder(
       client,
       placeId,
       total,
       items,
       description,
       null,
-      type,
       posId
     );
 
@@ -145,15 +153,13 @@ function isValidRequestData(
   placeId: number,
   items: { id: number; quantity: number }[],
   description: string,
-  total: number,
-  type: string | null
+  total: number
 ): boolean {
   return (
     typeof placeId === "number" &&
     Array.isArray(items) &&
     typeof description === "string" &&
-    typeof total === "number" &&
-    (type === null || ["web", "app", "terminal", "pos"].includes(type))
+    typeof total === "number"
   );
 }
 

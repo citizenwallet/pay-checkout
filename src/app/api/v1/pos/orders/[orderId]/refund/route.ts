@@ -15,9 +15,6 @@ export async function PATCH(
   try {
     const { orderId } = await params;
 
-    const body = await request.json();
-    const { account } = body;
-
     const client = getServiceRoleClient();
 
     const { data: orderData, error: orderError } = await getOrder(
@@ -54,7 +51,7 @@ export async function PATCH(
       );
     }
 
-    if (!isValidRequestData(orderId, account)) {
+    if (!isValidRequestData(orderId)) {
       return NextResponse.json(
         { error: "Invalid request data" },
         { status: 400 }
@@ -104,6 +101,8 @@ export async function PATCH(
           throw new Error("Unable to refund this order");
       }
     }
+
+    return NextResponse.json({ success: true }, { status: 200 });
   } catch (err) {
     console.error("Error in generate-order API:", err);
     return NextResponse.json(
@@ -113,9 +112,6 @@ export async function PATCH(
   }
 }
 
-function isValidRequestData(orderId: string, account: string | null): boolean {
-  return (
-    typeof orderId === "string" &&
-    (account === null || typeof account === "string")
-  );
+function isValidRequestData(orderId: string): boolean {
+  return typeof orderId === "string";
 }
