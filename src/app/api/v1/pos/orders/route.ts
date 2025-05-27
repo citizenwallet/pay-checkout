@@ -1,10 +1,11 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getServiceRoleClient } from "@/db";
-import { createOrder, deleteOrder } from "@/db/orders";
+import { createOrder } from "@/db/orders";
 import { getItemsForPlace } from "@/db/items";
 import { verifyConnectedHeaders } from "@citizenwallet/sdk";
 import { CommunityConfig } from "@citizenwallet/sdk";
 import Config from "@/cw/community.json";
+import { verifyPosAuth } from "../auth";
 
 /**
  * POST /api/v1/accounts/[account]/orders/createOrder
@@ -52,7 +53,7 @@ import Config from "@/cw/community.json";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { placeId, items, description, total, account, posId, type } = body;
+    const { placeId, items, description, total, posId, type } = body;
 
     try {
       const community = new CommunityConfig(Config);
@@ -65,6 +66,8 @@ export async function POST(request: NextRequest) {
       if (!verifiedAccount) {
         throw new Error("Invalid signature");
       }
+
+      await verifyPosAuth(placeId, verifiedAccount);
     } catch (error) {
       console.error("Account verification error:", error);
       return NextResponse.json(
@@ -73,9 +76,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (
-      !isValidRequestData(placeId, items, description, total, account, type)
-    ) {
+    if (!isValidRequestData(placeId, items, description, total, type)) {
       return NextResponse.json(
         { error: "Invalid request data" },
         { status: 400 }
@@ -116,7 +117,7 @@ export async function POST(request: NextRequest) {
       total,
       items,
       description,
-      account,
+      null,
       type,
       posId
     );
@@ -137,58 +138,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const orderId = searchParams.get("orderId");
-
-    if (!orderId) {
-      return NextResponse.json(
-        { error: "Missing orderId parameter" },
-        { status: 400 }
-      );
-    }
-
-    try {
-      const community = new CommunityConfig(Config);
-
-      const verifiedAccount = await verifyConnectedHeaders(
-        community,
-        request.headers
-      );
-
-      if (!verifiedAccount) {
-        throw new Error("Invalid signature");
-      }
-    } catch (error) {
-      console.error("Account verification error:", error);
-      return NextResponse.json(
-        { error: "Account verification failed" },
-        { status: 401 }
-      );
-    }
-
-    const client = getServiceRoleClient();
-
-    const { error } = await deleteOrder(client, parseInt(orderId));
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json(
-      { message: `Order ${orderId} deleted successfully` },
-      { status: 200 }
-    );
-  } catch (err) {
-    console.error("Error in Delete Order API:", err);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
-  }
-}
-
 /**
  * Validates the request data types and format
  */
@@ -197,7 +146,6 @@ function isValidRequestData(
   items: { id: number; quantity: number }[],
   description: string,
   total: number,
-  account: string | null,
   type: string | null
 ): boolean {
   return (
@@ -205,7 +153,6 @@ function isValidRequestData(
     Array.isArray(items) &&
     typeof description === "string" &&
     typeof total === "number" &&
-    (account === null || typeof account === "string") &&
     (type === null || ["web", "app", "terminal", "pos"].includes(type))
   );
 }

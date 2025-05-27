@@ -18,6 +18,19 @@ export interface Pos {
   is_active: boolean;
 }
 
+export const getPosByPlaceId = async (
+  client: SupabaseClient,
+  placeId: number,
+  posId: string
+): Promise<PostgrestSingleResponse<Pos | null>> => {
+  return client
+    .from("pos")
+    .select("*")
+    .eq("place_id", placeId)
+    .eq("id", posId)
+    .maybeSingle();
+};
+
 export const getVivaPosByIdSuffix = async (
   client: SupabaseClient,
   idSuffix: string

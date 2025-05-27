@@ -6,6 +6,7 @@ import { createStripeRefund } from "@/services/stripe";
 import { createVivaRefund } from "@/services/viva";
 import { CommunityConfig, verifyConnectedHeaders } from "@citizenwallet/sdk";
 import Config from "@/cw/community.json";
+import { verifyPosAuth } from "../../../auth";
 
 export async function PATCH(
   request: NextRequest,
@@ -16,6 +17,21 @@ export async function PATCH(
 
     const body = await request.json();
     const { account } = body;
+
+    const client = getServiceRoleClient();
+
+    const { data: orderData, error: orderError } = await getOrder(
+      client,
+      Number(orderId)
+    );
+
+    if (orderError) {
+      return NextResponse.json({ error: orderError.message }, { status: 500 });
+    }
+
+    if (!orderData) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
 
     try {
       const community = new CommunityConfig(Config);
@@ -28,6 +44,8 @@ export async function PATCH(
       if (!verifiedAccount) {
         throw new Error("Invalid signature");
       }
+
+      await verifyPosAuth(orderData.place_id, verifiedAccount);
     } catch (error) {
       console.error("Account verification error:", error);
       return NextResponse.json(
@@ -42,13 +60,6 @@ export async function PATCH(
         { status: 400 }
       );
     }
-
-    const client = getServiceRoleClient();
-
-    const { data: orderData, error: orderError } = await getOrder(
-      client,
-      Number(orderId)
-    );
 
     if (orderError) {
       throw new Error("Order not found");
