@@ -25,12 +25,16 @@ export default function PayElement({
   accountOrUsername,
   orderId,
   closeUrl,
+  successUrl,
+  errorUrl,
   showMethods,
 }: {
   total: number;
   accountOrUsername: string;
   orderId: number;
   closeUrl?: string;
+  successUrl?: string;
+  errorUrl?: string;
   showMethods: boolean;
 }) {
   const [elementStatus, setElementStatus] = useState<
@@ -101,6 +105,8 @@ export default function PayElement({
           accountOrUsername={accountOrUsername}
           orderId={orderId}
           closeUrl={closeUrl}
+          successUrl={successUrl}
+          errorUrl={errorUrl}
           setMessage={setMessage}
           router={router}
           setElementStatus={setElementStatus}
@@ -115,6 +121,8 @@ function CheckoutForm({
   accountOrUsername,
   orderId,
   closeUrl,
+  successUrl,
+  errorUrl,
   setMessage,
   router,
   setElementStatus,
@@ -122,6 +130,8 @@ function CheckoutForm({
   accountOrUsername: string;
   orderId: number;
   closeUrl?: string;
+  successUrl?: string;
+  errorUrl?: string;
   setMessage: (message: string) => void;
   router: AppRouterInstance;
   setElementStatus: (status: "loading" | "ready" | "unavailable") => void;
@@ -148,6 +158,7 @@ function CheckoutForm({
         elements,
         confirmParams: {
           return_url:
+            successUrl ||
             closeUrl ||
             `${window.location.origin}/${accountOrUsername}/pay/${orderId}/success`,
         },
@@ -157,11 +168,20 @@ function CheckoutForm({
         setMessage(error.message || "An unknown error occurred.");
       } else {
         setMessage("Payment Successful!");
-        router.push(closeUrl || `/${accountOrUsername}/pay/${orderId}/success`);
+        router.push(
+          successUrl ||
+            closeUrl ||
+            `/${accountOrUsername}/pay/${orderId}/success`
+        );
       }
     } catch (error) {
       console.error("Payment error:", error);
       setMessage("An unexpected error occurred during payment.");
+
+      if (errorUrl) {
+        router.push(errorUrl);
+        return;
+      }
     }
   };
 

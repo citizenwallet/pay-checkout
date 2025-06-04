@@ -213,14 +213,20 @@ export default function Component({
               name: "Anonymous",
             },
           },
-          return_url: successUrl,
+          return_url: successUrlParam
+            ? `${successUrlParam}?orderId=${order.id}`
+            : successUrl,
         }
       );
 
       if (error) {
         throw new Error(error.message);
       } else if (paymentIntent?.status === "succeeded") {
-        router.push(successUrl);
+        router.push(
+          successUrlParam
+            ? `${successUrlParam}?orderId=${order.id}`
+            : successUrl
+        );
       }
     } catch (error) {
       console.error(error);
@@ -240,11 +246,11 @@ export default function Component({
       url += `?close=${closeUrl}`;
     }
 
-    if (successUrl) {
+    if (successUrlParam) {
       if (url.includes("?")) {
-        url += `&successUrl=${encodeURIComponent(successUrl)}`;
+        url += `&successUrl=${encodeURIComponent(successUrlParam)}`;
       } else {
-        url += `?successUrl=${encodeURIComponent(successUrl)}`;
+        url += `?successUrl=${encodeURIComponent(successUrlParam)}`;
       }
     }
 
@@ -445,6 +451,12 @@ export default function Component({
               accountOrUsername={accountOrUsername}
               orderId={order?.id ?? 0}
               closeUrl={closeUrl}
+              successUrl={
+                successUrlParam
+                  ? `${successUrlParam}?orderId=${order?.id}`
+                  : undefined
+              }
+              errorUrl={errorUrl}
               showMethods={showMethods}
             />
 
