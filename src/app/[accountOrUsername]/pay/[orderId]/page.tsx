@@ -28,6 +28,8 @@ export default async function Page({
     tx?: string;
     close?: string;
     customOrderId?: string;
+    successUrl?: string;
+    errorUrl?: string;
   }>;
 }) {
   return (
@@ -77,10 +79,19 @@ async function AsyncPage({
     close?: string;
     tax?: "yes" | "no";
     customOrderId?: string;
+    successUrl?: string;
+    errorUrl?: string;
   }>;
 }) {
   const { accountOrUsername, orderId } = await params;
-  const { tx, close, tax = "yes", customOrderId } = await searchParams;
+  const {
+    tx,
+    close,
+    tax = "yes",
+    customOrderId,
+    successUrl,
+    errorUrl,
+  } = await searchParams;
 
   const client = getServiceRoleClient();
   const { data, error } = await getOrder(client, orderId);
@@ -149,6 +160,8 @@ async function AsyncPage({
       closeUrl={close}
       tax={tax}
       isTopUp={place.place?.display === "topup"}
+      successUrl={successUrl}
+      errorUrl={errorUrl}
     />
   );
 }

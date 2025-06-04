@@ -11,7 +11,7 @@ import { getItemsForPlace } from "@/db/items";
 import { Metadata } from "next";
 import { getPlaceWithProfile } from "@/lib/place";
 import { redirect } from "next/navigation";
-import { getOrder, Order } from "@/db/orders";
+import { createOrder, getOrder, Order } from "@/db/orders";
 import TopUpSelector from "./TopUp";
 
 export async function generateMetadata({
@@ -77,6 +77,10 @@ export default async function Page({
   searchParams: Promise<{
     account?: string;
     orderId?: string;
+    amount?: string;
+    description?: string;
+    successUrl?: string;
+    errorUrl?: string;
     sigAuthAccount?: string;
     sigAuthExpiry?: string;
     sigAuthSignature?: string;
@@ -87,6 +91,10 @@ export default async function Page({
   const {
     account,
     orderId,
+    amount,
+    description,
+    successUrl,
+    errorUrl,
     sigAuthAccount,
     sigAuthExpiry,
     sigAuthSignature,
@@ -111,6 +119,10 @@ export default async function Page({
         <PlacePage
           account={account}
           accountOrUsername={accountOrUsername}
+          amount={amount}
+          description={description}
+          successUrl={successUrl}
+          errorUrl={errorUrl}
           sigAuthAccount={parsedSigAuthAccount}
           sigAuthExpiry={sigAuthExpiry}
           sigAuthSignature={sigAuthSignature}
@@ -125,6 +137,10 @@ export default async function Page({
 async function PlacePage({
   account,
   accountOrUsername,
+  amount,
+  description,
+  successUrl,
+  errorUrl,
   sigAuthAccount,
   sigAuthExpiry,
   sigAuthSignature,
@@ -133,6 +149,10 @@ async function PlacePage({
 }: {
   account?: string;
   accountOrUsername: string;
+  amount?: string;
+  description?: string;
+  successUrl?: string;
+  errorUrl?: string;
   sigAuthAccount?: string;
   sigAuthExpiry?: string;
   sigAuthSignature?: string;
@@ -183,6 +203,28 @@ async function PlacePage({
   }
 
   const { data: items } = await getItemsForPlace(client, place.id);
+
+  if (!orderId && amount && successUrl && errorUrl) {
+    const { data: orderData } = await createOrder(
+      client,
+      place.id,
+      parseInt(amount ?? 0) * 100,
+      [],
+      description ?? "",
+      null,
+      "web"
+    );
+
+    if (orderData) {
+      redirect(
+        `/${accountOrUsername}/pay/${
+          orderData.id
+        }?successUrl=${encodeURIComponent(
+          successUrl
+        )}&errorUrl=${encodeURIComponent(errorUrl)}`
+      );
+    }
+  }
 
   let pendingOrder: Order | null = null;
   if (orderId) {

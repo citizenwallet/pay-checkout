@@ -41,6 +41,8 @@ interface Props {
   closeUrl?: string;
   tax: "yes" | "no";
   isTopUp?: boolean;
+  successUrl?: string;
+  errorUrl?: string;
 }
 
 export default function Component({
@@ -52,8 +54,11 @@ export default function Component({
   closeUrl,
   tax,
   isTopUp,
+  successUrl: successUrlParam,
+  errorUrl,
 }: Props) {
   const successUrl: string | null =
+    successUrlParam ||
     closeUrl ||
     `${
       typeof window !== "undefined" && window.location.origin
@@ -126,6 +131,11 @@ export default function Component({
     await cancelOrderAction(order.id);
     setCancelled(true);
 
+    if (errorUrl) {
+      router.push(errorUrl);
+      return;
+    }
+
     if (!customOrderId) {
       router.back();
     }
@@ -151,10 +161,17 @@ export default function Component({
         }
       }, 250);
 
-      window.open(
-        `${appScheme}checkout.pay.brussels/${accountOrUsername}?orderId=${order.id}`,
-        "_blank"
-      );
+      let appUrl = `${appScheme}checkout.pay.brussels/${accountOrUsername}?orderId=${order.id}`;
+
+      if (successUrl) {
+        appUrl += `&successUrl=${successUrl}`;
+      }
+
+      if (errorUrl) {
+        appUrl += `&errorUrl=${errorUrl}`;
+      }
+
+      window.open(appUrl, "_blank");
 
       hasOpened = true;
     } catch (error) {
@@ -207,6 +224,9 @@ export default function Component({
       }
     } catch (error) {
       console.error(error);
+      if (errorUrl) {
+        router.push(errorUrl);
+      }
     }
   };
 
@@ -218,6 +238,22 @@ export default function Component({
     let url = `/${accountOrUsername}/pay/${order?.id}/credit-card`;
     if (closeUrl) {
       url += `?close=${closeUrl}`;
+    }
+
+    if (successUrl) {
+      if (url.includes("?")) {
+        url += `&successUrl=${encodeURIComponent(successUrl)}`;
+      } else {
+        url += `?successUrl=${encodeURIComponent(successUrl)}`;
+      }
+    }
+
+    if (errorUrl) {
+      if (url.includes("?")) {
+        url += `&errorUrl=${encodeURIComponent(errorUrl)}`;
+      } else {
+        url += `?errorUrl=${encodeURIComponent(errorUrl)}`;
+      }
     }
 
     router.push(url);
