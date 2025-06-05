@@ -301,7 +301,7 @@ export const refundOrder = async (
     return orderResponse;
   }
 
-  const refundOrder = await client
+  const { data: refundOrder, error: refundOrderError } = await client
     .from("orders")
     .insert({
       place_id: order.place_id,
@@ -318,13 +318,15 @@ export const refundOrder = async (
     })
     .select()
     .single();
-  const refundOrderId = refundOrder.data?.id;
+  const refundOrderId: number | null = refundOrder?.id;
 
-  if (refundOrder.error !== null && refundOrderId) {
-    await client
+  if (refundOrderError === null && refundOrderId !== null) {
+    const { error: updatedOrderError } = await client
       .from("orders")
       .update({ status: "refunded", refund_id: refundOrderId })
       .eq("id", orderId);
+
+    console.error("updatedOrderError", updatedOrderError);
   }
 
   return refundOrder;
