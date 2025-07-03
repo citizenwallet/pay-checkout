@@ -65,12 +65,16 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Pos not found" }, { status: 404 });
   }
 
-  const { data } = await getTodayOrdersByPlaceByPosId(
+  const { data, error } = await getTodayOrdersByPlaceByPosId(
     client,
     parseInt(parsedPlaceId),
     posId,
     token.address
   );
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
   if (!data) {
     return NextResponse.json({ error: "No data" }, { status: 404 });

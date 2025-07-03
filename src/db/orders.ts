@@ -421,7 +421,17 @@ export const getTodayOrdersByPlaceByPosId = async (
   posId: string,
   tokenAddress: string
 ): Promise<PostgrestResponse<Order>> => {
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date();
+  const startOfDay = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate()
+  ).toISOString();
+  const endOfDay = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate() + 1
+  ).toISOString();
 
   return client
     .from("orders")
@@ -429,7 +439,8 @@ export const getTodayOrdersByPlaceByPosId = async (
     .eq("place_id", placeId)
     .eq("pos", posId)
     .eq("token", tokenAddress)
-    .eq("created_at", today)
+    .gte("created_at", startOfDay)
+    .lt("created_at", endOfDay)
     .or(`status.in.(paid,refunded,needs_minting)`)
     .order("created_at", { ascending: false });
 };
