@@ -130,6 +130,7 @@ export async function POST(request: NextRequest) {
       description,
       null,
       posId,
+      null,
       token || null
     );
 
