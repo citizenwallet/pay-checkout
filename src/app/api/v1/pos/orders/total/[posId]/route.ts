@@ -96,5 +96,9 @@ export async function GET(request: Request) {
 
   const totalNet = totalAmount - totalFees;
 
-  return NextResponse.json({ totalAmount, totalFees, totalNet });
+  return NextResponse.json({
+    total_amount: totalAmount,
+    total_fees: totalFees,
+    total_net: totalNet,
+  });
 }
