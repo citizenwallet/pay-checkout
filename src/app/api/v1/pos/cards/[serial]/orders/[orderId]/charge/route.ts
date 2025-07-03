@@ -130,7 +130,7 @@ export async function PATCH(
 
     const bundler = new BundlerService(community);
 
-    const token = community.primaryToken;
+    const token = community.getToken(order.token ?? undefined);
 
     const formattedAmount = parseUnits(
       (order.total / 100).toFixed(2),
