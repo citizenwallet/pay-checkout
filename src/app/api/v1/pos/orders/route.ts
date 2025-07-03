@@ -57,12 +57,14 @@ interface OrderRequest {
   total: number;
   posId: string;
   type: "web" | "app" | "terminal" | "pos";
+  token?: string;
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { placeId, items, description, total, posId } = body as OrderRequest;
+    const { placeId, items, description, total, posId, token } =
+      body as OrderRequest;
 
     try {
       const community = new CommunityConfig(Config);
@@ -127,7 +129,8 @@ export async function POST(request: NextRequest) {
       items,
       description,
       null,
-      posId
+      posId,
+      token || null
     );
 
     if (orderError) {

@@ -36,6 +36,7 @@ export interface Order {
   pos: string | null;
   processor_tx: number | null;
   refund_id: number | null;
+  token: string | null;
 }
 
 export const createOrder = async (
@@ -99,7 +100,8 @@ export const createPosOrder = async (
   description: string,
   account: string | null,
   posId: string | null = null,
-  txHash: string | null = null
+  txHash: string | null = null,
+  token: string | null = null
 ): Promise<PostgrestSingleResponse<Order>> => {
   return client
     .from("orders")
@@ -114,6 +116,7 @@ export const createPosOrder = async (
       type: "pos",
       pos: posId,
       tx_hash: txHash,
+      token,
     })
     .select()
     .single();
