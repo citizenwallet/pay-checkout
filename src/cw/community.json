@@ -1,14 +1,14 @@
 {
     "community": {
         "name": "Brussels Pay",
-        "description": "A community for the city of Brussels",
+        "description": "Open and local payments for Brussels",
         "url": "https://pay.brussels",
         "alias": "wallet.pay.brussels",
         "logo": "https://assets.citizenwallet.xyz/wallet-config/_images/wallet.pay.brussels.png",
         "custom_domain": "wallet.pay.brussels",
         "hidden": false,
         "theme": {
-            "primary": "#4a90e2"
+            "primary": "#3331c4"
         },
         "profile": {
             "address": "0x56Cc38bDa01bE6eC6D854513C995f6621Ee71229",
@@ -34,7 +34,17 @@
             "address": "0x5815E61eF72c9E6107b5c5A05FD121F334f7a7f1",
             "symbol": "EURb",
             "decimals": 6,
-            "chain_id": 100
+            "chain_id": 100,
+            "logo": "https://assets.citizenwallet.xyz/wallet-config/_images/wallet.pay.brussels.png"
+        },
+        "100:0x601D2Dc12bE367d1653d803827875c2Bcaeb4A20": {
+            "standard": "erc20",
+            "name": "La Caisse Locale d'Alimentation Solidaire de Schaerbeek",
+            "address": "0x601D2Dc12bE367d1653d803827875c2Bcaeb4A20",
+            "symbol": "CLASS",
+            "decimals": 6,
+            "chain_id": 100,
+            "logo": "https://assets.citizenwallet.xyz/wallet-config/_images/class.png"
         }
     },
     "scan": {
@@ -88,7 +98,22 @@
             "icon": "https://assets.citizenwallet.xyz/wallet-config/_images/wallet.pay.brussels.png",
             "url": "https://checkout.pay.brussels/topup",
             "action": "topup",
-            "signature": true
+            "signature": true,
+            "token_address": "0x5815E61eF72c9E6107b5c5A05FD121F334f7a7f1"
+        },
+        {
+            "name": "La CLASS",
+            "icon": "https://assets.citizenwallet.xyz/wallet-config/_images/class.png",
+            "url": "https://class.collectif-ssa.be",
+            "token_address": "0x601D2Dc12bE367d1653d803827875c2Bcaeb4A20"
+        },
+        {
+            "name": "Participer",
+            "icon": "https://assets.citizenwallet.xyz/wallet-config/_images/class.png",
+            "url": "https://class.collectif-ssa.be/en-pratique/",
+            "action": "topup",
+            "signature": true,
+            "token_address": "0x601D2Dc12bE367d1653d803827875c2Bcaeb4A20"
         }
     ],
     "config_location": "https://wallet.pay.brussels/config/community.json",

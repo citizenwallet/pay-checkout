@@ -40,7 +40,11 @@ const main = async () => {
   if (!cardManagerMap[instance]) {
     const contracts: string[] = [];
 
-    contracts.push(community.primaryToken.address);
+    const tokens = Object.values(community.tokens).map(
+      (token) => token.address
+    );
+
+    contracts.push(...tokens);
     contracts.push(community.community.profile.address);
 
     cardManagerMap[instance] = {
@@ -49,7 +53,9 @@ const main = async () => {
     };
   }
 
-  cardManagerMap[instance].contracts.push(community.primaryToken.address);
+  const tokens = Object.values(community.tokens).map((token) => token.address);
+
+  cardManagerMap[instance].contracts.push(...tokens);
   cardManagerMap[instance].contracts.push(community.community.profile.address);
 
   console.log("creating,", Object.values(cardManagerMap).length, "instances");
