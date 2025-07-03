@@ -205,6 +205,7 @@ async function PlacePage({
   const { data: items } = await getItemsForPlace(client, place.id);
 
   if (!orderId && amount && successUrl && errorUrl) {
+    const token = community.getToken();
     const { data: orderData } = await createOrder(
       client,
       place.id,
@@ -212,7 +213,9 @@ async function PlacePage({
       [],
       description ?? "",
       null,
-      "web"
+      "web",
+      null,
+      token.address
     );
 
     if (orderData) {

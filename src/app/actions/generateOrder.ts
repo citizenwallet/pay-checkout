@@ -4,6 +4,8 @@ import { getServiceRoleClient } from "@/db";
 import { getItemsForPlace } from "@/db/items";
 import { createOrder } from "@/db/orders";
 import { ActionResponse } from ".";
+import { CommunityConfig } from "@citizenwallet/sdk";
+import Config from "@/cw/community.json";
 
 export async function generateOrder(
   placeId: number,
@@ -27,6 +29,10 @@ export async function generateOrder(
     return { error: "Invalid items" };
   }
 
+  const community = new CommunityConfig(Config);
+
+  const token = community.getToken();
+
   // create order
   const { data: orderData, error: orderError } = await createOrder(
     client,
@@ -35,7 +41,9 @@ export async function generateOrder(
     validItems.map((item) => ({ id: item.id, quantity: items[item.id] })),
     description,
     account,
-    type
+    type,
+    null,
+    token.address
   );
   if (orderError) {
     return { error: orderError.message };

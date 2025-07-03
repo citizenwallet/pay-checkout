@@ -2,6 +2,8 @@ import { NextResponse, NextRequest } from "next/server";
 import { getServiceRoleClient } from "@/db";
 import { createPartnerOrder } from "@/db/orders";
 import { checkApiKey } from "@/db/apiKeys";
+import { CommunityConfig } from "@citizenwallet/sdk";
+import Config from "@/cw/community.json";
 
 interface PartnerOrderRequest {
   placeId: number;
@@ -42,13 +44,17 @@ export async function POST(request: NextRequest) {
 
   const { placeId, total, items = [], description = "" } = requestBody;
 
+  const community = new CommunityConfig(Config);
+  const token = community.getToken();
+
   try {
     const { data: order, error } = await createPartnerOrder(
       client,
       placeId,
       total,
       items,
-      description
+      description,
+      token.address
     );
 
     if (error) {

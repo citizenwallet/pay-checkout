@@ -1,7 +1,10 @@
 import { getServiceRoleClient } from "@/db";
 import { getPosByPlaceId } from "@/db/pos";
 
-export const verifyPosAuth = async (placeId: number, account: string) => {
+export const verifyPosAuth = async (
+  placeId: number,
+  account: string
+): Promise<string> => {
   const client = getServiceRoleClient();
 
   const { data: pos, error: posError } = await getPosByPlaceId(
@@ -31,5 +34,5 @@ export const verifyPosAuth = async (placeId: number, account: string) => {
     throw new Error("Pos is not active");
   }
 
-  return true;
+  return pos.id;
 };

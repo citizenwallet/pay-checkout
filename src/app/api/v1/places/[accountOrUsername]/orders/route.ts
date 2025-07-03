@@ -54,9 +54,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { placeId, items, description, total, account, posId, type } = body;
 
-    try {
-      const community = new CommunityConfig(Config);
+    const community = new CommunityConfig(Config);
 
+    try {
       const verifiedAccount = await verifyConnectedHeaders(
         community,
         request.headers
@@ -110,6 +110,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const token = community.getToken();
+
     const { data: orderData, error: orderError } = await createOrder(
       client,
       placeId,
@@ -118,7 +120,8 @@ export async function POST(request: NextRequest) {
       description,
       account,
       type,
-      posId
+      posId,
+      token.address
     );
 
     if (orderError) {

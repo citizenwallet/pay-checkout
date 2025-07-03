@@ -18,9 +18,9 @@ export async function POST(
     const body = await request.json();
     const { items = [], description, total, account, txHash } = body;
 
-    try {
-      const community = new CommunityConfig(Config);
+    const community = new CommunityConfig(Config);
 
+    try {
       const verifiedAccount = await verifyConnectedHeaders(
         community,
         request.headers
@@ -93,6 +93,8 @@ export async function POST(
       );
     }
 
+    const token = community.getToken();
+
     const { data: orderData, error: orderError } = await createAppOrder(
       client,
       placeId,
@@ -100,7 +102,8 @@ export async function POST(
       items,
       description,
       account,
-      txHash
+      txHash,
+      token.address
     );
 
     if (orderError) {

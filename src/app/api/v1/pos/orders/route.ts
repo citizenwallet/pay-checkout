@@ -63,12 +63,20 @@ interface OrderRequest {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { placeId, items, description, total, posId, token } =
-      body as OrderRequest;
+    const {
+      placeId,
+      items,
+      description,
+      total,
+      posId,
+      token: tokenAddress,
+    } = body as OrderRequest;
+
+    const community = new CommunityConfig(Config);
+
+    const token = community.getToken(tokenAddress ?? undefined);
 
     try {
-      const community = new CommunityConfig(Config);
-
       const verifiedAccount = await verifyConnectedHeaders(
         community,
         request.headers
@@ -131,7 +139,7 @@ export async function POST(request: NextRequest) {
       null,
       posId,
       null,
-      token || null
+      token.address
     );
 
     if (orderError) {

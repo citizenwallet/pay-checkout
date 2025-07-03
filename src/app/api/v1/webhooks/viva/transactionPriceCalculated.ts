@@ -78,13 +78,18 @@ export const transactionPriceCalculated = async (
     console.error("Error creating processor tx", processorTxError);
   }
 
+  const community = new CommunityConfig(Config);
+
+  const token = community.getToken();
+
   const { data: order, error: orderError } = await createTerminalOrder(
     client,
     place.id,
     amount,
     commission,
     pos.id,
-    processorTx?.id || null
+    processorTx?.id || null,
+    token.address
   );
 
   if (orderError || !order) {
@@ -101,8 +106,6 @@ export const transactionPriceCalculated = async (
   }
 
   const signer = new Wallet(process.env.FAUCET_PRIVATE_KEY!);
-
-  const community = new CommunityConfig(Config);
 
   let mintAmount = amount - commission;
   if (mintAmount < 0) {

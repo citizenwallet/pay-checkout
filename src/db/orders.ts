@@ -13,7 +13,8 @@ export type OrderStatus =
   | "needs_minting"
   | "needs_burning"
   | "refunded"
-  | "refund";
+  | "refund"
+  | "correction";
 
 export interface Order {
   id: number;
@@ -47,7 +48,8 @@ export const createOrder = async (
   description: string,
   account: string | null,
   type: "web" | "app" | "terminal" | "pos" | null = null,
-  posId: string | null = null
+  posId: string | null = null,
+  token: string
 ): Promise<PostgrestSingleResponse<Order>> => {
   return client
     .from("orders")
@@ -61,6 +63,7 @@ export const createOrder = async (
       account,
       type,
       pos: posId,
+      token,
     })
     .select()
     .single();
@@ -73,7 +76,8 @@ export const createAppOrder = async (
   items: { id: number; quantity: number }[],
   description: string,
   account: string | null,
-  txHash: string
+  txHash: string,
+  token: string
 ): Promise<PostgrestSingleResponse<Order>> => {
   return client
     .from("orders")
@@ -87,6 +91,7 @@ export const createAppOrder = async (
       account,
       type: "app",
       tx_hash: txHash,
+      token,
     })
     .select()
     .single();
@@ -101,7 +106,7 @@ export const createPosOrder = async (
   account: string | null,
   posId: string | null = null,
   txHash: string | null = null,
-  token: string | null = null
+  token: string
 ): Promise<PostgrestSingleResponse<Order>> => {
   return client
     .from("orders")
@@ -141,7 +146,8 @@ export const createPartnerOrder = async (
   placeId: number,
   total: number,
   items: { id: number; quantity: number }[],
-  description: string
+  description: string,
+  token: string
 ): Promise<PostgrestSingleResponse<Order>> => {
   return client
     .from("orders")
@@ -153,6 +159,7 @@ export const createPartnerOrder = async (
       status: "pending",
       description,
       type: "web",
+      token,
     })
     .select()
     .single();
@@ -164,7 +171,8 @@ export const createTerminalOrder = async (
   total: number,
   fees: number,
   posId: string,
-  processorTxId: number | null
+  processorTxId: number | null,
+  token: string
 ): Promise<PostgrestSingleResponse<Order>> => {
   return client
     .from("orders")
@@ -178,27 +186,7 @@ export const createTerminalOrder = async (
       pos: posId,
       type: "terminal",
       processor_tx: processorTxId,
-    })
-    .select()
-    .single();
-};
-
-export const createTerminalFeeOrder = async (
-  client: SupabaseClient,
-  fees: number,
-  description: string
-): Promise<PostgrestSingleResponse<Order>> => {
-  return client
-    .from("orders")
-    .insert({
-      place_id: 0,
-      items: [],
-      total: 0,
-      fees,
-      due: 0,
-      status: "paid",
-      description,
-      type: "terminal",
+      token,
     })
     .select()
     .single();
@@ -318,6 +306,7 @@ export const refundOrder = async (
       payout_id: order.payout_id,
       pos: order.pos,
       processor_tx: processorTxId,
+      token: order.token,
     })
     .select()
     .single();
@@ -424,6 +413,25 @@ export const getOrdersByPlace = async (
     )
     .order("created_at", { ascending: false })
     .range(offset, offset + limit);
+};
+
+export const getTodayOrdersByPlaceByPosId = async (
+  client: SupabaseClient,
+  placeId: number,
+  posId: string,
+  tokenAddress: string
+): Promise<PostgrestResponse<Order>> => {
+  const today = new Date().toISOString().split("T")[0];
+
+  return client
+    .from("orders")
+    .select()
+    .eq("place_id", placeId)
+    .eq("pos", posId)
+    .eq("token", tokenAddress)
+    .eq("created_at", today)
+    .or(`status.in.(paid,refunded,needs_minting)`)
+    .order("created_at", { ascending: false });
 };
 
 export const getOrdersByAccount = async (
