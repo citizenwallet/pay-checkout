@@ -192,7 +192,7 @@ export async function PATCH(
     }
 
     const { data: orderData, error: orderCreationError } =
-      await completePosOrder(client, parseInt(orderId), hash);
+      await completePosOrder(client, parseInt(orderId), hash, senderAddress);
 
     if (orderCreationError) {
       return NextResponse.json(

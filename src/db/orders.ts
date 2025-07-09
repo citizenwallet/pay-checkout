@@ -260,7 +260,8 @@ export const completeOrder = async (
 export const completePosOrder = async (
   client: SupabaseClient,
   orderId: number,
-  txHash: string
+  txHash: string,
+  account: string
 ): Promise<PostgrestSingleResponse<Order>> => {
   return client
     .from("orders")
@@ -269,6 +270,7 @@ export const completePosOrder = async (
       due: 0,
       completed_at: new Date().toISOString(),
       tx_hash: txHash,
+      account,
     })
     .eq("id", orderId)
     .select()
@@ -447,7 +449,7 @@ export const getTodayOrdersByPlaceByPosId = async (
 
 export const getOrdersByAccount = async (
   client: SupabaseClient,
-  account: string,
+  account: string[],
   limit: number = 10,
   offset: number = 0,
   placeId?: number
@@ -455,7 +457,7 @@ export const getOrdersByAccount = async (
   let query = client
     .from("orders")
     .select("*", { count: "exact" })
-    .eq("account", account);
+    .contains("account", account);
 
   if (placeId !== undefined) {
     query = query.eq("place_id", placeId);
