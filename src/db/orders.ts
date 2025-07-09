@@ -453,10 +453,20 @@ export const getOrdersByAccount = async (
   limit: number = 10,
   offset: number = 0,
   placeId?: number
-): Promise<PostgrestResponse<Order>> => {
+): Promise<
+  PostgrestResponse<
+    Order & { place: { display: string; accounts: string[]; slug: string } }
+  >
+> => {
   let query = client
     .from("orders")
-    .select("*", { count: "exact" })
+    .select(
+      `
+      *,
+      place:places(display, accounts, slug)
+    `,
+      { count: "exact" }
+    )
     .in("account", account);
 
   if (placeId !== undefined) {
