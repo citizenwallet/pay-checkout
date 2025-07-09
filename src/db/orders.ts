@@ -457,7 +457,7 @@ export const getOrdersByAccount = async (
   let query = client
     .from("orders")
     .select("*", { count: "exact" })
-    .contains("account", account);
+    .in("account", account);
 
   if (placeId !== undefined) {
     query = query.eq("place_id", placeId);
