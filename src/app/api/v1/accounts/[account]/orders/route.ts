@@ -56,6 +56,7 @@ export async function GET(
   const limit = parseInt(searchParams.get("limit") ?? "10");
   const offset = parseInt(searchParams.get("offset") ?? "0");
   const placeId = searchParams.get("placeId");
+  const additionalAccounts = searchParams.getAll("account");
 
   if (!account) {
     return NextResponse.json(
@@ -69,7 +70,7 @@ export async function GET(
   try {
     const { data: orders, count } = await getOrdersByAccount(
       client,
-      account,
+      [account, ...additionalAccounts],
       limit,
       offset,
       placeId ? parseInt(placeId) : undefined
