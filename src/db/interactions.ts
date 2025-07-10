@@ -61,8 +61,8 @@ export async function getInteractionsOfAccount(
     .from("a_interactions")
     .select(INTERACTIONS_SELECT_QUERY)
     .eq("account", account)
-    .order("updated_at", { ascending: false })
-    .order("new_interaction", { ascending: false });
+    .order("new_interaction", { ascending: false })
+    .order("updated_at", { ascending: false });
 
   const { data, error } = await interactionsQuery;
   if (error) throw error;
@@ -80,6 +80,7 @@ export async function getNewInteractionsOfAccount(
     .select(INTERACTIONS_SELECT_QUERY)
     .eq("account", account)
     .gt("updated_at", fromDate.toISOString())
+    .order("new_interaction", { ascending: false })
     .order("updated_at", { ascending: false });
 
   const { data, error } = await interactionsQuery;
