@@ -2,35 +2,25 @@ import { NextResponse, NextRequest } from "next/server";
 import { getServiceRoleClient } from "@/db";
 import {
   BundlerService,
-  formatProfileImageLinks,
   getAccountAddress,
   getCardAddress,
   getProfileFromAddress,
   getProfileUriFromId,
-  Profile,
-  verifyAndSuggestUsername,
   verifyConnectedHeaders,
 } from "@citizenwallet/sdk";
 import { CommunityConfig } from "@citizenwallet/sdk";
 import Config from "@/cw/community.json";
 import { getCardBySerial } from "@/db/cards";
 import { id, Wallet } from "ethers";
-import { pinJSONToIPFS, unpin } from "@/services/pinata/pinata";
+import { unpin } from "@/services/pinata/pinata";
 
-interface CardProfileRequest {
-  name: string;
-}
-
-export async function PUT(
+export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ serial: string }> }
 ) {
   try {
     // Extract the accountOrUsername from the params object
     const { serial } = await params;
-
-    const body = await request.json();
-    const { name } = body as CardProfileRequest;
 
     const community = new CommunityConfig(Config);
 
@@ -59,7 +49,7 @@ export async function PUT(
       );
     }
 
-    if (!isValidRequestData(serial, name)) {
+    if (!isValidRequestData(serial)) {
       return NextResponse.json(
         { error: "Invalid request data" },
         { status: 400 }
@@ -114,11 +104,28 @@ export async function PUT(
       cardAddress
     );
 
-    const defaultCardProfileImage =
-      process.env.DEFAULT_CARD_PROFILE_IMAGE_IPFS_HASH;
-    if (!defaultCardProfileImage) {
+    // Unpin the existing profile if it exists
+    if (!existingProfile) {
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+    }
+
+    const uri = await getProfileUriFromId(
+      community,
+      BigInt(existingProfile.token_id)
+    );
+
+    if (!uri) {
       return NextResponse.json(
-        { error: "Default card profile image not found" },
+        { error: "Failed to get profile URI" },
+        { status: 500 }
+      );
+    }
+
+    const unpinResponse = await unpin(uri);
+
+    if (!unpinResponse.ok) {
+      return NextResponse.json(
+        { error: "Failed to unpin profile" },
         { status: 500 }
       );
     }
@@ -144,78 +151,17 @@ export async function PUT(
       );
     }
 
-    const username = await verifyAndSuggestUsername(
-      community,
-      `card-${name}`.toLowerCase()
-    );
-    if (!username) {
-      return NextResponse.json(
-        { error: "Failed to suggest username" },
-        { status: 500 }
-      );
-    }
-
-    const profile: Profile = {
-      username: username.toLowerCase(),
-      name,
-      account: cardAddress,
-      description: "Ceci n'est pas une carte",
-      image_small: defaultCardProfileImage,
-      image_medium: defaultCardProfileImage,
-      image: defaultCardProfileImage,
-    };
-
-    const formattedProfile = formatProfileImageLinks(
-      `https://${ipfsDomain}`,
-      profile
-    );
-
-    const response = await pinJSONToIPFS(formattedProfile);
-
-    if (!response.IpfsHash) {
-      return NextResponse.json(
-        { error: "Failed to pin profile" },
-        { status: 500 }
-      );
-    }
-
-    // Unpin the existing profile if it exists
-    if (existingProfile) {
-      const uri = await getProfileUriFromId(
-        community,
-        BigInt(existingProfile.token_id)
-      );
-
-      if (!uri) {
-        return NextResponse.json(
-          { error: "Failed to get profile URI" },
-          { status: 500 }
-        );
-      }
-
-      const response = await unpin(uri);
-
-      if (!response.ok) {
-        return NextResponse.json(
-          { error: "Failed to unpin profile" },
-          { status: 500 }
-        );
-      }
-    }
-
     const bundler = new BundlerService(community);
 
-    const tx = await bundler.setProfile(
+    const tx = await bundler.burnProfile(
       signer,
       profileManagerAddress,
-      profile.account,
-      profile.username,
-      response.IpfsHash
+      existingProfile.account
     );
 
     await bundler.awaitSuccess(tx);
 
-    return NextResponse.json(formattedProfile, { status: 200 });
+    return NextResponse.json(null, { status: 200 });
   } catch (err) {
     console.error("Error in generate-order API:", err);
     return NextResponse.json(
@@ -228,11 +174,6 @@ export async function PUT(
 /**
  * Validates the request data types and format
  */
-function isValidRequestData(serial: string, name: string): boolean {
-  return (
-    typeof serial === "string" &&
-    serial.length > 0 &&
-    typeof name === "string" &&
-    name.length > 0
-  );
+function isValidRequestData(serial: string): boolean {
+  return typeof serial === "string" && serial.length > 0;
 }
