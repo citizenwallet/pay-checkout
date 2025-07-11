@@ -28,6 +28,7 @@ export const INTERACTIONS_SELECT_QUERY = `
   new_interaction,
   transaction:a_transactions!transaction_id (
     id,
+    contract,
     created_at,
     from,
     to,

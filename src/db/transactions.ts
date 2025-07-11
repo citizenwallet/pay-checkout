@@ -6,6 +6,7 @@ import { AProfile } from "./profiles";
 export interface ATransaction {
   id: string;
   hash: string;
+  contract: string;
   created_at: string;
   updated_at: string;
   from: string;

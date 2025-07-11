@@ -7,6 +7,15 @@ import { verifyConnectedHeaders } from "@citizenwallet/sdk";
 import { CommunityConfig } from "@citizenwallet/sdk";
 import Config from "@/cw/community.json";
 
+interface OrderRequest {
+  items: { id: number; quantity: number }[];
+  description: string | null;
+  total: number;
+  account: string | null;
+  txHash: string;
+  token?: string;
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ accountOrUsername: string }> }
@@ -16,7 +25,14 @@ export async function POST(
     const { accountOrUsername } = await params;
 
     const body = await request.json();
-    const { items = [], description, total, account, txHash } = body;
+    const {
+      items = [],
+      description,
+      total,
+      account,
+      txHash,
+      token,
+    } = body as OrderRequest;
 
     const community = new CommunityConfig(Config);
 
@@ -93,17 +109,17 @@ export async function POST(
       );
     }
 
-    const token = community.getToken();
+    const tokenConfig = community.getToken(token);
 
     const { data: orderData, error: orderError } = await createAppOrder(
       client,
       placeId,
       total,
       items,
-      description,
+      description ?? "",
       account,
       txHash,
-      token.address
+      tokenConfig.address
     );
 
     if (orderError) {
