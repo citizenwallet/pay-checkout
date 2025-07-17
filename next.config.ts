@@ -31,6 +31,7 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: process.env.SUPABASE_BUCKET_DOMAIN ?? "",
         port: "",
+        pathname: "**",
       },
     ],
   },
