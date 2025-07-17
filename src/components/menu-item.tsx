@@ -54,7 +54,7 @@ export default function MenuItem({
       key={item.id}
       className={`${selectedItems[item.id] ? "border-primary" : ""} mb-4`}
     >
-      <CardContent className="flex justify-start items-center gap-2 p-2">
+      <CardContent className="flex justify-start items-center gap-2 p-4">
         {item.image && (
           <div className="pr-2 border-r">
             <Image
