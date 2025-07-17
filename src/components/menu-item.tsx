@@ -6,6 +6,7 @@ import { Item } from "@/db/items";
 import { formatCurrencyNumber } from "@/lib/currency";
 import CurrencyLogo from "@/components/currency-logo";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 interface MenuItemProps {
   item?: Item;
@@ -22,6 +23,10 @@ export default function MenuItem({
   adjustItemQuantity,
   onImageClick,
 }: MenuItemProps) {
+  const [expandedDescriptions, setExpandedDescriptions] = useState<{
+    [key: number]: boolean;
+  }>({});
+
   if (!item) {
     return (
       <Card className="mb-4">
@@ -35,6 +40,14 @@ export default function MenuItem({
   }
 
   const onlyAmount = (item.name === null || item.name === "") && !item.image;
+  const isDescriptionExpanded = expandedDescriptions[item.id] || false;
+
+  const toggleDescription = () => {
+    setExpandedDescriptions((prev) => ({
+      ...prev,
+      [item.id]: !prev[item.id],
+    }));
+  };
 
   return (
     <Card
@@ -58,7 +71,24 @@ export default function MenuItem({
           {!onlyAmount ? (
             <>
               <p className="text-lg font-bold">{item.name}</p>
-              <p className="text-sm">{item.description}</p>
+              <div className="w-full">
+                <p
+                  className={cn(
+                    "text-sm whitespace-pre-line",
+                    !isDescriptionExpanded && "line-clamp-3"
+                  )}
+                >
+                  {item.description}
+                </p>
+                {item.description && item.description.length > 100 && (
+                  <button
+                    onClick={toggleDescription}
+                    className="text-sm text-blue-600 hover:text-blue-800 mt-1"
+                  >
+                    {isDescriptionExpanded ? "Show less" : "more..."}
+                  </button>
+                )}
+              </div>
             </>
           ) : (
             <div className="flex items-center gap-2 px-4">
@@ -68,48 +98,48 @@ export default function MenuItem({
               </p>
             </div>
           )}
-        </div>
-        <div
-          className={cn(
-            "flex flex-col items-end gap-2 h-20",
-            !onlyAmount ? "justify-between" : "justify-end"
-          )}
-        >
-          {!onlyAmount && (
+          <div
+            className={cn(
+              "flex w-full items-center gap-2",
+              !onlyAmount ? "justify-between" : "justify-end"
+            )}
+          >
             <div className="flex items-center gap-2">
-              <CurrencyLogo logo={currencyLogo} size={24} />
-              <p className="text-lg font-bold">
-                {formatCurrencyNumber(item.price)}
-              </p>
-            </div>
-          )}
-          <div className="flex items-center gap-2">
-            {!selectedItems[item.id] ? (
-              <Button
-                variant="secondary"
-                onClick={() => adjustItemQuantity(item.id, 1)}
-              >
-                <PlusIcon className="h-4 w-4" /> Add to Cart
-              </Button>
-            ) : (
-              <div className="flex items-center gap-2">
+              {!selectedItems[item.id] ? (
                 <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => adjustItemQuantity(item.id, -1)}
-                >
-                  -
-                </Button>
-                <span className="min-w-[2rem] text-center">
-                  {selectedItems[item.id]}
-                </span>
-                <Button
-                  variant="outline"
-                  size="icon"
+                  variant="secondary"
                   onClick={() => adjustItemQuantity(item.id, 1)}
                 >
-                  +
+                  <PlusIcon className="h-4 w-4" /> Add to Cart
                 </Button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => adjustItemQuantity(item.id, -1)}
+                  >
+                    -
+                  </Button>
+                  <span className="min-w-[2rem] text-center">
+                    {selectedItems[item.id]}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => adjustItemQuantity(item.id, 1)}
+                  >
+                    +
+                  </Button>
+                </div>
+              )}
+            </div>
+            {!onlyAmount && (
+              <div className="flex items-center gap-2">
+                <CurrencyLogo logo={currencyLogo} size={24} />
+                <p className="text-lg font-bold">
+                  {formatCurrencyNumber(item.price)}
+                </p>
               </div>
             )}
           </div>

@@ -109,7 +109,7 @@ export default function Menu({
 
   const itemsByCategory = items.reduce(
     (acc: { [key: string]: Item[] }, item) => {
-      const category = item.category || "Uncategorized";
+      const category = item.category || "Items";
       if (!acc[category]) {
         acc[category] = [];
       }
