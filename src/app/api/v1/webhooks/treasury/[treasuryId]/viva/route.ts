@@ -8,6 +8,8 @@ import {
 import { getMessagesConfigToken } from "@/viva/messages";
 import { transactionPriceCalculated } from "./transactionPriceCalculated";
 import { transactionReversalCreated } from "./transactionReversalCreated";
+import { getServiceRoleClient } from "@/db";
+import { getTreasury } from "@/db/treasury";
 
 function isAllowedIP(ip: string): boolean {
   const allowedIPs = [
@@ -41,9 +43,30 @@ function isAllowedIP(ip: string): boolean {
   });
 }
 
-export async function GET() {
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ treasuryId: string }> }
+) {
+  const { treasuryId } = await params;
+
+  const client = getServiceRoleClient();
+
+  const { data: treasury, error: treasuryError } = await getTreasury(
+    client,
+    parseInt(treasuryId),
+    "viva"
+  );
+
+  if (treasuryError) {
+    return NextResponse.json({ error: treasuryError.message }, { status: 500 });
+  }
+
+  if (!treasury) {
+    return NextResponse.json({ error: "Treasury not found" }, { status: 404 });
+  }
+
   const basicAuth = Buffer.from(
-    `${process.env.VIVA_MERCHANT_ID}:${process.env.VIVA_API_KEY}`
+    `${treasury.sync_provider_credentials.merchant_id}:${treasury.sync_provider_credentials.api_key}`
   ).toString("base64");
 
   const verificationKey = await getMessagesConfigToken(basicAuth);
@@ -56,7 +79,10 @@ export async function GET() {
   });
 }
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ treasuryId: string }> }
+) {
   if (process.env.NODE_ENV === "production") {
     // Check if request is coming from Vercel
     const isVercelRequest = request.headers.get("x-vercel-proxy-signature");
@@ -73,6 +99,24 @@ export async function POST(request: Request) {
     }
   }
 
+  const { treasuryId } = await params;
+
+  const client = getServiceRoleClient();
+
+  const { data: treasury, error: treasuryError } = await getTreasury(
+    client,
+    parseInt(treasuryId),
+    "viva"
+  );
+
+  if (treasuryError) {
+    return NextResponse.json({ error: treasuryError.message }, { status: 500 });
+  }
+
+  if (!treasury) {
+    return NextResponse.json({ error: "Treasury not found" }, { status: 404 });
+  }
+
   const body: VivaEvent<unknown> = await request.json();
 
   console.log("Viva webhook body", body);
@@ -80,6 +124,7 @@ export async function POST(request: Request) {
   switch (body.EventTypeId) {
     case VIVA_EVENT_TYPES.TRANSACTION_PRICE_CALCULATED:
       return transactionPriceCalculated(
+        treasury,
         body.EventData as VivaTransactionPriceCalculated
       );
     case VIVA_EVENT_TYPES.TRANSACTION_PAYMENT_REVERSED:

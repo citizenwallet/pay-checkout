@@ -1,3 +1,5 @@
+"use client";
+
 import { getClientSecretAction } from "@/app/actions/paymentProcess";
 import {
   Elements,
@@ -5,22 +7,15 @@ import {
   useElements,
   useStripe,
 } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
-import { useEffect, useState } from "react";
+import { loadStripe, Stripe } from "@stripe/stripe-js";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { cn } from "@/lib/utils";
 
-if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
-  throw new Error("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set");
-}
-
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-);
-
 export default function PayElement({
+  publishableKey,
   total,
   accountOrUsername,
   orderId,
@@ -29,6 +24,7 @@ export default function PayElement({
   errorUrl,
   showMethods,
 }: {
+  publishableKey: string;
   total: number;
   accountOrUsername: string;
   orderId: number;
@@ -37,6 +33,9 @@ export default function PayElement({
   errorUrl?: string;
   showMethods: boolean;
 }) {
+  const stripePromiseRef = useRef<Promise<Stripe | null>>(
+    loadStripe(publishableKey)
+  );
   const [elementStatus, setElementStatus] = useState<
     "loading" | "ready" | "unavailable"
   >("loading");
@@ -92,7 +91,7 @@ export default function PayElement({
       )}
     >
       <Elements
-        stripe={stripePromise}
+        stripe={stripePromiseRef.current}
         options={{
           clientSecret,
           appearance: {

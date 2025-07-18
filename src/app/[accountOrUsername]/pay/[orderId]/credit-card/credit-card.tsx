@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   useStripe,
@@ -18,20 +18,13 @@ import {
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cancelOrderAction } from "@/app/actions/cancelOrder";
-import { loadStripe } from "@stripe/stripe-js";
+import { loadStripe, Stripe } from "@stripe/stripe-js";
 import { Order } from "@/db/orders";
 import { formatCurrencyNumber } from "@/lib/currency";
 import CurrencyLogo from "@/components/currency-logo";
 
-if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
-  throw new Error("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set");
-}
-
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-);
-
 export default function CreditCard({
+  publishableKey,
   clientSecret,
   order,
   accountOrUsername,
@@ -40,6 +33,7 @@ export default function CreditCard({
   successUrl,
   errorUrl,
 }: {
+  publishableKey: string;
   clientSecret: string;
   order: Order;
   accountOrUsername: string;
@@ -48,6 +42,9 @@ export default function CreditCard({
   successUrl?: string;
   errorUrl?: string;
 }) {
+  const stripePromiseRef = useRef<Promise<Stripe | null>>(
+    loadStripe(publishableKey)
+  );
   const stripe = useStripe();
   const elements = useElements();
   const router = useRouter();
@@ -159,7 +156,7 @@ export default function CreditCard({
         </CardHeader>
         <CardContent className="flex flex-col justify-center items-center gap-4">
           <Elements
-            stripe={stripePromise}
+            stripe={stripePromiseRef.current}
             options={{
               clientSecret,
               appearance: {

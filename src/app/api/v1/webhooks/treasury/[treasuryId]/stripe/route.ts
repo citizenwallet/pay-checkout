@@ -5,19 +5,38 @@ import { checkoutSessionCompleted } from "./checkoutSessionCompleted";
 import { chargeUpdated } from "./chargeUpdated";
 import { paymentIntentSucceeded } from "./paymentIntentSucceeded";
 import { chargeRefunded } from "./chargeRefunded";
+import { getTreasury } from "@/db/treasury";
+import { getServiceRoleClient } from "@/db";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ treasuryId: string }> }
+) {
+  const { treasuryId } = await params;
 
-// This is your Stripe webhook secret for testing your endpoint locally.
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const client = getServiceRoleClient();
 
-export async function POST(request: Request) {
+  const { data: treasury, error: treasuryError } = await getTreasury(
+    client,
+    parseInt(treasuryId),
+    "stripe"
+  );
+
+  if (treasuryError) {
+    return NextResponse.json({ error: treasuryError.message }, { status: 500 });
+  }
+
+  if (!treasury) {
+    return NextResponse.json({ error: "Treasury not found" }, { status: 404 });
+  }
+
+  const stripe = new Stripe(treasury.sync_provider_credentials.secret_key);
+
+  // This is your Stripe webhook secret for testing your endpoint locally.
+  const endpointSecret = treasury.sync_provider_credentials.webhook_secret;
+
   const body = await request.text();
   const sig = (await headers()).get("stripe-signature");
-
-  if (!endpointSecret) {
-    throw new Error("STRIPE_WEBHOOK_SECRET is not set");
-  }
 
   if (!sig) {
     return NextResponse.json({ error: "No signature" }, { status: 400 });

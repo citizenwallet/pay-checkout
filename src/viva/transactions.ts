@@ -1,9 +1,11 @@
+import { Treasury } from "@/db/treasury";
 import { VivaTransaction, VivaLegacyTransactionsResponse } from ".";
 
 export const getVivaTransaction = async (
+  treasury: Treasury<"viva">,
   transactionId: string
 ): Promise<VivaTransaction | null> => {
-  const accessToken = await getVivaAccessToken();
+  const accessToken = await getVivaAccessToken(treasury);
 
   const response = await fetch(
     `https://api.vivapayments.com/checkout/v2/transactions/${transactionId}`,
@@ -24,9 +26,9 @@ export const getVivaTransaction = async (
   return data;
 };
 
-const getVivaAccessToken = async () => {
+const getVivaAccessToken = async (treasury: Treasury<"viva">) => {
   const basicAuth = Buffer.from(
-    `${process.env.VIVA_CLIENT_ID}:${process.env.VIVA_CLIENT_SECRET}`
+    `${treasury.sync_provider_credentials.client_id}:${treasury.sync_provider_credentials.client_secret}`
   ).toString("base64");
 
   const response = await fetch(
@@ -46,9 +48,12 @@ const getVivaAccessToken = async () => {
   return data.access_token;
 };
 
-export const getFullTransaction = async (transactionId: string) => {
+export const getFullTransaction = async (
+  treasury: Treasury<"viva">,
+  transactionId: string
+) => {
   const basicAuth = Buffer.from(
-    `${process.env.VIVA_MERCHANT_ID}:${process.env.VIVA_API_KEY}`
+    `${treasury.sync_provider_credentials.merchant_id}:${treasury.sync_provider_credentials.api_key}`
   ).toString("base64");
 
   const response = await fetch(

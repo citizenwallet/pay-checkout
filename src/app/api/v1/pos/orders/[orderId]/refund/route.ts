@@ -7,6 +7,7 @@ import { createVivaRefund } from "@/services/viva";
 import { CommunityConfig, verifyConnectedHeaders } from "@citizenwallet/sdk";
 import Config from "@/cw/community.json";
 import { verifyPosAuth } from "../../../auth";
+import { getTreasuryByBusinessId } from "@/db/treasury";
 
 export async function PATCH(
   request: NextRequest,
@@ -70,6 +71,10 @@ export async function PATCH(
       throw new Error("Order has no processor tx");
     }
 
+    if (!orderData.token) {
+      throw new Error("Order has no token");
+    }
+
     if (orderData.type === "app" && orderData.status === "paid") {
       // TODO: Implement refund for app orders
     } else if (
@@ -79,7 +84,24 @@ export async function PATCH(
     ) {
       switch (processorTx.type) {
         case "stripe": {
+          const { data: treasury, error: treasuryError } =
+            await getTreasuryByBusinessId(
+              client,
+              "stripe",
+              orderData.place.business.id,
+              orderData.token
+            );
+
+          if (treasuryError) {
+            throw new Error("Unable to find treasury");
+          }
+
+          if (!treasury) {
+            throw new Error("Unable to find treasury");
+          }
+
           const refunded = await createStripeRefund(
+            treasury,
             processorTx.processor_tx_id
           );
           if (!refunded) {
@@ -88,7 +110,24 @@ export async function PATCH(
           return;
         }
         case "viva": {
+          const { data: treasury, error: treasuryError } =
+            await getTreasuryByBusinessId(
+              client,
+              "viva",
+              orderData.place.business.id,
+              orderData.token
+            );
+
+          if (treasuryError) {
+            throw new Error("Unable to find treasury");
+          }
+
+          if (!treasury) {
+            throw new Error("Unable to find treasury");
+          }
+
           const refunded = await createVivaRefund(
+            treasury,
             processorTx.processor_tx_id,
             orderData.total
           );

@@ -18,6 +18,8 @@ import { CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getPlace } from "@/lib/place";
+import { getTreasuryByBusinessId } from "@/db/treasury";
+import ElementsWrapper from "../ElementsWrapper";
 
 export default async function Page({
   params,
@@ -146,22 +148,47 @@ async function AsyncPage({
     return <div>Error: Place not found</div>;
   }
 
+  if (!data || !data.token) {
+    return <div>Order not found</div>;
+  }
+
+  const { data: treasury, error: treasuryError } =
+    await getTreasuryByBusinessId(
+      client,
+      "stripe",
+      data.place.business.id,
+      data.token
+    );
+
+  if (treasuryError) {
+    return <div>Error: {treasuryError.message}</div>;
+  }
+
+  if (!treasury) {
+    return <div>Treasury not found</div>;
+  }
+
   return (
-    <Summary
-      accountOrUsername={accountOrUsername}
-      order={data}
-      items={items.reduce((acc, item) => {
-        acc[item.id] = item;
-        return acc;
-      }, {} as { [key: number]: Item })}
-      currencyLogo={community.community.logo}
-      tx={tx}
-      customOrderId={customOrderId}
-      closeUrl={close}
-      tax={tax}
-      isTopUp={place.place?.display === "topup"}
-      successUrl={successUrl}
-      errorUrl={errorUrl}
-    />
+    <ElementsWrapper
+      publishableKey={treasury.sync_provider_credentials.publishable_key}
+    >
+      <Summary
+        publishableKey={treasury.sync_provider_credentials.publishable_key}
+        accountOrUsername={accountOrUsername}
+        order={data}
+        items={items.reduce((acc, item) => {
+          acc[item.id] = item;
+          return acc;
+        }, {} as { [key: number]: Item })}
+        currencyLogo={community.community.logo}
+        tx={tx}
+        customOrderId={customOrderId}
+        closeUrl={close}
+        tax={tax}
+        isTopUp={place.place?.display === "topup"}
+        successUrl={successUrl}
+        errorUrl={errorUrl}
+      />
+    </ElementsWrapper>
   );
 }

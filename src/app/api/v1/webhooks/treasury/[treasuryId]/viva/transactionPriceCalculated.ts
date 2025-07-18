@@ -16,8 +16,10 @@ import {
   createOrderProcessorTx,
   getOrderProcessorTx,
 } from "@/db/ordersProcessorTx";
+import { Treasury } from "@/db/treasury";
 
 export const transactionPriceCalculated = async (
+  treasury: Treasury<"viva">,
   data: VivaTransactionPriceCalculated
 ) => {
   const { OrderCode, TransactionId, TotalCommission = 0.0 } = data;
@@ -40,7 +42,7 @@ export const transactionPriceCalculated = async (
     pos.place_id
   );
 
-  const transaction = await getVivaTransaction(TransactionId);
+  const transaction = await getVivaTransaction(treasury, TransactionId);
 
   if (!transaction) {
     console.error("Transaction not found", TransactionId);
