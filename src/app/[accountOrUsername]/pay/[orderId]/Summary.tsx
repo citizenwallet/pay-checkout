@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils";
 import { installAppAction, openAppAction } from "./actions";
 
 interface Props {
+  publishableKey: string;
   accountOrUsername: string;
   order?: Order;
   items?: { [key: number]: Item };
@@ -46,6 +47,7 @@ interface Props {
 }
 
 export default function Component({
+  publishableKey,
   accountOrUsername,
   order,
   items,
@@ -447,6 +449,7 @@ export default function Component({
             </Button>
 
             <PayElement
+              publishableKey={publishableKey}
               total={total}
               accountOrUsername={accountOrUsername}
               orderId={order?.id ?? 0}

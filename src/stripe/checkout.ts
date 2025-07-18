@@ -5,22 +5,21 @@ import { completeOrder, getOrder } from "@/db/orders";
 import { getPlace } from "@/lib/place";
 
 import Stripe from "stripe";
+import { getTreasuryByBusinessId, Treasury } from "@/db/treasury";
 
 export const generateCheckoutSession = async (
+  treasury: Treasury<"stripe">,
   accountOrUsername: string,
   orderId: number,
   amount: number
 ) => {
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-  if (!secretKey) {
-    throw new Error("STRIPE_SECRET_KEY is not set");
-  }
-
-  const stripe = new Stripe(secretKey);
-  const priceId = process.env.STRIPE_PRICE_ID;
+  const stripe = new Stripe(treasury.sync_provider_credentials.secret_key, {
+    apiVersion: "2024-10-28.acacia",
+  });
+  const priceId = treasury.sync_provider_credentials.price_id;
 
   if (!priceId) {
-    throw new Error("STRIPE_PRICE_ID is not set");
+    throw new Error("stripe price id is not set");
   }
 
   const baseDomain = process.env.BASE_DOMAIN;
@@ -61,7 +60,6 @@ export const generateCheckoutSession = async (
     placeId: place.id,
     orderId,
     amount,
-    forward_url: `https://${baseDomain}/api/v1/webhooks/stripe`,
   };
 
   const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [
@@ -91,13 +89,6 @@ export const getClientSecret = async (
   orderId: number,
   amount: number
 ) => {
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-  if (!secretKey) {
-    throw new Error("STRIPE_SECRET_KEY is not set");
-  }
-
-  const stripe = new Stripe(secretKey);
-
   const client = getServiceRoleClient();
 
   const { place } = await getPlace(client, accountOrUsername);
@@ -108,19 +99,34 @@ export const getClientSecret = async (
 
   const { data: order } = await getOrder(client, orderId);
 
-  if (!order) {
+  if (!order || !order.token) {
     throw new Error("Order not found");
   }
+
+  const { data: treasury, error: treasuryError } =
+    await getTreasuryByBusinessId(
+      client,
+      "stripe",
+      order.place.business.id,
+      order.token
+    );
+
+  if (treasuryError) {
+    throw new Error("Treasury not found");
+  }
+
+  if (!treasury) {
+    throw new Error("Treasury not found");
+  }
+
+  const stripe = new Stripe(treasury.sync_provider_credentials.secret_key, {
+    apiVersion: "2024-10-28.acacia",
+  });
 
   let account = place.accounts[0];
   if (place.display === "topup" && order.account) {
     // top ups should be given to the order account
     account = order.account;
-  }
-
-  const baseDomain = process.env.BASE_DOMAIN;
-  if (!baseDomain) {
-    throw new Error("BASE_DOMAIN is not set");
   }
 
   const metadata: Stripe.MetadataParam = {
@@ -129,7 +135,6 @@ export const getClientSecret = async (
     placeId: place.id,
     orderId,
     amount,
-    forward_url: `https://${baseDomain}/api/v1/webhooks/stripe`,
   };
   if (place.display === "topup") {
     // top ups shouldn't be charged fees

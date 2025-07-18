@@ -40,6 +40,14 @@ export interface Order {
   token: string | null;
 }
 
+export interface OrderWithBusiness extends Order {
+  place: {
+    business: {
+      id: number;
+    };
+  };
+}
+
 export const createOrder = async (
   client: SupabaseClient,
   placeId: number,
@@ -221,8 +229,12 @@ export const updateOrder = async (
 export const getOrder = async (
   client: SupabaseClient,
   orderId: number
-): Promise<PostgrestSingleResponse<Order>> => {
-  return client.from("orders").select().eq("id", orderId).single();
+): Promise<PostgrestSingleResponse<OrderWithBusiness>> => {
+  return client
+    .from("orders")
+    .select("*, place:places(business:businesses(id))")
+    .eq("id", orderId)
+    .single();
 };
 
 export const getTerminalOrderByTransactionId = async (

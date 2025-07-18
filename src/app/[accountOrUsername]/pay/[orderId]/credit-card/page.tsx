@@ -8,6 +8,8 @@ import { Suspense } from "react";
 import CreditCard from "./credit-card";
 import { CommunityConfig } from "@citizenwallet/sdk";
 import Config from "@/cw/community.json";
+import { getTreasuryByBusinessId } from "@/db/treasury";
+import ElementsWrapper from "../../ElementsWrapper";
 
 export default async function CreditCardPayment({
   params,
@@ -63,6 +65,26 @@ async function AsyncPage({
     return <div>Error: {error.message}</div>;
   }
 
+  if (!data || !data.token) {
+    return <div>Order not found</div>;
+  }
+
+  const { data: treasury, error: treasuryError } =
+    await getTreasuryByBusinessId(
+      client,
+      "stripe",
+      data.place.business.id,
+      data.token
+    );
+
+  if (treasuryError) {
+    return <div>Error: {treasuryError.message}</div>;
+  }
+
+  if (!treasury) {
+    return <div>Treasury not found</div>;
+  }
+
   const clientSecret = await getClientSecret(
     accountOrUsername,
     orderId,
@@ -76,12 +98,17 @@ async function AsyncPage({
   const community = new CommunityConfig(Config);
 
   return (
-    <CreditCard
-      clientSecret={clientSecret}
-      order={data}
-      accountOrUsername={accountOrUsername}
-      currencyLogo={community.community.logo}
-      closeUrl={close}
-    />
+    <ElementsWrapper
+      publishableKey={treasury.sync_provider_credentials.publishable_key}
+    >
+      <CreditCard
+        publishableKey={treasury.sync_provider_credentials.publishable_key}
+        clientSecret={clientSecret}
+        order={data}
+        accountOrUsername={accountOrUsername}
+        currencyLogo={community.community.logo}
+        closeUrl={close}
+      />
+    </ElementsWrapper>
   );
 }
