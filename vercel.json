@@ -3,6 +3,10 @@
     {
       "path": "/api/v1/cron/minting",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/v1/cron/treasury/ponto",
+      "schedule": "*/1 * * * *"
     }
   ]
 }

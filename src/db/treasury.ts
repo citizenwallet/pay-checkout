@@ -18,8 +18,12 @@ export interface VivaProviderCredentials {
 }
 
 export interface PontoProviderCredentials {
-  api_key: string;
-  api_secret: string;
+  client_id: string;
+  client_secret: string;
+  account_id: string;
+  iban: string;
+  sync_expiry: string;
+  sync_message_type: "structured" | "unstructured";
 }
 
 export type SyncStrategy = "payg" | "periodic";
@@ -53,7 +57,7 @@ export interface Treasury<S extends SyncProvider> {
     ? PaygSyncStrategyConfig
     : SyncStrategy extends "periodic"
     ? PeriodicSyncStrategyConfig
-    : never;
+    : PaygSyncStrategyConfig;
   sync_currency_symbol: string;
 }
 
@@ -130,4 +134,10 @@ export const getTreasuryByBusinessId = async <S extends SyncProvider>(
     status: 200,
     statusText: "OK",
   };
+};
+
+export const getPontoTreasuries = async (
+  client: SupabaseClient
+): Promise<PostgrestSingleResponse<Treasury<"ponto">[]>> => {
+  return client.from("treasury").select("*").eq("sync_provider", "ponto");
 };
