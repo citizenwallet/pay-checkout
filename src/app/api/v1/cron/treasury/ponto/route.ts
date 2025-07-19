@@ -31,6 +31,10 @@ export async function GET(request: NextRequest) {
   }
 
   for (const treasury of treasuries) {
+    if (treasury.sync_strategy !== "payg") {
+      continue;
+    }
+
     const ponto = new PontoClient(
       treasury.sync_provider_credentials.client_id,
       treasury.sync_provider_credentials.client_secret
@@ -39,8 +43,6 @@ export async function GET(request: NextRequest) {
     const transactions = await ponto.getTransactions(
       treasury.sync_provider_credentials.account_id
     );
-
-    // console.log("treasury", treasury.id, transactions.data);
 
     const operations = transactions.data.map((transaction) =>
       pontoTransactionToTreasuryOperation(transaction, treasury.id, "pending")
@@ -63,12 +65,7 @@ export async function GET(request: NextRequest) {
       operation.account = taccount.account;
     }
 
-    console.log(operations);
-    const { error: insertError } = await insertTreasuryOperations(
-      client,
-      operations
-    );
-    console.log(insertError);
+    await insertTreasuryOperations(client, operations);
   }
 
   return new NextResponse("treasuries synced", { status: 200 });
