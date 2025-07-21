@@ -3,7 +3,7 @@ import { getServiceRoleClient } from "@/db";
 import { getPontoTreasuries } from "@/db/treasury";
 import { PontoClient } from "@/services/ponto";
 import { pontoTransactionToTreasuryOperation } from "@/services/ponto/transaction";
-import { getTreasuryAccountMessage } from "@/db/treasury_account_message";
+import { getTreasuryAccount } from "@/db/treasury_account";
 import {
   getLatestTreasuryOperation,
   insertTreasuryOperations,
@@ -60,8 +60,11 @@ export async function GET(request: NextRequest) {
     );
 
     for (const operation of operations) {
-      const { data: taccount, error: messagesError } =
-        await getTreasuryAccountMessage(client, operation.message, treasury.id);
+      const { data: taccount, error: messagesError } = await getTreasuryAccount(
+        client,
+        operation.message,
+        treasury.id
+      );
 
       if (messagesError) {
         console.error(messagesError);

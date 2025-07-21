@@ -2,22 +2,22 @@ import "server-only";
 
 import { PostgrestSingleResponse, SupabaseClient } from "@supabase/supabase-js";
 
-export interface TreasuryAccountMessage {
-  message: string;
+export interface TreasuryAccount {
+  id: string;
   treasury_id: number;
   created_at: string;
   account: string;
 }
 
-export const getTreasuryAccountMessage = async (
+export const getTreasuryAccount = async (
   client: SupabaseClient,
-  message: string,
+  id: string,
   treasuryId: number
-): Promise<PostgrestSingleResponse<TreasuryAccountMessage | null>> => {
+): Promise<PostgrestSingleResponse<TreasuryAccount | null>> => {
   return client
-    .from("treasury_account_message")
+    .from("treasury_account")
     .select("*")
-    .eq("message", message)
+    .eq("id", id)
     .eq("treasury_id", treasuryId)
     .maybeSingle();
 };
