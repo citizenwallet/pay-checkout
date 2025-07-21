@@ -121,7 +121,7 @@ export const transactionReversalCreated = async (
   )} - #${order.id}`;
 
   const operation: TreasuryOperation<"payg"> = {
-    id: TransactionId,
+    id: `${TransactionId}-refund`,
     treasury_id: treasury.id,
     created_at: createdAt.toISOString(),
     updated_at: createdAt.toISOString(),

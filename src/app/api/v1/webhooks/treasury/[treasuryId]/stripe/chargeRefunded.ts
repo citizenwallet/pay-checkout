@@ -187,14 +187,10 @@ export const chargeRefunded = async (
     description = `Refunded ${token.symbol} ${formatCurrencyNumber(toBurn)}`;
   }
 
-  console.log("description", description);
-
   const message = `stripe refund operation - ${placeName} - ${orderId}`;
 
-  console.log("message", message);
-
   const operation: TreasuryOperation<"payg"> = {
-    id: paymentIntentId,
+    id: `${paymentIntentId}-refund`,
     treasury_id: treasury.id,
     created_at: new Date(event.created * 1000).toISOString(),
     updated_at: new Date(event.created * 1000).toISOString(),
@@ -209,8 +205,6 @@ export const chargeRefunded = async (
     tx_hash: null,
     account,
   };
-
-  console.log("operation", operation);
 
   const { error: insertError } = await insertTreasuryOperations(client, [
     operation,
