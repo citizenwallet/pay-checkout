@@ -140,7 +140,7 @@ export const chargeRefunded = async (
 
   // if the order is already refunded, do nothing
   if (order.status === "refunded") {
-    console.error("Order is already refunded", orderError);
+    console.error("Order is already refunded", order);
     return NextResponse.json({ received: true });
   }
 
