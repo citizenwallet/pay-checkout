@@ -84,7 +84,7 @@ export const transactionReversalCreated = async (
     order.id,
     amount,
     fees,
-    createdProcessorTx!.id
+    createdProcessorTx?.id ?? null
   );
   if (updateError) {
     console.error("Error updating order", updateError);

@@ -166,7 +166,7 @@ export const chargeRefunded = async (
     orderId,
     parseInt(amount),
     fees,
-    createdProcessorTx!.id
+    createdProcessorTx?.id ?? null
   );
   if (updateError) {
     console.error("Error updating order", updateError);
