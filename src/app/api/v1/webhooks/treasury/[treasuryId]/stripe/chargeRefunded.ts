@@ -173,6 +173,11 @@ export const chargeRefunded = async (
     return NextResponse.json({ received: true });
   }
 
+  if (!refundOrderData) {
+    console.error("Error refunding order", refundOrderData);
+    return NextResponse.json({ received: true });
+  }
+
   if (order.status === "needs_minting") {
     // If the order was already not minted, we only need to burn the fees
     toBurn = fees;
