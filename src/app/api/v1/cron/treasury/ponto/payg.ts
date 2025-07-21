@@ -31,6 +31,11 @@ export async function syncPontoTreasuryPayg(
     latestOperation?.id
   );
 
+  if (transactions.length === 0) {
+    console.log("payg: no transactions to sync");
+    return;
+  }
+
   // map the transactions to treasury operations
   const operations = transactions.map((transaction) =>
     pontoTransactionToTreasuryOperation(transaction, treasury.id, "pending")
