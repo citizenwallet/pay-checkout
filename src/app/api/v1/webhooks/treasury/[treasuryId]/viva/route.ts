@@ -128,7 +128,10 @@ export async function POST(
         body.EventData as VivaTransactionPriceCalculated
       );
     case VIVA_EVENT_TYPES.TRANSACTION_PAYMENT_REVERSED:
-      return transactionReversalCreated(body.EventData as VivaTransactionData);
+      return transactionReversalCreated(
+        treasury,
+        body.EventData as VivaTransactionData
+      );
   }
 
   return NextResponse.json({ received: true });

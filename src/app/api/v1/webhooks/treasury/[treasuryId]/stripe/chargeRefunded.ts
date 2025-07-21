@@ -1,17 +1,6 @@
 import { getServiceRoleClient } from "@/db";
-import {
-  attachTxHashToOrder,
-  getOrder,
-  getOrderByProcessorTxId,
-  orderNeedsBurning,
-  refundOrder,
-} from "@/db/orders";
-import {
-  BundlerService,
-  CommunityConfig,
-  getAccountAddress,
-} from "@citizenwallet/sdk";
-import { Wallet } from "ethers";
+import { getOrder, getOrderByProcessorTxId, refundOrder } from "@/db/orders";
+import { CommunityConfig } from "@citizenwallet/sdk";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import Config from "@/cw/community.json";
@@ -22,8 +11,17 @@ import {
   createOrderProcessorTx,
   getOrderProcessorTx,
 } from "@/db/ordersProcessorTx";
+import { Treasury } from "@/db/treasury";
+import {
+  insertTreasuryOperations,
+  TreasuryOperation,
+} from "@/db/treasury_operation";
 
-export const chargeRefunded = async (stripe: Stripe, event: Stripe.Event) => {
+export const chargeRefunded = async (
+  stripe: Stripe,
+  event: Stripe.Event,
+  treasury: Treasury<"stripe">
+) => {
   const charge = event.data.object as Stripe.Charge;
 
   // Log the metadata
@@ -45,6 +43,8 @@ export const chargeRefunded = async (stripe: Stripe, event: Stripe.Event) => {
   if (!placeId) {
     return NextResponse.json({ error: "No placeId" }, { status: 400 });
   }
+
+  const placeName = charge.metadata?.placeName;
 
   const orderId = parseInt(charge.metadata?.orderId ?? "0");
   if (!orderId || isNaN(orderId)) {
@@ -82,6 +82,8 @@ export const chargeRefunded = async (stripe: Stripe, event: Stripe.Event) => {
   }
 
   const community = new CommunityConfig(Config);
+
+  const token = community.getToken(treasury.token);
 
   const client = getServiceRoleClient();
 
@@ -175,44 +177,29 @@ export const chargeRefunded = async (stripe: Stripe, event: Stripe.Event) => {
     // If the order was already not minted, we only need to burn the fees
     toBurn = fees;
 
-    description = `Refunded ${
-      community.primaryToken.symbol
-    } ${formatCurrencyNumber(toBurn)}`;
+    description = `Refunded ${token.symbol} ${formatCurrencyNumber(toBurn)}`;
   }
 
-  if (
-    !process.env.FAUCET_PRIVATE_KEY ||
-    process.env.FAUCET_PRIVATE_KEY === "DEV"
-  ) {
-    return NextResponse.json({ received: true });
-  }
+  const message = `stripe refund operation - ${placeName} - ${orderId}`;
 
-  const signer = new Wallet(process.env.FAUCET_PRIVATE_KEY!);
-
-  const senderAccount = await getAccountAddress(community, signer.address);
-  if (!senderAccount) {
-    return NextResponse.json({ error: "No sender account" }, { status: 400 });
-  }
-
-  const bundler = new BundlerService(community);
-
-  const txHash = await bundler.burnFromERC20Token(
-    signer,
-    community.primaryToken.address,
-    senderAccount,
+  const operation: TreasuryOperation<"payg"> = {
+    id: paymentIntentId,
+    treasury_id: treasury.id,
+    created_at: new Date(event.created * 1000).toISOString(),
+    updated_at: new Date(event.created * 1000).toISOString(),
+    direction: "out",
+    amount: toBurn,
+    status: "pending",
+    message,
+    metadata: {
+      order_id: refundOrderData.id,
+      description,
+    },
+    tx_hash: null,
     account,
-    `${toBurn / 100}`,
-    description
-  );
+  };
 
-  await attachTxHashToOrder(client, refundOrderData.id, txHash);
-
-  try {
-    await bundler.awaitSuccess(txHash);
-  } catch (error) {
-    console.error("Error when burning", error);
-    await orderNeedsBurning(client, refundOrderData.id);
-  }
+  await insertTreasuryOperations(client, [operation]);
 
   return NextResponse.json({ received: true });
 };

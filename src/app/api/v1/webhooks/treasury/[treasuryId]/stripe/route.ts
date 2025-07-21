@@ -63,7 +63,7 @@ export async function POST(
     case "charge.updated":
       return chargeUpdated(stripe, event, treasury);
     case "charge.refunded":
-      return chargeRefunded(stripe, event);
+      return chargeRefunded(stripe, event, treasury);
   }
 
   return NextResponse.json({ received: true });

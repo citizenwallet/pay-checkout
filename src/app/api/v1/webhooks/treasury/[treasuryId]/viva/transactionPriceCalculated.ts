@@ -117,7 +117,7 @@ export const transactionPriceCalculated = async (
 
   const description = `Received ${token.symbol} ${formatCurrencyNumber(
     mintAmount
-  )}`;
+  )} - #${order.id}`;
 
   const operation: TreasuryOperation<"payg"> = {
     id: TransactionId,
