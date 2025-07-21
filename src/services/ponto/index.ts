@@ -140,8 +140,8 @@ export class PontoClient {
   async getTransactions(
     accountId: string,
     options: {
-      after?: string;
-      before?: string;
+      after?: string | null;
+      before?: string | null;
     } = {}
   ): Promise<PontoTransactionsResponse> {
     const query = new URLSearchParams();
@@ -162,6 +162,36 @@ export class PontoClient {
     );
 
     return response;
+  }
+
+  async getAllTransactionsUntilId(
+    accountId: string,
+    untilId?: string
+  ): Promise<PontoTransaction[]> {
+    let after: string | null = null;
+    const transactions: PontoTransaction[] = [];
+
+    while (true) {
+      const response = await this.getTransactions(accountId, { after });
+
+      if (response.data.length === 0) {
+        return transactions;
+      }
+
+      for (const transaction of response.data) {
+        if (untilId && transaction.id === untilId) {
+          return transactions;
+        }
+
+        transactions.push(transaction);
+      }
+
+      if (response.meta.paging.after === null) {
+        return transactions;
+      }
+
+      after = response.meta.paging.after;
+    }
   }
 }
 
