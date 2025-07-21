@@ -24,7 +24,7 @@ export async function generateMetadata({
     title: "Place not found",
     description: "This place has not been claimed yet.",
     icons: {
-      icon: "/favicon.ico",
+      icon: `/favicon/${accountOrUsername}`,
     },
     openGraph: {
       title: "Place not found",
@@ -43,12 +43,16 @@ export async function generateMetadata({
   );
 
   if (inviteCode && !place) {
+    const faviconImage = "/shop.png";
     metadata.title = "Join Brussels Pay";
     metadata.description = "Verify your business to activate this code.";
+    metadata.icons = {
+      icon: `/favicon/${accountOrUsername}`,
+    };
     metadata.openGraph = {
       title: "Join Brussels Pay",
       description: "Verify your business to activate this code.",
-      images: ["/shop.png"],
+      images: [faviconImage],
     };
     return metadata;
   }
@@ -57,12 +61,16 @@ export async function generateMetadata({
     return metadata;
   }
 
+  const faviconImage = place.image ?? profile?.image ?? "/shop.png";
   metadata.title = place.name;
   metadata.description = profile?.description ?? "Pay with Brussels Pay";
+  metadata.icons = {
+    icon: `/favicon/${accountOrUsername}`,
+  };
   metadata.openGraph = {
     title: place.name,
     description: profile?.description ?? "Pay with Brussels Pay",
-    images: [place.image ?? profile?.image ?? "/shop.png"],
+    images: [faviconImage],
     type: "website",
   };
 

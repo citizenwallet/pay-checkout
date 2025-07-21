@@ -15,6 +15,18 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async rewrites() {
+    return [
+      {
+        source: "/favicon/:accountOrUsername",
+        destination: "/api/favicon/:accountOrUsername",
+      },
+      {
+        source: "/favicon/:accountOrUsername.ico",
+        destination: "/api/favicon/:accountOrUsername",
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {
