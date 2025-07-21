@@ -4,7 +4,10 @@ import { getPontoTreasuries } from "@/db/treasury";
 import { PontoClient } from "@/services/ponto";
 import { pontoTransactionToTreasuryOperation } from "@/services/ponto/transaction";
 import { getTreasuryAccountMessage } from "@/db/treasury_account_message";
-import { insertTreasuryOperations } from "@/db/treasury_operation";
+import {
+  getLatestTreasuryOperation,
+  insertTreasuryOperations,
+} from "@/db/treasury_operation";
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -40,11 +43,19 @@ export async function GET(request: NextRequest) {
       treasury.sync_provider_credentials.client_secret
     );
 
-    const transactions = await ponto.getTransactions(
-      treasury.sync_provider_credentials.account_id
+    const { data: latestOperation, error: latestOperationError } =
+      await getLatestTreasuryOperation(client, treasury.id);
+    if (latestOperationError) {
+      console.error(latestOperationError);
+      continue;
+    }
+
+    const transactions = await ponto.getAllTransactionsUntilId(
+      treasury.sync_provider_credentials.account_id,
+      latestOperation?.id
     );
 
-    const operations = transactions.data.map((transaction) =>
+    const operations = transactions.map((transaction) =>
       pontoTransactionToTreasuryOperation(transaction, treasury.id, "pending")
     );
 

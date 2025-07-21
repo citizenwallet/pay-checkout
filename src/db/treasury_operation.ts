@@ -51,3 +51,16 @@ export const getPendingTreasuryOperations = async (
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 };
+
+export const getLatestTreasuryOperation = async (
+  client: SupabaseClient,
+  treasuryId: number
+): Promise<PostgrestSingleResponse<TreasuryOperation | null>> => {
+  return client
+    .from("treasury_operations")
+    .select("*")
+    .eq("treasury_id", treasuryId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+};
