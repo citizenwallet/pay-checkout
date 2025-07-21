@@ -1,17 +1,10 @@
 import { getServiceRoleClient } from "@/db";
 import {
   attachProcessorTxToOrder,
-  attachTxHashToOrder,
   getOrder,
-  orderNeedsMinting,
   updateOrderFees,
 } from "@/db/orders";
-import {
-  BundlerService,
-  CommunityConfig,
-  getAccountAddress,
-} from "@citizenwallet/sdk";
-import { Wallet } from "ethers";
+import { CommunityConfig } from "@citizenwallet/sdk";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import Config from "@/cw/community.json";
@@ -22,8 +15,17 @@ import {
   createOrderProcessorTx,
   getOrderProcessorTx,
 } from "@/db/ordersProcessorTx";
+import { Treasury } from "@/db/treasury";
+import {
+  insertTreasuryOperations,
+  TreasuryOperation,
+} from "@/db/treasury_operation";
 
-export const chargeUpdated = async (stripe: Stripe, event: Stripe.Event) => {
+export const chargeUpdated = async (
+  stripe: Stripe,
+  event: Stripe.Event,
+  treasury: Treasury<"stripe">
+) => {
   const charge = event.data.object as Stripe.Charge;
 
   // Log the metadata
@@ -45,6 +47,8 @@ export const chargeUpdated = async (stripe: Stripe, event: Stripe.Event) => {
   if (!placeId) {
     return NextResponse.json({ error: "No placeId" }, { status: 400 });
   }
+
+  const placeName = charge.metadata?.placeName;
 
   const orderId = parseInt(charge.metadata?.orderId ?? "0");
   if (!orderId || isNaN(orderId)) {
@@ -85,9 +89,9 @@ export const chargeUpdated = async (stripe: Stripe, event: Stripe.Event) => {
 
   const client = getServiceRoleClient();
 
-  let description = `Received ${
-    community.primaryToken.symbol
-  } ${formatCurrencyNumber(toMint)}`;
+  const token = community.getToken(treasury.token);
+
+  let description = `Received ${token.symbol} ${formatCurrencyNumber(toMint)}`;
 
   try {
     const { data: order } = await getOrder(client, orderId);
@@ -111,63 +115,55 @@ export const chargeUpdated = async (stripe: Stripe, event: Stripe.Event) => {
     paymentIntentId = charge.payment_intent?.id || null;
   }
 
-  if (paymentIntentId) {
-    const { data: orderProcessorTx } = await getOrderProcessorTx(
-      client,
-      "stripe",
-      paymentIntentId
-    );
-    if (orderProcessorTx) {
-      console.log("Order processor tx already exists", paymentIntentId);
-      return NextResponse.json({ received: true });
-    }
+  if (!paymentIntentId) {
+    return NextResponse.json({ received: true });
+  }
 
-    const { data: processorTx, error: processorTxError } =
-      await createOrderProcessorTx(client, "stripe", paymentIntentId);
-    if (processorTxError || !processorTx) {
-      console.error("Error creating processor tx", processorTxError);
-    }
+  const { data: orderProcessorTx } = await getOrderProcessorTx(
+    client,
+    "stripe",
+    paymentIntentId
+  );
+  if (orderProcessorTx) {
+    console.log("Order processor tx already exists", paymentIntentId);
+    return NextResponse.json({ received: true });
+  }
 
-    if (processorTx) {
-      await attachProcessorTxToOrder(client, orderId, processorTx.id);
-    }
+  const { data: processorTx, error: processorTxError } =
+    await createOrderProcessorTx(client, "stripe", paymentIntentId);
+  if (processorTxError || !processorTx) {
+    console.error("Error creating processor tx", processorTxError);
+  }
+
+  if (processorTx) {
+    await attachProcessorTxToOrder(client, orderId, processorTx.id);
   }
 
   await updateOrderFees(client, orderId, fees);
 
-  if (
-    !process.env.FAUCET_PRIVATE_KEY ||
-    process.env.FAUCET_PRIVATE_KEY === "DEV"
-  ) {
-    return NextResponse.json({ received: true });
+  let message = `stripe operation - ${placeName} - ${orderId}`;
+  if (charge.payment_method_details) {
+    message += ` - ${charge.payment_method_details.type}`;
   }
 
-  const signer = new Wallet(process.env.FAUCET_PRIVATE_KEY!);
-
-  const senderAccount = await getAccountAddress(community, signer.address);
-  if (!senderAccount) {
-    return NextResponse.json({ error: "No sender account" }, { status: 400 });
-  }
-
-  const bundler = new BundlerService(community);
-
-  const txHash = await bundler.mintERC20Token(
-    signer,
-    community.primaryToken.address,
-    senderAccount,
+  const operation: TreasuryOperation<"payg"> = {
+    id: paymentIntentId,
+    treasury_id: treasury.id,
+    created_at: new Date(event.created * 1000).toISOString(),
+    updated_at: new Date(event.created * 1000).toISOString(),
+    direction: "in",
+    amount: toMint,
+    status: "pending",
+    message,
+    metadata: {
+      order_id: orderId,
+      description,
+    },
+    tx_hash: null,
     account,
-    `${toMint / 100}`,
-    description
-  );
+  };
 
-  await attachTxHashToOrder(client, orderId, txHash);
-
-  try {
-    await bundler.awaitSuccess(txHash);
-  } catch (error) {
-    console.error("Error when minting", error);
-    await orderNeedsMinting(client, orderId);
-  }
+  await insertTreasuryOperations(client, [operation]);
 
   return NextResponse.json({ received: true });
 };
