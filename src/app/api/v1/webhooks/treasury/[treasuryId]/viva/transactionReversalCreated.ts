@@ -1,25 +1,26 @@
-import {
-  attachTxHashToOrder,
-  getOrderByProcessorTxId,
-  orderNeedsBurning,
-  refundOrder,
-} from "@/db/orders";
+import { getOrderByProcessorTxId, refundOrder } from "@/db/orders";
 import { getServiceRoleClient } from "@/db";
-import { BundlerService } from "@citizenwallet/sdk";
 import { getPlaceById } from "@/db/places";
-import { getAccountAddress } from "@citizenwallet/sdk";
 import { VivaTransactionData } from "@/viva";
 import { CommunityConfig } from "@citizenwallet/sdk";
-import { Wallet } from "ethers";
 import { NextResponse } from "next/server";
 import Config from "@/cw/community.json";
 import {
   createOrderProcessorTx,
   getOrderProcessorTx,
 } from "@/db/ordersProcessorTx";
+import {
+  insertTreasuryOperations,
+  TreasuryOperation,
+} from "@/db/treasury_operation";
+import { Treasury } from "@/db/treasury";
+import { formatCurrencyNumber } from "@/lib/currency";
 
-export const transactionReversalCreated = async (data: VivaTransactionData) => {
-  const { ParentId, TransactionId, Amount, TotalFee } = data;
+export const transactionReversalCreated = async (
+  treasury: Treasury<"viva">,
+  data: VivaTransactionData
+) => {
+  const { ParentId, TransactionId, Amount, TotalFee, InsDate } = data;
 
   const transactionId = ParentId || TransactionId;
 
@@ -101,23 +102,9 @@ export const transactionReversalCreated = async (data: VivaTransactionData) => {
     toBurn = fees;
   }
 
-  if (
-    !process.env.FAUCET_PRIVATE_KEY ||
-    process.env.FAUCET_PRIVATE_KEY === "DEV"
-  ) {
-    console.error("No faucet private key");
-    return NextResponse.json({ received: true });
-  }
-
-  const signer = new Wallet(process.env.FAUCET_PRIVATE_KEY!);
-
   const community = new CommunityConfig(Config);
 
-  const senderAccount = await getAccountAddress(community, signer.address);
-  if (!senderAccount) {
-    console.error("Error getting sender account", senderAccount);
-    return NextResponse.json({ received: true });
-  }
+  const token = community.getToken(treasury.token);
 
   const account = place.accounts[0];
   if (!account) {
@@ -125,24 +112,32 @@ export const transactionReversalCreated = async (data: VivaTransactionData) => {
     return NextResponse.json({ received: true });
   }
 
-  const bundler = new BundlerService(community);
+  const createdAt = new Date(InsDate);
 
-  const txHash = await bundler.burnFromERC20Token(
-    signer,
-    community.primaryToken.address,
-    senderAccount,
+  const message = `viva refund operation - ${place.display} - ${order.id} - ${transactionId}`;
+
+  const description = `Refunded ${token.symbol} ${formatCurrencyNumber(
+    toBurn
+  )} - #${order.id}`;
+
+  const operation: TreasuryOperation<"payg"> = {
+    id: TransactionId,
+    treasury_id: treasury.id,
+    created_at: createdAt.toISOString(),
+    updated_at: createdAt.toISOString(),
+    direction: "out",
+    amount: toBurn,
+    status: "pending",
+    message,
+    metadata: {
+      order_id: refundOrderData.id,
+      description,
+    },
+    tx_hash: null,
     account,
-    `${toBurn / 100}`
-  );
+  };
 
-  await attachTxHashToOrder(client, refundOrderData.id, txHash);
-
-  try {
-    await bundler.awaitSuccess(txHash);
-  } catch (error) {
-    console.error("Error when burning", error);
-    await orderNeedsBurning(client, refundOrderData.id);
-  }
+  await insertTreasuryOperations(client, [operation]);
 
   return NextResponse.json({ received: true });
 };

@@ -41,7 +41,10 @@ export type PeriodicSyncStrategyConfig = {
   minute?: number; // 0-59, minute of hour to trigger
 };
 
-export interface Treasury<S extends SyncProvider> {
+export interface Treasury<
+  S extends SyncProvider,
+  SS extends SyncStrategy = "payg"
+> {
   id: number;
   business_id: number;
   created_at: string;
@@ -55,9 +58,9 @@ export interface Treasury<S extends SyncProvider> {
     ? PontoProviderCredentials
     : never;
   sync_strategy: SyncStrategy;
-  sync_strategy_config: SyncStrategy extends "payg"
+  sync_strategy_config: SS extends "payg"
     ? PaygSyncStrategyConfig
-    : SyncStrategy extends "periodic"
+    : SS extends "periodic"
     ? PeriodicSyncStrategyConfig
     : PaygSyncStrategyConfig;
   sync_currency_symbol: string;

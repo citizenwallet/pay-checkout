@@ -5,6 +5,7 @@ import {
   PostgrestSingleResponse,
   SupabaseClient,
 } from "@supabase/supabase-js";
+import { SyncStrategy } from "./treasury";
 
 export type TreasuryOperationStatus =
   | "requesting"
@@ -14,11 +15,17 @@ export type TreasuryOperationStatus =
   | "processed"
   | "processed-account-not-found";
 
-export interface TreasuryOperationMetadata {
+export interface PeriodicOperationMetadata {
   grouped_operations: string[];
   total_amount: number;
 }
-export interface TreasuryOperation {
+
+export interface PaygOperationMetadata {
+  order_id?: number;
+  description?: string;
+}
+
+export interface TreasuryOperation<S extends SyncStrategy = "payg"> {
   id: string;
   treasury_id: number;
   created_at: string;
@@ -27,7 +34,11 @@ export interface TreasuryOperation {
   amount: number;
   status: TreasuryOperationStatus;
   message: string;
-  metadata: Record<string, string> | TreasuryOperationMetadata;
+  metadata: S extends "periodic"
+    ? PeriodicOperationMetadata
+    : S extends "payg"
+    ? PaygOperationMetadata
+    : Record<string, string>;
   tx_hash: string | null;
   account: string | null;
 }
@@ -47,7 +58,7 @@ export const getPendingPeriodicTreasuryOperations = async (
   treasuryId: number,
   minDate: string,
   maxDate: string
-): Promise<PostgrestResponse<TreasuryOperation>> => {
+): Promise<PostgrestResponse<TreasuryOperation<"periodic">>> => {
   return client
     .from("treasury_operations")
     .select("*")

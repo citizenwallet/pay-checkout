@@ -1,12 +1,8 @@
-import { attachTxHashToOrder, orderNeedsMinting } from "@/db/orders";
 import { getServiceRoleClient } from "@/db";
-import { BundlerService } from "@citizenwallet/sdk";
 import { createTerminalOrder } from "@/db/orders";
 import { getPlaceById } from "@/db/places";
-import { getAccountAddress } from "@citizenwallet/sdk";
 import { VivaTransactionPriceCalculated } from "@/viva";
 import { CommunityConfig } from "@citizenwallet/sdk";
-import { Wallet } from "ethers";
 import { NextResponse } from "next/server";
 import Config from "@/cw/community.json";
 import { getVivaTransaction } from "@/viva/transactions";
@@ -17,6 +13,11 @@ import {
   getOrderProcessorTx,
 } from "@/db/ordersProcessorTx";
 import { Treasury } from "@/db/treasury";
+import {
+  insertTreasuryOperations,
+  TreasuryOperation,
+} from "@/db/treasury_operation";
+import { formatCurrencyNumber } from "@/lib/currency";
 
 export const transactionPriceCalculated = async (
   treasury: Treasury<"viva">,
@@ -82,7 +83,7 @@ export const transactionPriceCalculated = async (
 
   const community = new CommunityConfig(Config);
 
-  const token = community.getToken();
+  const token = community.getToken(treasury.token);
 
   const { data: order, error: orderError } = await createTerminalOrder(
     client,
@@ -99,25 +100,9 @@ export const transactionPriceCalculated = async (
     return NextResponse.json({ received: true });
   }
 
-  if (
-    !process.env.FAUCET_PRIVATE_KEY ||
-    process.env.FAUCET_PRIVATE_KEY === "DEV"
-  ) {
-    console.error("No faucet private key");
-    return NextResponse.json({ received: true });
-  }
-
-  const signer = new Wallet(process.env.FAUCET_PRIVATE_KEY!);
-
   let mintAmount = amount - commission;
   if (mintAmount < 0) {
     mintAmount = 0;
-  }
-
-  const senderAccount = await getAccountAddress(community, signer.address);
-  if (!senderAccount) {
-    console.error("Error getting sender account", senderAccount);
-    return NextResponse.json({ received: true });
   }
 
   const account = place.accounts[0];
@@ -126,24 +111,32 @@ export const transactionPriceCalculated = async (
     return NextResponse.json({ received: true });
   }
 
-  const bundler = new BundlerService(community);
+  const createdAt = new Date(transaction.insDate);
 
-  const txHash = await bundler.mintERC20Token(
-    signer,
-    community.primaryToken.address,
-    senderAccount,
+  const message = `viva operation - ${place.display} - ${order.id} - ${transaction.bankId}`;
+
+  const description = `Received ${token.symbol} ${formatCurrencyNumber(
+    mintAmount
+  )} - #${order.id}`;
+
+  const operation: TreasuryOperation<"payg"> = {
+    id: TransactionId,
+    treasury_id: treasury.id,
+    created_at: createdAt.toISOString(),
+    updated_at: createdAt.toISOString(),
+    direction: "in",
+    amount: mintAmount,
+    status: "pending",
+    message,
+    metadata: {
+      order_id: order.id,
+      description,
+    },
+    tx_hash: null,
     account,
-    `${mintAmount / 100}`
-  );
+  };
 
-  await attachTxHashToOrder(client, order.id, txHash);
-
-  try {
-    await bundler.awaitSuccess(txHash);
-  } catch (error) {
-    console.error("Error when minting", error);
-    await orderNeedsMinting(client, order.id);
-  }
+  await insertTreasuryOperations(client, [operation]);
 
   return NextResponse.json({ received: true });
 };

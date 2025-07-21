@@ -61,9 +61,9 @@ export async function POST(
     case "payment_intent.succeeded":
       return paymentIntentSucceeded(event);
     case "charge.updated":
-      return chargeUpdated(stripe, event);
+      return chargeUpdated(stripe, event, treasury);
     case "charge.refunded":
-      return chargeRefunded(stripe, event);
+      return chargeRefunded(stripe, event, treasury);
   }
 
   return NextResponse.json({ received: true });
