@@ -43,6 +43,7 @@ export const pontoTransactionToTreasuryOperation = (
     id: transaction.id,
     treasury_id: treasuryId,
     created_at: transaction.attributes.createdAt,
+    updated_at: transaction.attributes.updatedAt,
     direction: transaction.attributes.amount > 0 ? "in" : "out",
     amount: Math.floor(Math.abs(transaction.attributes.amount) * 100),
     status,

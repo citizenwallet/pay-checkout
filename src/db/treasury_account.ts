@@ -7,6 +7,7 @@ export interface TreasuryAccount {
   treasury_id: number;
   created_at: string;
   account: string;
+  target: number | null;
 }
 
 export const getTreasuryAccount = async (
@@ -19,5 +20,18 @@ export const getTreasuryAccount = async (
     .select("*")
     .eq("id", id)
     .eq("treasury_id", treasuryId)
+    .maybeSingle();
+};
+
+export const getTreasuryAccountTarget = async (
+  client: SupabaseClient,
+  treasuryId: number,
+  account: string
+): Promise<PostgrestSingleResponse<number | null>> => {
+  return client
+    .from("treasury_account")
+    .select("target")
+    .eq("treasury_id", treasuryId)
+    .eq("account", account)
     .maybeSingle();
 };

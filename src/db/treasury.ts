@@ -31,6 +31,8 @@ export type SyncStrategy = "payg" | "periodic";
 export type PaygSyncStrategyConfig = null;
 
 export type PeriodicSyncStrategyConfig = {
+  target: number;
+  reward: number;
   interval: number;
   interval_unit: "day" | "week" | "month" | "year";
   day_of_month?: number; // 1-31, only used when interval_unit is "month"

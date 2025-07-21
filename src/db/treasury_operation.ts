@@ -9,19 +9,25 @@ import {
 export type TreasuryOperationStatus =
   | "requesting"
   | "pending"
+  | "pending-periodic"
   | "confirming"
   | "processed"
   | "processed-account-not-found";
 
+export interface TreasuryOperationMetadata {
+  grouped_operations: string[];
+  total_amount: number;
+}
 export interface TreasuryOperation {
   id: string;
   treasury_id: number;
   created_at: string;
+  updated_at: string;
   direction: "in" | "out";
   amount: number;
   status: TreasuryOperationStatus;
   message: string;
-  metadata: Record<string, string>;
+  metadata: Record<string, string> | TreasuryOperationMetadata;
   tx_hash: string | null;
   account: string | null;
 }
@@ -36,20 +42,21 @@ export const insertTreasuryOperations = async (
   });
 };
 
-export const getPendingTreasuryOperations = async (
+export const getPendingPeriodicTreasuryOperations = async (
   client: SupabaseClient,
   treasuryId: number,
-  limit: number = 100,
-  offset: number = 0
-): Promise<PostgrestResponse<TreasuryOperation[]>> => {
+  minDate: string,
+  maxDate: string
+): Promise<PostgrestResponse<TreasuryOperation>> => {
   return client
     .from("treasury_operations")
     .select("*")
     .eq("treasury_id", treasuryId)
-    .eq("status", "pending")
+    .eq("status", "pending-periodic")
     .neq("account", null)
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
+    .gte("created_at", minDate)
+    .lt("created_at", maxDate)
+    .order("created_at", { ascending: false });
 };
 
 export const getLatestTreasuryOperation = async (
@@ -63,4 +70,24 @@ export const getLatestTreasuryOperation = async (
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
+};
+
+export const processPeriodicTreasuryOperation = async (
+  client: SupabaseClient,
+  id: string,
+  treasuryId: number,
+  groupedOperations: string[],
+  totalAmount: number
+): Promise<PostgrestSingleResponse<null>> => {
+  return client
+    .from("treasury_operations")
+    .update({
+      status: "pending",
+      metadata: {
+        grouped_operations: groupedOperations,
+        total_amount: totalAmount,
+      },
+    })
+    .eq("id", id)
+    .eq("treasury_id", treasuryId);
 };
