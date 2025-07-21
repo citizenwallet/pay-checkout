@@ -130,7 +130,7 @@ export const transactionReversalCreated = async (
     status: "pending",
     message,
     metadata: {
-      order_id: order.id,
+      order_id: refundOrderData.id,
       description,
     },
     tx_hash: null,
