@@ -160,21 +160,23 @@ export const chargeRefunded = async (
     console.error("Error creating processor tx", processorTxError);
   }
 
+  console.log("Created processor tx", createdProcessorTx);
+
   // update the order to refunded
-  const { data: refundOrderData, error: updateError } = await refundOrder(
+  const { data: refundOrderData, error: refundOrderError } = await refundOrder(
     client,
     orderId,
     parseInt(amount),
     fees,
     createdProcessorTx?.id ?? null
   );
-  if (updateError) {
-    console.error("Error updating order", updateError);
+  if (refundOrderError) {
+    console.error("Error refunding order", refundOrderError);
     return NextResponse.json({ received: true });
   }
 
   if (!refundOrderData) {
-    console.error("Error refunding order", refundOrderData);
+    console.error("Missing refund order data", orderId);
     return NextResponse.json({ received: true });
   }
 
@@ -185,7 +187,11 @@ export const chargeRefunded = async (
     description = `Refunded ${token.symbol} ${formatCurrencyNumber(toBurn)}`;
   }
 
+  console.log("description", description);
+
   const message = `stripe refund operation - ${placeName} - ${orderId}`;
+
+  console.log("message", message);
 
   const operation: TreasuryOperation<"payg"> = {
     id: paymentIntentId,
@@ -204,7 +210,14 @@ export const chargeRefunded = async (
     account,
   };
 
-  await insertTreasuryOperations(client, [operation]);
+  console.log("operation", operation);
+
+  const { error: insertError } = await insertTreasuryOperations(client, [
+    operation,
+  ]);
+  if (insertError) {
+    console.error("Error inserting operation", insertError);
+  }
 
   return NextResponse.json({ received: true });
 };
