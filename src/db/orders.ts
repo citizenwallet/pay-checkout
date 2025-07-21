@@ -295,7 +295,7 @@ export const refundOrder = async (
   amount: number,
   fees: number,
   processorTxId: number | null
-): Promise<PostgrestSingleResponse<Order>> => {
+): Promise<PostgrestSingleResponse<Order | null>> => {
   const orderResponse = await getOrder(client, orderId);
   const { data: order, error } = orderResponse;
   if (error) {
@@ -306,24 +306,32 @@ export const refundOrder = async (
     return orderResponse;
   }
 
-  const { data: refundOrder, error: refundOrderError } = await client
+  const newOrder: Omit<
+    Order,
+    "id" | "created_at" | "completed_at" | "tx_hash" | "refund_id"
+  > = {
+    place_id: order.place_id,
+    items: order.items,
+    total: amount,
+    fees,
+    due: 0,
+    status: "refund",
+    description: order.description,
+    type: order.type,
+    payout_id: order.payout_id,
+    pos: order.pos,
+    processor_tx: processorTxId,
+    token: order.token,
+    account: order.account,
+  };
+
+  const result = await client
     .from("orders")
-    .insert({
-      place_id: order.place_id,
-      items: order.items,
-      total: amount,
-      fees,
-      due: 0,
-      status: "refund",
-      description: order.description,
-      type: order.type,
-      payout_id: order.payout_id,
-      pos: order.pos,
-      processor_tx: processorTxId,
-      token: order.token,
-    })
+    .insert(newOrder)
     .select()
-    .single();
+    .maybeSingle();
+
+  const { data: refundOrder, error: refundOrderError } = result;
   const refundOrderId: number | null = refundOrder?.id;
 
   if (refundOrderError === null && refundOrderId !== null) {
@@ -335,7 +343,7 @@ export const refundOrder = async (
     console.error("updatedOrderError", updatedOrderError);
   }
 
-  return refundOrder;
+  return result;
 };
 
 export const updateOrderFees = async (
