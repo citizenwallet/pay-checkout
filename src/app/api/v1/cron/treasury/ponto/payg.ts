@@ -5,7 +5,10 @@ import {
   insertTreasuryOperations,
 } from "@/db/treasury_operation";
 import { PontoClient } from "@/services/ponto";
-import { pontoTransactionToTreasuryOperation } from "@/services/ponto/transaction";
+import {
+  extractIdFromMessage,
+  pontoTransactionToTreasuryOperation,
+} from "@/services/ponto/transaction";
 import { SupabaseClient } from "@supabase/supabase-js";
 
 export async function syncPontoTreasuryPayg(
@@ -54,7 +57,7 @@ export async function syncPontoTreasuryPayg(
     if (taccount === undefined) {
       const { data: taccount, error: messagesError } = await getTreasuryAccount(
         client,
-        operation.message,
+        extractIdFromMessage(operation.message),
         treasury.id
       );
 

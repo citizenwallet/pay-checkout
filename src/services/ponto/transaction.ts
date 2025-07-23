@@ -59,5 +59,9 @@ export const pontoTransactionToTreasuryOperation = (
 };
 
 const cleanMessage = (message: string) => {
-  return message.trim().replace(/[/+]/g, "");
+  return message.trim();
+};
+
+export const extractIdFromMessage = (message: string) => {
+  return message.trim().replace(/\D/g, "");
 };
