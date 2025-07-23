@@ -365,17 +365,6 @@ export const cancelOrder = async (
     .single();
 };
 
-export const orderNeedsMinting = async (
-  client: SupabaseClient,
-  orderId: number
-): Promise<PostgrestSingleResponse<Order>> => {
-  return client
-    .from("orders")
-    .update({ status: "needs_minting", tx_hash: null })
-    .eq("id", orderId)
-    .single();
-};
-
 export const orderNeedsBurning = async (
   client: SupabaseClient,
   orderId: number

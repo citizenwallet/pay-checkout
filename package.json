@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "configure-provider": "tsx scripts/configure-provider.ts"
+    "configure-provider": "tsx scripts/configure-provider.ts",
+    "migrate-place-accounts": "tsx scripts/migrate-place-accounts.ts"
   },
   "dependencies": {
     "@citizenwallet/sdk": "^2.0.109",

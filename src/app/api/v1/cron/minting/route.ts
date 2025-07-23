@@ -14,6 +14,7 @@ import Config from "@/cw/community.json";
 import { Wallet } from "ethers";
 import { getPlaceById } from "@/db/places";
 
+// TODO: remove if new sync systems works
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
