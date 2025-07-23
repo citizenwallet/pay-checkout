@@ -3,11 +3,11 @@
 import * as z from "zod";
 
 import { createBusiness } from "@/db/business";
-import { createPlace } from "@/db/places";
+import { createPlace, updatePlaceAccounts } from "@/db/places";
 import { getServiceRoleClient } from "@/db";
 import { joinFormSchema } from "../[accountOrUsername]/join/Join";
-import { Wallet } from "ethers";
-import { getAccountAddress, CommunityConfig } from "@citizenwallet/sdk";
+import { id } from "ethers";
+import { CommunityConfig, getCardAddress } from "@citizenwallet/sdk";
 import Config from "@/cw/community.json";
 import { createSlug, generateRandomString } from "@/lib/utils";
 import { createUser, getUserByEmail } from "@/db/users";
@@ -35,18 +35,6 @@ export async function joinAction(
     return { error: "Failed to send email" };
   }
 
-  // generate a throwaway private key
-  const newPk = Wallet.createRandom();
-  const address = newPk.address;
-
-  const community = new CommunityConfig(Config);
-
-  // get account address from throwaway private key
-  const account = await getAccountAddress(community, address);
-  if (!account) {
-    return { error: "Failed to get account address" };
-  }
-
   // create business in businesses table
   const { data: business, error: businessError } = await createBusiness(
     client,
@@ -55,7 +43,6 @@ export async function joinAction(
       status: null,
       vat_number: "",
       business_status: "created",
-      account,
       email: data.email,
       phone: data.phone,
       invite_code: inviteCode,
@@ -101,11 +88,11 @@ export async function joinAction(
   }
 
   // create place in places table
-  const { error: placeError } = await createPlace(client, {
+  const { data: place, error: placeError } = await createPlace(client, {
     name: data.name,
     slug,
     business_id: business.id,
-    accounts: [account],
+    accounts: [],
     invite_code: inviteCode,
     image: null,
     display: "amount",
@@ -115,6 +102,21 @@ export async function joinAction(
   if (placeError) {
     return { error: placeError.message };
   }
+
+  if (!place) {
+    return { error: "Failed to create place" };
+  }
+
+  const community = new CommunityConfig(Config);
+
+  const hashedSerial = id(`${business.id}:${place.id}`);
+
+  const account = await getCardAddress(community, hashedSerial);
+  if (!account) {
+    return { error: "Failed to get account address" };
+  }
+
+  await updatePlaceAccounts(client, place.id, [account]);
 
   return { success: true };
 }

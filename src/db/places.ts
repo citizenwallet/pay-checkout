@@ -139,6 +139,19 @@ export const createPlace = async (
   return client.from("places").insert(place).select().single();
 };
 
+export const updatePlaceAccounts = async (
+  client: SupabaseClient,
+  placeId: number,
+  accounts: string[]
+): Promise<PostgrestSingleResponse<Place>> => {
+  return client
+    .from("places")
+    .update({ accounts })
+    .eq("id", placeId)
+    .select()
+    .single();
+};
+
 // TODO: add pagination
 export const getAllPlaces = async (
   client: SupabaseClient
