@@ -13,6 +13,7 @@ export type OrderStatus =
   | "needs_minting"
   | "needs_burning"
   | "refunded"
+  | "refund_pending"
   | "refund"
   | "correction";
 
@@ -294,7 +295,8 @@ export const refundOrder = async (
   orderId: number,
   amount: number,
   fees: number,
-  processorTxId: number | null
+  processorTxId: number | null,
+  status: OrderStatus = "refund"
 ): Promise<PostgrestSingleResponse<Order | null>> => {
   const orderResponse = await getOrder(client, orderId);
   const { data: order, error } = orderResponse;
@@ -315,7 +317,7 @@ export const refundOrder = async (
     total: amount,
     fees,
     due: 0,
-    status: "refund",
+    status,
     description: order.description,
     type: order.type,
     payout_id: order.payout_id,

@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getServiceRoleClient } from "@/db";
-import { getOrder } from "@/db/orders";
+import { getOrder, refundOrder } from "@/db/orders";
 import { getProcessorTx } from "@/db/ordersProcessorTx";
 import { createStripeRefund } from "@/services/stripe";
 import { createVivaRefund } from "@/services/viva";
@@ -76,7 +76,18 @@ export async function PATCH(
     }
 
     if (orderData.type === "app" && orderData.status === "paid") {
-      // TODO: Implement refund for app orders
+      const { error: refundError } = await refundOrder(
+        client,
+        orderData.id,
+        orderData.total,
+        orderData.fees,
+        null,
+        "refund_pending"
+      );
+
+      if (refundError) {
+        throw new Error("Unable to refund this order");
+      }
     } else if (
       orderData.type !== "app" &&
       orderData.status === "paid" &&
