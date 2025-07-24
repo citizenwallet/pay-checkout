@@ -32,7 +32,7 @@ export interface Order {
   status: OrderStatus;
   description: string;
   tx_hash: string | null;
-  type: "web" | "app" | "terminal" | null;
+  type: "web" | "app" | "terminal" | "system" | null;
   account: string | null;
   payout_id: number | null;
   pos: string | null;
