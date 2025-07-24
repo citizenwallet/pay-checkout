@@ -7,11 +7,16 @@ import { createPlace, updatePlaceAccounts } from "@/db/places";
 import { getServiceRoleClient } from "@/db";
 import { joinFormSchema } from "../[accountOrUsername]/join/Join";
 import { id } from "ethers";
-import { CommunityConfig, getCardAddress } from "@citizenwallet/sdk";
+import {
+  CommunityConfig,
+  getCardAddress,
+  verifyAndSuggestUsername,
+} from "@citizenwallet/sdk";
 import Config from "@/cw/community.json";
-import { createSlug, generateRandomString } from "@/lib/utils";
+import { createSlug } from "@/lib/utils";
 import { createUser, getUserByEmail } from "@/db/users";
 import { sendMailAction } from "./sendMailAction";
+import { upsertProfile } from "@/cw/profiles";
 
 export async function joinAction(
   inviteCode: string,
@@ -62,35 +67,18 @@ export async function joinAction(
 
   // Try to create a unique slug
   const baseSlug = createSlug(data.name);
-  let slug = baseSlug;
-  let attempts = 0;
-  const maxAttempts = 5;
 
-  // Keep trying until we find a unique slug or hit max attempts
-  while (attempts < maxAttempts) {
-    const { data: existingPlace } = await client
-      .from("places")
-      .select("id")
-      .eq("slug", slug)
-      .single();
+  const community = new CommunityConfig(Config);
 
-    if (!existingPlace) {
-      break;
-    }
-
-    // If place exists, try a new random string
-    slug = `${baseSlug}-${generateRandomString(4)}`;
-    attempts++;
-  }
-
-  if (attempts >= maxAttempts) {
+  const username = await verifyAndSuggestUsername(community, baseSlug);
+  if (!username) {
     return { error: "Unable to generate unique slug for place" };
   }
 
   // create place in places table
   const { data: place, error: placeError } = await createPlace(client, {
     name: data.name,
-    slug,
+    slug: username,
     business_id: business.id,
     accounts: [],
     invite_code: inviteCode,
@@ -107,13 +95,24 @@ export async function joinAction(
     return { error: "Failed to create place" };
   }
 
-  const community = new CommunityConfig(Config);
-
   const hashedSerial = id(`${business.id}:${place.id}`);
 
   const account = await getCardAddress(community, hashedSerial);
   if (!account) {
     return { error: "Failed to get account address" };
+  }
+
+  try {
+    await upsertProfile(
+      community,
+      username,
+      data.name,
+      account,
+      data.description,
+      data.image
+    );
+  } catch (error) {
+    console.error("Failed to upsert profile", error);
   }
 
   await updatePlaceAccounts(client, place.id, [account]);
