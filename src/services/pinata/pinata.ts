@@ -26,13 +26,16 @@ export const pinFileToIPFS = async (file: File) => {
     formData.append("file", file);
     formData.append("network", "public");
 
-    const response = await fetch(`${process.env.PINATA_BASE_URL}/v3/files`, {
-      method: "POST",
-      body: formData,
-      headers: {
-        Authorization: `Bearer ${process.env.PINATA_JWT}`,
-      },
-    });
+    const response = await fetch(
+      `${process.env.PINATA_UPLOADS_BASE_URL}/v3/files`,
+      {
+        method: "POST",
+        body: formData,
+        headers: {
+          Authorization: `Bearer ${process.env.PINATA_JWT}`,
+        },
+      }
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -61,13 +64,16 @@ export const pinJSONToIPFS = async (json: Profile) => {
     formData.append("file", file);
     formData.append("network", "public");
 
-    const response = await fetch(`${process.env.PINATA_BASE_URL}/v3/files`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.PINATA_JWT}`,
-      },
-      body: formData,
-    });
+    const response = await fetch(
+      `${process.env.PINATA_UPLOADS_BASE_URL}/v3/files`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.PINATA_JWT}`,
+        },
+        body: formData,
+      }
+    );
 
     if (!response.ok) {
       throw new Error(`Failed to pin JSON to IPFS: ${response.statusText}`);
@@ -84,7 +90,7 @@ export const pinJSONToIPFS = async (json: Profile) => {
 
 export const unpin = async (hash: string) => {
   try {
-    const url = `https://api.pinata.cloud/v3/files/public?cid=${hash}`;
+    const url = `${process.env.PINATA_API_BASE_URL}/v3/files/public?cid=${hash}`;
 
     const fileResponse = await fetch(url, {
       headers: {
@@ -107,7 +113,7 @@ export const unpin = async (hash: string) => {
     }
 
     const response = await fetch(
-      `https://api.pinata.cloud/v3/files/public/${file.id}`,
+      `${process.env.PINATA_API_BASE_URL}/v3/files/public/${file.id}`,
       {
         method: "DELETE",
         headers: {
