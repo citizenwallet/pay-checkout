@@ -123,7 +123,7 @@ export async function DELETE(
 
     const unpinResponse = await unpin(uri);
 
-    if (!unpinResponse.ok) {
+    if (!unpinResponse?.ok) {
       return NextResponse.json(
         { error: "Failed to unpin profile" },
         { status: 500 }

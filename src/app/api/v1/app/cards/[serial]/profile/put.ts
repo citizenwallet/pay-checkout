@@ -172,7 +172,7 @@ export async function PUT(
 
     const response = await pinJSONToIPFS(formattedProfile);
 
-    if (!response.IpfsHash) {
+    if (!response) {
       return NextResponse.json(
         { error: "Failed to pin profile" },
         { status: 500 }
@@ -195,7 +195,7 @@ export async function PUT(
 
       const response = await unpin(uri);
 
-      if (!response.ok) {
+      if (!response?.ok) {
         return NextResponse.json(
           { error: "Failed to unpin profile" },
           { status: 500 }
@@ -210,7 +210,7 @@ export async function PUT(
       profileManagerAddress,
       profile.account,
       profile.username,
-      response.IpfsHash
+      response
     );
 
     await bundler.awaitSuccess(tx);
