@@ -17,6 +17,7 @@ import { createSlug } from "@/lib/utils";
 import { createUser, getUserByEmail } from "@/db/users";
 import { sendMailAction } from "./sendMailAction";
 import { upsertProfile } from "@/cw/profiles";
+import { createBusinessUser } from "@/db/businessUser";
 
 export async function joinAction(
   inviteCode: string,
@@ -59,10 +60,29 @@ export async function joinAction(
   }
 
   // create user in users table
-  const { error: newUserError } = await createUser(client, email, business.id);
+  const { data: newUser, error: newUserError } = await createUser(
+    client,
+    email,
+    business.id
+  );
 
   if (newUserError) {
     return { error: newUserError.message };
+  }
+
+  if (!newUser) {
+    return { error: "Failed to create user" };
+  }
+
+  const { error: businessUserError } = await createBusinessUser(
+    client,
+    newUser.id,
+    business.id,
+    "owner"
+  );
+
+  if (businessUserError) {
+    return { error: businessUserError.message };
   }
 
   // Try to create a unique slug
