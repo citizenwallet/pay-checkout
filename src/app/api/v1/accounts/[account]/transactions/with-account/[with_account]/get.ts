@@ -58,7 +58,11 @@ export async function GET(
   const client = getServiceRoleClient();
 
   try {
-    const transactions = await getTransactionsBetweenAccounts(
+    const {
+      data: transactions,
+      count,
+      error,
+    } = await getTransactionsBetweenAccounts(
       client,
       account,
       with_account,
@@ -66,9 +70,14 @@ export async function GET(
       offset
     );
 
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
     return NextResponse.json(
       {
         transactions,
+        count,
       },
       { status: 200 }
     );
