@@ -476,7 +476,7 @@ export const getOrdersByAccount = async (
     .select(
       `
       *,
-      place:places(display, accounts, slug)
+      place:places!inner(display, accounts, slug)
     `,
       { count: "exact" }
     )
