@@ -463,7 +463,8 @@ export const getOrdersByAccount = async (
   account: string[],
   limit: number = 10,
   offset: number = 0,
-  placeId?: number
+  placeId?: number,
+  token?: string
 ): Promise<
   PostgrestResponse<
     Order & { place: { display: string; accounts: string[]; slug: string } }
@@ -482,6 +483,10 @@ export const getOrdersByAccount = async (
 
   if (placeId !== undefined) {
     query = query.eq("place_id", placeId);
+  }
+
+  if (token !== undefined) {
+    query = query.eq("token", token);
   }
 
   return query

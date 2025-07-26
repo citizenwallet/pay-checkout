@@ -56,6 +56,7 @@ export async function GET(
   const limit = parseInt(searchParams.get("limit") ?? "10");
   const offset = parseInt(searchParams.get("offset") ?? "0");
   const placeId = searchParams.get("placeId");
+  const token = searchParams.get("token");
   const additionalAccounts = searchParams.getAll("account");
 
   if (!account) {
@@ -73,7 +74,8 @@ export async function GET(
       [account, ...additionalAccounts],
       limit,
       offset,
-      placeId ? parseInt(placeId) : undefined
+      placeId ? parseInt(placeId) : undefined,
+      token ?? undefined
     );
 
     return NextResponse.json(
