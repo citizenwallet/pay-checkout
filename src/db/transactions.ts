@@ -55,8 +55,8 @@ export async function getTransactionsBetweenAccounts(
     )
     .order("created_at", { ascending: false });
 
-  if (limit && offset) {
-    query = query.range(offset, offset + limit);
+  if (limit !== undefined && offset !== undefined) {
+    query = query.range(offset, offset + limit - 1);
   }
 
   return query;
