@@ -44,8 +44,8 @@ export async function GET(
 
   const { searchParams } = new URL(request.url);
 
-  const limit = parseInt(searchParams.get("limit") ?? "10");
-  const offset = parseInt(searchParams.get("offset") ?? "0");
+  const limit = searchParams.get("limit");
+  const offset = searchParams.get("offset");
 
   if (!account) {
     return NextResponse.json({ error: "No account" }, { status: 400 });
@@ -66,8 +66,8 @@ export async function GET(
       client,
       account,
       with_account,
-      limit,
-      offset
+      limit ? parseInt(limit) : undefined,
+      offset ? parseInt(offset) : undefined
     );
 
     if (error) {
