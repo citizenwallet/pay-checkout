@@ -42,6 +42,11 @@ export async function GET(
 ) {
   const { account, with_account } = await context.params;
 
+  const { searchParams } = new URL(request.url);
+
+  const limit = parseInt(searchParams.get("limit") ?? "10");
+  const offset = parseInt(searchParams.get("offset") ?? "0");
+
   if (!account) {
     return NextResponse.json({ error: "No account" }, { status: 400 });
   }
@@ -56,7 +61,9 @@ export async function GET(
     const transactions = await getTransactionsBetweenAccounts(
       client,
       account,
-      with_account
+      with_account,
+      limit,
+      offset
     );
 
     return NextResponse.json(

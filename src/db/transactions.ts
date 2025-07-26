@@ -1,6 +1,6 @@
 import "server-only";
 
-import { SupabaseClient } from "@supabase/supabase-js";
+import { PostgrestResponse, SupabaseClient } from "@supabase/supabase-js";
 import { AProfile } from "./profiles";
 
 export interface ATransaction {
@@ -41,30 +41,25 @@ export async function getProfileMapFromTransactionHashes(
 }
 
 export async function getTransactionsBetweenAccounts(
-  supabase: SupabaseClient,
+  client: SupabaseClient,
   account: string,
-  withAccount: string
-): Promise<(ATransaction & { exchange_direction: ExchangeDirection })[]> {
-  const { data, error } = await supabase
+  withAccount: string,
+  limit?: number,
+  offset?: number
+): Promise<PostgrestResponse<ATransaction>> {
+  let query = client
     .from("a_transactions")
-    .select("*")
+    .select("*", { count: "exact" })
     .or(
       `and(from.eq.${account},to.eq.${withAccount}),and(from.eq.${withAccount},to.eq.${account})`
     )
     .order("created_at", { ascending: false });
 
-  if (error) throw error;
+  if (limit && offset) {
+    query = query.range(offset, offset + limit);
+  }
 
-  const transformedData: (ATransaction & {
-    exchange_direction: ExchangeDirection;
-  })[] = data.map((transaction) => {
-    return {
-      ...transaction,
-      exchange_direction: transaction.from === account ? "sent" : "received",
-    };
-  });
-
-  return transformedData;
+  return query;
 }
 
 export async function getNewTransactionsBetweenAccounts(
