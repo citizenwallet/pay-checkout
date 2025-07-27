@@ -1,6 +1,10 @@
 import "server-only";
 
-import { PostgrestSingleResponse, SupabaseClient } from "@supabase/supabase-js";
+import {
+  PostgrestResponse,
+  PostgrestSingleResponse,
+  SupabaseClient,
+} from "@supabase/supabase-js";
 
 export type PosType = "app" | "viva";
 
@@ -24,6 +28,18 @@ export const getCardBySerial = async (
     .select("serial, project, created_at, updated_at, owner")
     .eq("serial", serial)
     .maybeSingle();
+};
+
+export const getCardsByOwner = async (
+  client: SupabaseClient,
+  owner: string
+): Promise<PostgrestResponse<PublicCard>> => {
+  return client
+    .from("cards")
+    .select("serial, project, created_at, updated_at, owner", {
+      count: "exact",
+    })
+    .eq("owner", owner);
 };
 
 export const claimCard = async (
