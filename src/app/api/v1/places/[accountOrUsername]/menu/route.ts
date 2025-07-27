@@ -1,5 +1,4 @@
 import { getServiceRoleClient } from "@/db";
-import { getItemsForPlace } from "@/db/items";
 import { getPlaceWithProfile } from "@/lib/place";
 import { NextResponse } from "next/server";
 import Config from "@/cw/community.json";
@@ -29,7 +28,5 @@ export async function GET(
     return NextResponse.json({ error: "Place not found" }, { status: 404 });
   }
 
-  const { data } = await getItemsForPlace(client, place.id);
-
-  return NextResponse.json({ place, profile, items: data });
+  return NextResponse.json({ place, profile, items: place.items });
 }

@@ -49,7 +49,8 @@ export const INTERACTIONS_SELECT_QUERY = `
     image,
     description,
     display,
-    accounts
+    accounts,
+    items:pos_items(id,place_id,name,description,image,price,vat,category,order,hidden)
   )
 ` as const;
 
@@ -62,6 +63,7 @@ export async function getInteractionsOfAccount(
     .from("a_interactions")
     .select(INTERACTIONS_SELECT_QUERY)
     .eq("account", account)
+    .eq("with_place.items.hidden", false)
     .order("new_interaction", { ascending: false })
     .order("updated_at", { ascending: false });
 
@@ -80,6 +82,7 @@ export async function getNewInteractionsOfAccount(
     .from("a_interactions")
     .select(INTERACTIONS_SELECT_QUERY)
     .eq("account", account)
+    .eq("with_place.items.hidden", false)
     .gt("updated_at", fromDate.toISOString())
     .order("new_interaction", { ascending: false })
     .order("updated_at", { ascending: false });

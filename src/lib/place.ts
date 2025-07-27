@@ -7,6 +7,7 @@ import {
   getPlaceIdByUsername,
   getPlaceIdsByAccount,
   Place,
+  PlaceWithItems,
 } from "@/db/places";
 
 import { getPlacesByAccount } from "@/db/places";
@@ -24,11 +25,11 @@ export const getPlaceWithProfile = async (
   community: CommunityConfig,
   accountOrUsername: string
 ): Promise<{
-  place: Place | null;
+  place: PlaceWithItems | null;
   profile: Profile | null;
   inviteCode: boolean;
 }> => {
-  let place: Place | null = null;
+  let place: PlaceWithItems | null = null;
   let profile: Profile | null = null;
   let inviteCode = false;
   if (accountOrUsername.startsWith("0x")) {

@@ -6,6 +6,7 @@ import {
   // QueryData,
   SupabaseClient,
 } from "@supabase/supabase-js";
+import { Item } from "./items";
 
 export interface Place {
   id: number;
@@ -22,6 +23,10 @@ export interface Place {
   hidden: boolean;
 }
 
+export interface PlaceWithItems extends Place {
+  items: Item[];
+}
+
 export type NewPlace = Omit<
   Place,
   "id" | "created_at" | "terminal_id" | "description"
@@ -33,11 +38,21 @@ export interface PlaceSearchResult {
   slug: string;
 }
 
+const PLACE_WITH_ITEMS_SELECT_QUERY = `
+  *,
+  items:pos_items(id,place_id,name,description,image,price,vat,category,order,hidden)
+`;
+
 export const getPlaceByUsername = async (
   client: SupabaseClient,
   username: string
-): Promise<PostgrestSingleResponse<Place | null>> => {
-  return client.from("places").select("*").eq("slug", username).maybeSingle();
+): Promise<PostgrestSingleResponse<PlaceWithItems | null>> => {
+  return client
+    .from("places")
+    .select(PLACE_WITH_ITEMS_SELECT_QUERY)
+    .eq("slug", username)
+    .eq("items.hidden", false)
+    .maybeSingle();
 };
 
 export const getPlaceIdByUsername = async (
@@ -68,10 +83,11 @@ export const getPlaceByTerminalId = async (
 export const getPlacesByAccount = async (
   client: SupabaseClient,
   account: string
-): Promise<PostgrestResponse<Place>> => {
+): Promise<PostgrestResponse<PlaceWithItems>> => {
   return client
     .from("places")
-    .select("*")
+    .select(PLACE_WITH_ITEMS_SELECT_QUERY)
+    .eq("items.hidden", false)
     .contains("accounts", JSON.stringify([account]));
 };
 
@@ -88,8 +104,13 @@ export const getPlaceIdsByAccount = async (
 export const getPlaceById = async (
   client: SupabaseClient,
   id: number
-): Promise<PostgrestSingleResponse<Place | null>> => {
-  return client.from("places").select("*").eq("id", id).maybeSingle();
+): Promise<PostgrestSingleResponse<PlaceWithItems | null>> => {
+  return client
+    .from("places")
+    .select(PLACE_WITH_ITEMS_SELECT_QUERY)
+    .eq("items.hidden", false)
+    .eq("id", id)
+    .maybeSingle();
 };
 
 export const getPlaceBySlug = async (
@@ -102,10 +123,11 @@ export const getPlaceBySlug = async (
 export const getPlaceByInviteCode = async (
   client: SupabaseClient,
   inviteCode: string
-): Promise<PostgrestSingleResponse<Place | null>> => {
+): Promise<PostgrestSingleResponse<PlaceWithItems | null>> => {
   return client
     .from("places")
-    .select("*")
+    .select(PLACE_WITH_ITEMS_SELECT_QUERY)
+    .eq("items.hidden", false)
     .eq("invite_code", inviteCode)
     .maybeSingle();
 };
