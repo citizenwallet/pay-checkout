@@ -41,13 +41,29 @@ export interface Order {
   token: string | null;
 }
 
+export interface OrderWithPlaceMetadata extends Order {
+  place: {
+    display: string;
+    accounts: string[];
+    slug: string;
+  };
+}
+
 export interface OrderWithBusiness extends Order {
   place: {
+    display: string;
+    accounts: string[];
+    slug: string;
     business: {
       id: number;
     };
   };
 }
+
+const ORDER_SELECT_QUERY = `
+  *,
+  place:places!inner(display, accounts, slug)
+`;
 
 export const createOrder = async (
   client: SupabaseClient,
@@ -59,7 +75,7 @@ export const createOrder = async (
   type: "web" | "app" | "terminal" | "pos" | null = null,
   posId: string | null = null,
   token: string
-): Promise<PostgrestSingleResponse<Order>> => {
+): Promise<PostgrestSingleResponse<OrderWithPlaceMetadata>> => {
   return client
     .from("orders")
     .insert({
@@ -74,7 +90,7 @@ export const createOrder = async (
       pos: posId,
       token,
     })
-    .select()
+    .select(ORDER_SELECT_QUERY)
     .single();
 };
 
@@ -87,7 +103,7 @@ export const createAppOrder = async (
   account: string | null,
   txHash: string,
   token: string
-): Promise<PostgrestSingleResponse<Order>> => {
+): Promise<PostgrestSingleResponse<OrderWithPlaceMetadata>> => {
   return client
     .from("orders")
     .insert({
@@ -102,7 +118,7 @@ export const createAppOrder = async (
       tx_hash: txHash,
       token,
     })
-    .select()
+    .select(ORDER_SELECT_QUERY)
     .single();
 };
 
@@ -116,7 +132,7 @@ export const createPosOrder = async (
   posId: string | null = null,
   txHash: string | null = null,
   token: string
-): Promise<PostgrestSingleResponse<Order>> => {
+): Promise<PostgrestSingleResponse<OrderWithPlaceMetadata>> => {
   return client
     .from("orders")
     .insert({
@@ -132,7 +148,7 @@ export const createPosOrder = async (
       tx_hash: txHash,
       token,
     })
-    .select()
+    .select(ORDER_SELECT_QUERY)
     .single();
 };
 
@@ -141,12 +157,12 @@ export const completeAppOrder = async (
   orderId: number,
   account: string,
   txHash: string
-): Promise<PostgrestSingleResponse<Order>> => {
+): Promise<PostgrestSingleResponse<OrderWithPlaceMetadata>> => {
   return client
     .from("orders")
     .update({ status: "paid", due: 0, account, tx_hash: txHash })
     .eq("id", orderId)
-    .select()
+    .select(ORDER_SELECT_QUERY)
     .single();
 };
 
@@ -157,7 +173,7 @@ export const createPartnerOrder = async (
   items: { id: number; quantity: number }[],
   description: string,
   token: string
-): Promise<PostgrestSingleResponse<Order>> => {
+): Promise<PostgrestSingleResponse<OrderWithPlaceMetadata>> => {
   return client
     .from("orders")
     .insert({
@@ -170,7 +186,7 @@ export const createPartnerOrder = async (
       type: "web",
       token,
     })
-    .select()
+    .select(ORDER_SELECT_QUERY)
     .single();
 };
 
@@ -182,7 +198,7 @@ export const createTerminalOrder = async (
   posId: string,
   processorTxId: number | null,
   token: string
-): Promise<PostgrestSingleResponse<Order>> => {
+): Promise<PostgrestSingleResponse<OrderWithPlaceMetadata>> => {
   return client
     .from("orders")
     .insert({
@@ -197,7 +213,7 @@ export const createTerminalOrder = async (
       processor_tx: processorTxId,
       token,
     })
-    .select()
+    .select(ORDER_SELECT_QUERY)
     .single();
 };
 
@@ -206,11 +222,12 @@ export const updateOrderTotal = async (
   placeId: number,
   orderId: number,
   total: number
-): Promise<PostgrestSingleResponse<Order>> => {
+): Promise<PostgrestSingleResponse<OrderWithPlaceMetadata>> => {
   return client
     .from("orders")
     .update({ place_id: placeId, total })
     .eq("id", orderId)
+    .select(ORDER_SELECT_QUERY)
     .single();
 };
 
@@ -219,11 +236,12 @@ export const updateOrder = async (
   orderId: number,
   total: number,
   items: { id: number; quantity: number }[]
-): Promise<PostgrestSingleResponse<Order>> => {
+): Promise<PostgrestSingleResponse<OrderWithPlaceMetadata>> => {
   return client
     .from("orders")
     .update({ total, items })
     .eq("id", orderId)
+    .select(ORDER_SELECT_QUERY)
     .single();
 };
 
@@ -233,7 +251,7 @@ export const getOrder = async (
 ): Promise<PostgrestSingleResponse<OrderWithBusiness>> => {
   return client
     .from("orders")
-    .select("*, place:places(business:businesses(id))")
+    .select("*, place:places(display, accounts, slug, business:businesses(id))")
     .eq("id", orderId)
     .single();
 };
@@ -241,20 +259,20 @@ export const getOrder = async (
 export const getTerminalOrderByTransactionId = async (
   client: SupabaseClient,
   transactionId: string
-): Promise<PostgrestResponse<Order>> => {
+): Promise<PostgrestResponse<OrderWithPlaceMetadata>> => {
   return client
     .from("orders")
-    .select()
+    .select(ORDER_SELECT_QUERY)
     .eq("description", `Order: ${transactionId}`);
 };
 
 export const getOrderByProcessorTxId = async (
   client: SupabaseClient,
   processorTxId: number
-): Promise<PostgrestSingleResponse<Order>> => {
+): Promise<PostgrestSingleResponse<OrderWithPlaceMetadata>> => {
   return client
     .from("orders")
-    .select()
+    .select(ORDER_SELECT_QUERY)
     .eq("processor_tx", processorTxId)
     .single();
 };
@@ -262,11 +280,12 @@ export const getOrderByProcessorTxId = async (
 export const completeOrder = async (
   client: SupabaseClient,
   orderId: number
-): Promise<PostgrestSingleResponse<Order>> => {
+): Promise<PostgrestSingleResponse<OrderWithPlaceMetadata>> => {
   return client
     .from("orders")
     .update({ status: "paid", due: 0, completed_at: new Date().toISOString() })
     .eq("id", orderId)
+    .select(ORDER_SELECT_QUERY)
     .single();
 };
 
@@ -275,7 +294,7 @@ export const completePosOrder = async (
   orderId: number,
   txHash: string,
   account: string
-): Promise<PostgrestSingleResponse<Order>> => {
+): Promise<PostgrestSingleResponse<OrderWithPlaceMetadata>> => {
   return client
     .from("orders")
     .update({
@@ -286,7 +305,7 @@ export const completePosOrder = async (
       account,
     })
     .eq("id", orderId)
-    .select()
+    .select(ORDER_SELECT_QUERY)
     .single();
 };
 
@@ -297,7 +316,7 @@ export const refundOrder = async (
   fees: number,
   processorTxId: number | null,
   status: OrderStatus = "refund"
-): Promise<PostgrestSingleResponse<Order | null>> => {
+): Promise<PostgrestSingleResponse<OrderWithPlaceMetadata | null>> => {
   const orderResponse = await getOrder(client, orderId);
   const { data: order, error } = orderResponse;
   if (error) {
@@ -330,7 +349,7 @@ export const refundOrder = async (
   const result = await client
     .from("orders")
     .insert(newOrder)
-    .select()
+    .select(ORDER_SELECT_QUERY)
     .maybeSingle();
 
   const { data: refundOrder, error: refundOrderError } = result;
@@ -352,29 +371,36 @@ export const updateOrderFees = async (
   client: SupabaseClient,
   orderId: number,
   fees: number
-): Promise<PostgrestSingleResponse<Order>> => {
-  return client.from("orders").update({ fees }).eq("id", orderId).single();
+): Promise<PostgrestSingleResponse<OrderWithPlaceMetadata>> => {
+  return client
+    .from("orders")
+    .update({ fees })
+    .eq("id", orderId)
+    .select(ORDER_SELECT_QUERY)
+    .single();
 };
 
 export const cancelOrder = async (
   client: SupabaseClient,
   orderId: number
-): Promise<PostgrestSingleResponse<Order>> => {
+): Promise<PostgrestSingleResponse<OrderWithPlaceMetadata>> => {
   return client
     .from("orders")
     .update({ status: "cancelled" })
     .eq("id", orderId)
+    .select(ORDER_SELECT_QUERY)
     .single();
 };
 
 export const orderNeedsBurning = async (
   client: SupabaseClient,
   orderId: number
-): Promise<PostgrestSingleResponse<Order>> => {
+): Promise<PostgrestSingleResponse<OrderWithPlaceMetadata>> => {
   return client
     .from("orders")
     .update({ status: "needs_burning" })
     .eq("id", orderId)
+    .select(ORDER_SELECT_QUERY)
     .single();
 };
 
@@ -382,11 +408,12 @@ export const attachTxHashToOrder = async (
   client: SupabaseClient,
   orderId: number,
   txHash: string
-): Promise<PostgrestSingleResponse<Order>> => {
+): Promise<PostgrestSingleResponse<OrderWithPlaceMetadata>> => {
   return client
     .from("orders")
     .update({ tx_hash: txHash, status: "paid" })
     .eq("id", orderId)
+    .select(ORDER_SELECT_QUERY)
     .single();
 };
 
@@ -394,11 +421,12 @@ export const attachProcessorTxToOrder = async (
   client: SupabaseClient,
   orderId: number,
   processorTxId: number
-): Promise<PostgrestSingleResponse<Order>> => {
+): Promise<PostgrestSingleResponse<OrderWithPlaceMetadata>> => {
   return client
     .from("orders")
     .update({ processor_tx: processorTxId })
     .eq("id", orderId)
+    .select(ORDER_SELECT_QUERY)
     .single();
 };
 
@@ -414,12 +442,12 @@ export const getOrdersByPlace = async (
   placeId: number,
   limit: number = 10,
   offset: number = 0
-): Promise<PostgrestResponse<Order>> => {
+): Promise<PostgrestResponse<OrderWithPlaceMetadata>> => {
   const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
   return client
     .from("orders")
-    .select()
+    .select(ORDER_SELECT_QUERY, { count: "exact" })
     .eq("place_id", placeId)
     .or(
       `status.in.(paid,refunded,needs_minting),and(status.eq.pending,created_at.gte.${fiveMinutesAgo})`
@@ -466,20 +494,10 @@ export const getOrdersByAccount = async (
   placeId?: number,
   slug?: string,
   token?: string
-): Promise<
-  PostgrestResponse<
-    Order & { place: { display: string; accounts: string[]; slug: string } }
-  >
-> => {
+): Promise<PostgrestResponse<OrderWithPlaceMetadata>> => {
   let query = client
     .from("orders")
-    .select(
-      `
-      *,
-      place:places!inner(display, accounts, slug)
-    `,
-      { count: "exact" }
-    )
+    .select(ORDER_SELECT_QUERY, { count: "exact" })
     .in("account", account);
 
   if (placeId !== undefined) {
@@ -504,10 +522,10 @@ export const getOrdersByStatus = async (
   status: OrderStatus,
   limit: number = 10,
   offset: number = 0
-): Promise<PostgrestResponse<Order>> => {
+): Promise<PostgrestResponse<OrderWithPlaceMetadata>> => {
   return client
     .from("orders")
-    .select()
+    .select(ORDER_SELECT_QUERY, { count: "exact" })
     .eq("status", status)
     .order("created_at", { ascending: true })
     .range(offset, offset + limit - 1);
@@ -516,6 +534,11 @@ export const getOrdersByStatus = async (
 export const deleteOrder = async (
   client: SupabaseClient,
   orderId: number
-): Promise<PostgrestSingleResponse<Order>> => {
-  return client.from("orders").delete().eq("id", orderId).select().single();
+): Promise<PostgrestSingleResponse<OrderWithPlaceMetadata>> => {
+  return client
+    .from("orders")
+    .delete()
+    .eq("id", orderId)
+    .select(ORDER_SELECT_QUERY)
+    .single();
 };
