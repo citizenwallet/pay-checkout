@@ -5,6 +5,7 @@ import {
   PostgrestSingleResponse,
   SupabaseClient,
 } from "@supabase/supabase-js";
+import { Item } from "./items";
 
 export type OrderStatus =
   | "pending"
@@ -57,12 +58,13 @@ export interface OrderWithBusiness extends Order {
     business: {
       id: number;
     };
+    items: Item[];
   };
 }
 
 const ORDER_SELECT_QUERY = `
   *,
-  place:places!inner(display, accounts, slug)
+  place:places!inner(display, accounts, slug, items:pos_items(id,place_id,name,description,image,price,vat,category,order,hidden))
 `;
 
 export const createOrder = async (
