@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getServiceRoleClient } from "@/db";
-import { getCardBySerial } from "@/db/cards";
+import { getCardBySerial, getCardPin } from "@/db/cards";
 import { CommunityConfig, verifyConnectedHeaders } from "@citizenwallet/sdk";
 import Config from "@/cw/community.json";
 
@@ -53,9 +53,36 @@ export async function GET(
 
     if (
       card.owner &&
+      verifiedAccount && // TODO: rethink this,
       card.owner.toLowerCase() !== verifiedAccount.toLowerCase()
     ) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      const { data: cardPin, error: pinError } = await getCardPin(
+        client,
+        serial
+      );
+
+      if (pinError) {
+        return NextResponse.json({ error: pinError.message }, { status: 500 });
+      }
+
+      if (cardPin === null) {
+        return NextResponse.json(
+          { error: "Unauthorized", challenge: null },
+          { status: 401 }
+        );
+      }
+
+      if (cardPin.pin === null) {
+        return NextResponse.json(
+          { error: "Unauthorized", challenge: null },
+          { status: 401 }
+        );
+      }
+
+      return NextResponse.json(
+        { error: "Unauthorized", challenge: "pin" }, // TODO: allow querying with a pin
+        { status: 401 }
+      );
     }
 
     return NextResponse.json(

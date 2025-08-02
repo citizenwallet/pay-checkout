@@ -19,6 +19,10 @@ export interface Card {
 
 export type PublicCard = Omit<Card, "pin">;
 
+export type CardPin = {
+  pin: string | null;
+};
+
 export const getCardBySerial = async (
   client: SupabaseClient,
   serial: string
@@ -28,6 +32,13 @@ export const getCardBySerial = async (
     .select("serial, project, created_at, updated_at, owner")
     .eq("serial", serial)
     .maybeSingle();
+};
+
+export const getCardPin = async (
+  client: SupabaseClient,
+  serial: string
+): Promise<PostgrestSingleResponse<CardPin | null>> => {
+  return client.from("cards").select("pin").eq("serial", serial).maybeSingle();
 };
 
 export const getCardsByOwner = async (
