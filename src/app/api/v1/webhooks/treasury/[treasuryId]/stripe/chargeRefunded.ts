@@ -1,5 +1,9 @@
 import { getServiceRoleClient } from "@/db";
-import { getOrder, getOrderByProcessorTxId, refundOrder } from "@/db/orders";
+import {
+  getOrderWithBusiness,
+  getOrderByProcessorTxId,
+  refundOrder,
+} from "@/db/orders";
 import { CommunityConfig } from "@citizenwallet/sdk";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
@@ -92,7 +96,7 @@ export const chargeRefunded = async (
   } ${formatCurrencyNumber(toBurn)}`;
 
   try {
-    const { data: order } = await getOrder(client, orderId);
+    const { data: order } = await getOrderWithBusiness(client, orderId);
     const { data: items } = await getItemsForPlace(client, parseInt(placeId));
     if (order && items) {
       if (order.description) {

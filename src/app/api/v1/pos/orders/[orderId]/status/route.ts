@@ -1,6 +1,6 @@
 import { getServiceRoleClient } from "@/db";
 import { NextResponse } from "next/server";
-import { getOrder, getOrderStatus } from "@/db/orders";
+import { getOrderWithBusiness, getOrderStatus } from "@/db/orders";
 import { verifyConnectedHeaders } from "@citizenwallet/sdk";
 import { CommunityConfig } from "@citizenwallet/sdk";
 import Config from "@/cw/community.json";
@@ -31,7 +31,7 @@ export async function GET(
       throw new Error("Invalid signature");
     }
 
-    const { data: order, error: orderError } = await getOrder(
+    const { data: order, error: orderError } = await getOrderWithBusiness(
       client,
       parsedOrderId
     );

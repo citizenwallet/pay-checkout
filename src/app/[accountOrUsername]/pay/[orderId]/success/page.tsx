@@ -1,6 +1,6 @@
 import { getServiceRoleClient } from "@/db";
 import { getItemsForPlace } from "@/db/items";
-import { getOrder } from "@/db/orders";
+import { getOrderWithBusiness } from "@/db/orders";
 import Success from "./Success";
 import { Item } from "@/db/items";
 import { CommunityConfig } from "@citizenwallet/sdk";
@@ -66,7 +66,7 @@ async function AsyncPage({
   const { tx, close } = await searchParams;
 
   const client = getServiceRoleClient();
-  const { data, error } = await getOrder(client, orderId);
+  const { data, error } = await getOrderWithBusiness(client, orderId);
 
   if (error) {
     return <div>Error: {error.message}</div>;

@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getServiceRoleClient } from "@/db";
-import { getOrder, refundOrder } from "@/db/orders";
+import { getOrderWithBusiness, refundOrder } from "@/db/orders";
 import { getProcessorTx } from "@/db/ordersProcessorTx";
 import { createStripeRefund } from "@/services/stripe";
 import { createVivaRefund } from "@/services/viva";
@@ -18,7 +18,7 @@ export async function PATCH(
 
     const client = getServiceRoleClient();
 
-    const { data: orderData, error: orderError } = await getOrder(
+    const { data: orderData, error: orderError } = await getOrderWithBusiness(
       client,
       Number(orderId)
     );

@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getServiceRoleClient } from "@/db";
-import { getOrder } from "@/db/orders";
+import { getOrderWithBusiness } from "@/db/orders";
 import { getClientSecret } from "@/stripe/checkout";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -60,7 +60,7 @@ async function AsyncPage({
   close?: string;
 }) {
   const client = getServiceRoleClient();
-  const { data, error } = await getOrder(client, orderId);
+  const { data, error } = await getOrderWithBusiness(client, orderId);
   if (error) {
     return <div>Error: {error.message}</div>;
   }

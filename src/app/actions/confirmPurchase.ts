@@ -2,7 +2,7 @@
 
 import Stripe from "stripe";
 import { getServiceRoleClient } from "@/db";
-import { updateOrder, getOrder } from "@/db/orders";
+import { updateOrder, getOrderWithBusiness } from "@/db/orders";
 import { generateCheckoutSession } from "@/stripe/checkout";
 import { getTreasuryByBusinessId } from "@/db/treasury";
 
@@ -19,7 +19,10 @@ export const confirmPurchaseAction = async (
     throw new Error(error.message);
   }
 
-  const { data: order, error: orderError } = await getOrder(client, orderId);
+  const { data: order, error: orderError } = await getOrderWithBusiness(
+    client,
+    orderId
+  );
 
   if (orderError) {
     throw new Error(orderError.message);

@@ -247,13 +247,24 @@ export const updateOrder = async (
     .single();
 };
 
-export const getOrder = async (
+export const getOrderWithBusiness = async (
   client: SupabaseClient,
   orderId: number
 ): Promise<PostgrestSingleResponse<OrderWithBusiness>> => {
   return client
     .from("orders")
     .select("*, place:places(display, accounts, slug, business:businesses(id))")
+    .eq("id", orderId)
+    .single();
+};
+
+export const getOrder = async (
+  client: SupabaseClient,
+  orderId: number
+): Promise<PostgrestSingleResponse<OrderWithPlaceMetadata>> => {
+  return client
+    .from("orders")
+    .select(ORDER_SELECT_QUERY)
     .eq("id", orderId)
     .single();
 };
@@ -319,7 +330,7 @@ export const refundOrder = async (
   processorTxId: number | null,
   status: OrderStatus = "refund"
 ): Promise<PostgrestSingleResponse<OrderWithPlaceMetadata | null>> => {
-  const orderResponse = await getOrder(client, orderId);
+  const orderResponse = await getOrderWithBusiness(client, orderId);
   const { data: order, error } = orderResponse;
   if (error) {
     throw new Error(error.message);

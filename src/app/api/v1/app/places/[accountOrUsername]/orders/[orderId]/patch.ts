@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getServiceRoleClient } from "@/db";
-import { completeAppOrder, getOrder } from "@/db/orders";
+import { completeAppOrder, getOrderWithBusiness } from "@/db/orders";
 import { verifyConnectedHeaders } from "@citizenwallet/sdk";
 import { CommunityConfig } from "@citizenwallet/sdk";
 import Config from "@/cw/community.json";
@@ -53,7 +53,7 @@ export async function PATCH(
 
     const client = getServiceRoleClient();
 
-    const { data: order, error: orderError } = await getOrder(
+    const { data: order, error: orderError } = await getOrderWithBusiness(
       client,
       Number(orderId)
     );

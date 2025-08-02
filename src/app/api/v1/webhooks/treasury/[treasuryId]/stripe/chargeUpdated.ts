@@ -1,7 +1,7 @@
 import { getServiceRoleClient } from "@/db";
 import {
   attachProcessorTxToOrder,
-  getOrder,
+  getOrderWithBusiness,
   updateOrderFees,
 } from "@/db/orders";
 import { CommunityConfig } from "@citizenwallet/sdk";
@@ -94,7 +94,7 @@ export const chargeUpdated = async (
   let description = `Received ${token.symbol} ${formatCurrencyNumber(toMint)}`;
 
   try {
-    const { data: order } = await getOrder(client, orderId);
+    const { data: order } = await getOrderWithBusiness(client, orderId);
     const { data: items } = await getItemsForPlace(client, parseInt(placeId));
     if (order && items) {
       if (order.description) {

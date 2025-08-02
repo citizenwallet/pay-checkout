@@ -3,7 +3,7 @@ import { verifyConnectedHeaders } from "@citizenwallet/sdk";
 import { NextResponse, NextRequest } from "next/server";
 import Config from "@/cw/community.json";
 import { getServiceRoleClient } from "@/db";
-import { deleteOrder, getOrder } from "@/db/orders";
+import { deleteOrder, getOrderWithBusiness } from "@/db/orders";
 import { verifyPosAuth } from "../../auth";
 
 export async function DELETE(
@@ -22,7 +22,7 @@ export async function DELETE(
       );
     }
 
-    const { data: order, error: orderError } = await getOrder(
+    const { data: order, error: orderError } = await getOrderWithBusiness(
       client,
       parseInt(orderId)
     );

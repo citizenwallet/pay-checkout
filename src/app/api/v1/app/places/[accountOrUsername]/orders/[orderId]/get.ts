@@ -1,6 +1,6 @@
 import { getServiceRoleClient } from "@/db";
 import { NextResponse } from "next/server";
-import { getOrder } from "@/db/orders";
+import { getOrderWithBusiness } from "@/db/orders";
 
 export async function GET(
   request: Request,
@@ -19,7 +19,10 @@ export async function GET(
 
   const client = getServiceRoleClient();
 
-  const { data: order, error } = await getOrder(client, parsedOrderId);
+  const { data: order, error } = await getOrderWithBusiness(
+    client,
+    parsedOrderId
+  );
 
   if (error) {
     return NextResponse.json({ error: "Database error" }, { status: 500 });

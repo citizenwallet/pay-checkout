@@ -1,4 +1,4 @@
-import { getOrder } from "@/db/orders";
+import { getOrderWithBusiness } from "@/db/orders";
 
 import { getServiceRoleClient } from "@/db";
 import { completeOrder } from "@/db/orders";
@@ -47,7 +47,7 @@ export const paymentIntentSucceeded = async (event: Stripe.Event) => {
   }
 
   try {
-    const { data: order } = await getOrder(client, orderId);
+    const { data: order } = await getOrderWithBusiness(client, orderId);
     const { data: items } = await getItemsForPlace(client, parseInt(placeId));
     const { data: place } = await getPlaceById(client, parseInt(placeId));
     if (order && items && place) {

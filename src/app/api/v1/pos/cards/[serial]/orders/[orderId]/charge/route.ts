@@ -14,7 +14,7 @@ import {
 import { NextResponse } from "next/server";
 import Config from "@/cw/community.json";
 import { getPosById } from "@/db/pos";
-import { completePosOrder, getOrder } from "@/db/orders";
+import { completePosOrder, getOrderWithBusiness } from "@/db/orders";
 import { id, parseUnits, Wallet } from "ethers";
 import { getPlaceById } from "@/db/places";
 
@@ -87,7 +87,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Place not found" }, { status: 404 });
     }
 
-    const { data: order, error: orderError } = await getOrder(
+    const { data: order, error: orderError } = await getOrderWithBusiness(
       client,
       parseInt(orderId)
     );

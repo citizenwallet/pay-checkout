@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getServiceRoleClient } from "@/db";
-import { completeOrder, getOrder } from "@/db/orders";
+import { completeOrder, getOrderWithBusiness } from "@/db/orders";
 import { getPlace } from "@/lib/place";
 
 import Stripe from "stripe";
@@ -97,7 +97,7 @@ export const getClientSecret = async (
     throw new Error("Place not found");
   }
 
-  const { data: order } = await getOrder(client, orderId);
+  const { data: order } = await getOrderWithBusiness(client, orderId);
 
   if (!order || !order.token) {
     throw new Error("Order not found");

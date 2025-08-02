@@ -1,6 +1,6 @@
 import { getServiceRoleClient } from "@/db";
 import { getItemsForPlace, Item } from "@/db/items";
-import { attachTxHashToOrder, getOrder } from "@/db/orders";
+import { attachTxHashToOrder, getOrderWithBusiness } from "@/db/orders";
 import Summary from "./Summary";
 import { CommunityConfig } from "@citizenwallet/sdk";
 import Config from "@/cw/community.json";
@@ -96,7 +96,7 @@ async function AsyncPage({
   } = await searchParams;
 
   const client = getServiceRoleClient();
-  const { data, error } = await getOrder(client, orderId);
+  const { data, error } = await getOrderWithBusiness(client, orderId);
 
   if (error) {
     return <div>Error: {error.message}</div>;

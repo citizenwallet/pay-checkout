@@ -11,7 +11,7 @@ import { getItemsForPlace } from "@/db/items";
 import { Metadata } from "next";
 import { getPlaceWithProfile } from "@/lib/place";
 import { redirect } from "next/navigation";
-import { createOrder, getOrder, Order } from "@/db/orders";
+import { createOrder, getOrderWithBusiness, Order } from "@/db/orders";
 import TopUpSelector from "./TopUp";
 
 export async function generateMetadata({
@@ -239,7 +239,10 @@ async function PlacePage({
 
   let pendingOrder: Order | null = null;
   if (orderId) {
-    const { data: orderData } = await getOrder(client, parseInt(orderId));
+    const { data: orderData } = await getOrderWithBusiness(
+      client,
+      parseInt(orderId)
+    );
     if (orderData) {
       pendingOrder = orderData;
     }
