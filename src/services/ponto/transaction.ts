@@ -65,3 +65,9 @@ const cleanMessage = (message: string) => {
 export const extractIdFromMessage = (message: string) => {
   return message.trim().replace(/\D/g, "");
 };
+
+export const idToStructuredMessage = (id: number): string => {
+  const paddedId = id.toString().padStart(10, "0");
+  const modPart = (id % 97).toString().padStart(2, "0");
+  return paddedId + modPart;
+};

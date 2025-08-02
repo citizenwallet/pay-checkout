@@ -164,12 +164,12 @@ describe("extractIdFromMessage", () => {
       description: "correct",
     },
     {
-      input: "00/0000/000101",
+      input: "000/000/000101",
       expected: "000000000101",
       description: "belgian style",
     },
     {
-      input: "+++00/0000/000101+++",
+      input: "+++000/000/000101+++",
       expected: "000000000101",
       description: "belgian style with special characters",
     },

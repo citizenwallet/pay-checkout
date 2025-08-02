@@ -54,24 +54,26 @@ export async function syncPontoTreasuryPeriodic(
   // parse operations and determine the account address for each operation
   for (const operation of operations) {
     const key = `${operation.message}-${treasury.id}`;
-    let taccount: TreasuryAccount | null | undefined = null;
+    let taccount: TreasuryAccount | null | undefined = undefined;
     if (mappedTreasuryAccounts.has(key)) {
       taccount = mappedTreasuryAccounts.get(key);
     }
 
     if (taccount === undefined) {
-      const { data: taccount, error: messagesError } = await getTreasuryAccount(
-        client,
-        extractIdFromMessage(operation.message),
-        treasury.id
-      );
+      const { data: potentialTAccount, error: messagesError } =
+        await getTreasuryAccount(
+          client,
+          extractIdFromMessage(operation.message),
+          treasury.id
+        );
 
       if (messagesError) {
         console.error(messagesError);
         continue;
       }
 
-      mappedTreasuryAccounts.set(key, taccount);
+      mappedTreasuryAccounts.set(key, potentialTAccount);
+      taccount = potentialTAccount;
     }
 
     if (!taccount) {
@@ -126,8 +128,6 @@ export async function syncPontoTreasuryPeriodic(
         console.log("month: not in sync window", syncMinDate, now, maxDate);
         break;
       }
-
-      console.log("month: in sync window", syncMinDate, now, maxDate);
 
       // parse the max date to a date object
       const minDate = new Date(maxDate);
