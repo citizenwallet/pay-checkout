@@ -12,7 +12,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "configure-provider": "tsx scripts/configure-provider.ts",
-    "migrate-place-accounts": "tsx scripts/migrate-place-accounts.ts"
+    "migrate-place-accounts": "tsx scripts/migrate-place-accounts.ts",
+    "import-cards": "tsx scripts/import-cards.ts"
   },
   "dependencies": {
     "@citizenwallet/sdk": "^2.0.109",
