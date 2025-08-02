@@ -6,7 +6,7 @@ import Config from "@/cw/community.json";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ serial: string }> }
+  { params }: { params: Promise<{ serial: string }> } // TODO: allow querying with a pin
 ) {
   const { serial } = await params;
 
@@ -25,13 +25,6 @@ export async function GET(
     }
   } catch (error) {
     console.error("Account verification error:", error);
-    return NextResponse.json(
-      { error: "Account verification failed" },
-      { status: 401 }
-    );
-  }
-
-  if (!verifiedAccount) {
     return NextResponse.json(
       { error: "Account verification failed" },
       { status: 401 }
