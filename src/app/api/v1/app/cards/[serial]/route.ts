@@ -19,12 +19,12 @@ export async function GET(
   let verifiedAccount: string | null = null;
   try {
     verifiedAccount = await verifyConnectedHeaders(community, request.headers);
+
+    if (!verifiedAccount) {
+      throw new Error("Invalid signature");
+    }
   } catch (error) {
     console.error("Account verification error:", error);
-    return NextResponse.json(
-      { error: "Account verification failed" },
-      { status: 401 }
-    );
   }
 
   const client = getServiceRoleClient();
