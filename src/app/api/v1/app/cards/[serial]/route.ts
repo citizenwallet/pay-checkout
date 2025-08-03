@@ -6,9 +6,11 @@ import Config from "@/cw/community.json";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ serial: string }> } // TODO: allow querying with a pin
+  { params }: { params: Promise<{ serial: string }> }
 ) {
   const { serial } = await params;
+  const searchParams = request.nextUrl.searchParams;
+  const pin = searchParams.get("pin");
 
   if (!serial) {
     return NextResponse.json({ error: "No serial specified" }, { status: 400 });
@@ -40,38 +42,69 @@ export async function GET(
       return NextResponse.json({ error: "Card not found" }, { status: 404 });
     }
 
+    if (card.owner === null) {
+      return NextResponse.json(
+        {
+          card,
+        },
+        { status: 200 }
+      );
+    }
+
+    const { data: cardPin, error: pinError } = await getCardPin(client, serial);
+
+    if (pinError) {
+      return NextResponse.json({ error: pinError.message }, { status: 500 });
+    }
+
+    if (cardPin === null) {
+      return NextResponse.json({ error: "Card not found" }, { status: 500 });
+    }
+
     if (
-      card.owner &&
-      verifiedAccount && // TODO: rethink this,
+      verifiedAccount &&
       card.owner.toLowerCase() !== verifiedAccount.toLowerCase()
     ) {
-      const { data: cardPin, error: pinError } = await getCardPin(
-        client,
-        serial
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-      if (pinError) {
-        return NextResponse.json({ error: pinError.message }, { status: 500 });
-      }
-
-      if (cardPin === null) {
+    if (!verifiedAccount && card.owner) {
+      // authorization not provided but needed
+      if (cardPin.pin === null) {
+        // pin not configured, no other way to authorize
         return NextResponse.json(
           { error: "Unauthorized", challenge: null },
           { status: 401 }
         );
       }
 
-      if (cardPin.pin === null) {
+      if (pin === null) {
         return NextResponse.json(
-          { error: "Unauthorized", challenge: null },
+          { error: "Unauthorized", challenge: "pin" },
+          { status: 401 }
+        );
+      }
+
+      if (pin.trim() !== cardPin.pin?.trim()) {
+        return NextResponse.json(
+          { error: "Unauthorized", challenge: "wrong-pin" },
           { status: 401 }
         );
       }
 
       return NextResponse.json(
-        { error: "Unauthorized", challenge: "pin" }, // TODO: allow querying with a pin
-        { status: 401 }
+        {
+          card,
+        },
+        { status: 200 }
       );
+    }
+
+    if (
+      verifiedAccount &&
+      card.owner.toLowerCase() !== verifiedAccount.toLowerCase()
+    ) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     return NextResponse.json(
