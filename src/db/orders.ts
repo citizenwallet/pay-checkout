@@ -469,6 +469,16 @@ export const getOrdersByPlace = async (
     .range(offset, offset + limit);
 };
 
+export const getOrdersByTxHash = async (
+  client: SupabaseClient,
+  txHash: string
+): Promise<PostgrestResponse<OrderWithPlaceMetadata>> => {
+  return client
+    .from("orders")
+    .select(ORDER_SELECT_QUERY, { count: "exact" })
+    .eq("tx_hash", txHash);
+};
+
 export const getTodayOrdersByPlaceByPosId = async (
   client: SupabaseClient,
   placeId: number,

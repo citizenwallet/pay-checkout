@@ -40,6 +40,59 @@ export async function getProfileMapFromTransactionHashes(
   }, {} as { [key: string]: AProfile });
 }
 
+export async function getTransactionByHash(
+  client: SupabaseClient,
+  hash: string
+): Promise<PostgrestResponse<ATransaction>> {
+  return client.from("a_transactions").select("*").eq("hash", hash).single();
+}
+
+export async function getTransactionsForAccount(
+  client: SupabaseClient,
+  account: string,
+  contract?: string,
+  limit?: number,
+  offset?: number
+): Promise<PostgrestResponse<ATransaction>> {
+  let query = client.from("a_transactions").select("*", { count: "exact" });
+
+  if (contract) {
+    query = query.eq("contract", contract);
+  }
+
+  query = query
+    .or(`from.eq.${account},to.eq.${account}`)
+    .order("created_at", { ascending: false });
+
+  if (limit !== undefined && offset !== undefined) {
+    query = query.range(offset, offset + limit - 1);
+  }
+
+  return query;
+}
+
+export async function getNewTransactionsForAccount(
+  client: SupabaseClient,
+  account: string,
+  fromDate: Date,
+  contract?: string
+): Promise<PostgrestResponse<ATransaction>> {
+  let query = client.from("a_transactions").select("*");
+
+  if (contract) {
+    query = query.eq("contract", contract);
+  }
+
+  console.log(fromDate.toISOString());
+
+  query = query
+    .or(`from.eq.${account},to.eq.${account}`)
+    .gt("created_at", fromDate.toISOString())
+    .order("created_at", { ascending: false });
+
+  return query;
+}
+
 export async function getTransactionsBetweenAccounts(
   client: SupabaseClient,
   account: string,

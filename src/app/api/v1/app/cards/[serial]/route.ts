@@ -72,10 +72,7 @@ export async function GET(
       // authorization not provided but needed
       if (cardPin.pin === null) {
         // pin not configured, no other way to authorize
-        return NextResponse.json(
-          { error: "Unauthorized", challenge: null },
-          { status: 401 }
-        );
+        return NextResponse.json({ card }, { status: 200 });
       }
 
       if (pin === null) {
