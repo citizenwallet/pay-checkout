@@ -13,6 +13,11 @@ import { getPlaceWithProfile } from "@/lib/place";
 import { redirect } from "next/navigation";
 import { createOrder, getOrderWithBusiness, Order } from "@/db/orders";
 import TopUpSelector from "./TopUp";
+import {
+  getPublicPontoTreasuryByBusinessId,
+  getPublicStripeTreasuryByBusinessId,
+  getTreasuryByBusinessId,
+} from "@/db/treasury";
 
 export async function generateMetadata({
   params,
@@ -86,6 +91,7 @@ export default async function Page({
     account?: string;
     orderId?: string;
     amount?: string;
+    token?: string;
     description?: string;
     successUrl?: string;
     errorUrl?: string;
@@ -100,6 +106,7 @@ export default async function Page({
     account,
     orderId,
     amount,
+    token,
     description,
     successUrl,
     errorUrl,
@@ -128,6 +135,7 @@ export default async function Page({
           account={account}
           accountOrUsername={accountOrUsername}
           amount={amount}
+          tokenAddress={token}
           description={description}
           successUrl={successUrl}
           errorUrl={errorUrl}
@@ -146,6 +154,7 @@ async function PlacePage({
   account,
   accountOrUsername,
   amount,
+  tokenAddress,
   description,
   successUrl,
   errorUrl,
@@ -158,6 +167,7 @@ async function PlacePage({
   account?: string;
   accountOrUsername: string;
   amount?: string;
+  tokenAddress?: string;
   description?: string;
   successUrl?: string;
   errorUrl?: string;
@@ -212,8 +222,9 @@ async function PlacePage({
 
   const { data: items } = await getItemsForPlace(client, place.id);
 
+  const token = community.getToken(tokenAddress);
+
   if (!orderId && amount && successUrl && errorUrl) {
-    const token = community.getToken();
     const { data: orderData } = await createOrder(
       client,
       place.id,
@@ -249,6 +260,20 @@ async function PlacePage({
   }
 
   if (place.display === "topup") {
+    const { data: stripeTreasury } = await getPublicStripeTreasuryByBusinessId(
+      client,
+      place.business_id,
+      token.address
+    );
+    const { data: pontoTreasury } = await getPublicPontoTreasuryByBusinessId(
+      client,
+      place.business_id,
+      token.address
+    );
+
+    console.log("stripeTreasury", stripeTreasury);
+    console.log("pontoTreasury", pontoTreasury);
+
     return (
       <TopUpSelector
         connectedAccount={connectedAccount}
@@ -256,6 +281,8 @@ async function PlacePage({
         connectedProfile={connectedProfile}
         sigAuthRedirect={sigAuthRedirect}
         placeId={place.id}
+        stripeTreasury={stripeTreasury}
+        pontoTreasury={pontoTreasury}
       />
     );
   }

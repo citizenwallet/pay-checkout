@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { generateOrder } from "../actions/generateOrder";
 import { Loader2 } from "lucide-react";
 import { ProfileWithTokenId } from "@citizenwallet/sdk";
+import { PublicPontoTreasury, PublicStripeTreasury } from "@/db/treasury";
 
 const PRESET_AMOUNTS = [10, 20, 50, 100];
 const CURRENCY_LOGO = Config.community.logo;
@@ -21,6 +22,8 @@ interface TopUpSelectorProps {
   connectedProfile?: ProfileWithTokenId | null;
   sigAuthRedirect?: string;
   placeId: number;
+  stripeTreasury: PublicStripeTreasury | null;
+  pontoTreasury: PublicPontoTreasury | null;
 }
 
 const isValidEthereumAddress = (address: string) => {
