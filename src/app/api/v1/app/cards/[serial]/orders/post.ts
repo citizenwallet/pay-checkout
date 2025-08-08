@@ -240,7 +240,7 @@ export async function POST(
 
     console.log("orderData", order);
 
-    return NextResponse.json({ orderId: order.id }, { status: 200 });
+    return NextResponse.json(order, { status: 200 });
   } catch (error) {
     console.error("pos order creation error", error);
     return NextResponse.json(

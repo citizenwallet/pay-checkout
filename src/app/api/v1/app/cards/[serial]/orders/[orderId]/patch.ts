@@ -197,7 +197,7 @@ export async function PATCH(
 
     console.log("orderData", orderData);
 
-    return NextResponse.json({ orderId: orderData.id }, { status: 200 });
+    return NextResponse.json(orderData, { status: 200 });
   } catch (error) {
     console.error("pos order creation error", error);
     return NextResponse.json(
