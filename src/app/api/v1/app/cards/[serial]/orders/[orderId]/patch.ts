@@ -13,7 +13,7 @@ import {
 } from "@citizenwallet/sdk";
 import { NextResponse } from "next/server";
 import Config from "@/cw/community.json";
-import { completePosOrder, getOrderWithBusiness } from "@/db/orders";
+import { completeAppOrder, getOrderWithBusiness } from "@/db/orders";
 import { id, parseUnits, Wallet } from "ethers";
 import { getPlaceById } from "@/db/places";
 import { getCardBySerial } from "@/db/cards";
@@ -186,7 +186,7 @@ export async function PATCH(
     }
 
     const { data: orderData, error: orderCreationError } =
-      await completePosOrder(client, parseInt(orderId), hash, senderAddress);
+      await completeAppOrder(client, parseInt(orderId), senderAddress, hash);
 
     if (orderCreationError) {
       return NextResponse.json(

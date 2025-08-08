@@ -162,7 +162,14 @@ export const completeAppOrder = async (
 ): Promise<PostgrestSingleResponse<OrderWithPlaceMetadata>> => {
   return client
     .from("orders")
-    .update({ status: "paid", due: 0, account, tx_hash: txHash })
+    .update({
+      status: "paid",
+      due: 0,
+      type: "app",
+      account,
+      tx_hash: txHash,
+      completed_at: new Date().toISOString(),
+    })
     .eq("id", orderId)
     .select(ORDER_SELECT_QUERY)
     .single();
