@@ -49,24 +49,24 @@ export async function syncPontoTreasuryPayg(
   // parse operations and determine the account address for each operation
   for (const operation of operations) {
     const key = `${operation.message}-${treasury.id}`;
-    let taccount: TreasuryAccount | null | undefined = null;
-    if (mappedTreasuryAccounts.has(key)) {
-      taccount = mappedTreasuryAccounts.get(key);
-    }
+    let taccount: TreasuryAccount | null | undefined =
+      mappedTreasuryAccounts.get(key);
 
     if (taccount === undefined) {
-      const { data: taccount, error: messagesError } = await getTreasuryAccount(
-        client,
-        extractIdFromMessage(operation.message),
-        treasury.id
-      );
+      const { data: foundTaccount, error: messagesError } =
+        await getTreasuryAccount(
+          client,
+          extractIdFromMessage(operation.message),
+          treasury.id
+        );
 
       if (messagesError) {
         console.error(messagesError);
         continue;
       }
 
-      mappedTreasuryAccounts.set(key, taccount);
+      mappedTreasuryAccounts.set(key, foundTaccount);
+      taccount = foundTaccount;
     }
 
     if (!taccount) {

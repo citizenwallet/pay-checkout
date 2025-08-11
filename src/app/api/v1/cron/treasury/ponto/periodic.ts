@@ -54,13 +54,11 @@ export async function syncPontoTreasuryPeriodic(
   // parse operations and determine the account address for each operation
   for (const operation of operations) {
     const key = `${operation.message}-${treasury.id}`;
-    let taccount: TreasuryAccount | null | undefined = undefined;
-    if (mappedTreasuryAccounts.has(key)) {
-      taccount = mappedTreasuryAccounts.get(key);
-    }
+    let taccount: TreasuryAccount | null | undefined =
+      mappedTreasuryAccounts.get(key);
 
     if (taccount === undefined) {
-      const { data: potentialTAccount, error: messagesError } =
+      const { data: foundTaccount, error: messagesError } =
         await getTreasuryAccount(
           client,
           extractIdFromMessage(operation.message),
@@ -72,8 +70,8 @@ export async function syncPontoTreasuryPeriodic(
         continue;
       }
 
-      mappedTreasuryAccounts.set(key, potentialTAccount);
-      taccount = potentialTAccount;
+      mappedTreasuryAccounts.set(key, foundTaccount);
+      taccount = foundTaccount;
     }
 
     if (!taccount) {
