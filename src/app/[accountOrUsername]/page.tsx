@@ -16,8 +16,12 @@ import TopUpSelector from "./TopUp";
 import {
   getPublicPontoTreasuryByBusinessId,
   getPublicStripeTreasuryByBusinessId,
-  getTreasuryByBusinessId,
 } from "@/db/treasury";
+import {
+  createTreasuryAccount,
+  getNextTreasuryAccountId,
+  getTreasuryAccountByAccount,
+} from "@/db/treasury_account";
 
 export async function generateMetadata({
   params,
@@ -265,14 +269,44 @@ async function PlacePage({
       place.business_id,
       token.address
     );
-    const { data: pontoTreasury } = await getPublicPontoTreasuryByBusinessId(
+    let { data: pontoTreasury } = await getPublicPontoTreasuryByBusinessId(
       client,
       place.business_id,
       token.address
     );
 
-    console.log("stripeTreasury", stripeTreasury);
-    console.log("pontoTreasury", pontoTreasury);
+    let treasuryAccountId: string | null = null;
+    if (pontoTreasury && connectedAccount) {
+      const { data: treasuryAccount } = await getTreasuryAccountByAccount(
+        client,
+        pontoTreasury.id,
+        connectedAccount
+      );
+
+      treasuryAccountId = treasuryAccount?.id ?? null;
+      if (!treasuryAccountId) {
+        const nextTreasuryAccount = await getNextTreasuryAccountId(
+          client,
+          pontoTreasury.id
+        );
+
+        const { data: newTreasuryAccount } = await createTreasuryAccount(
+          client,
+          nextTreasuryAccount,
+          pontoTreasury.id,
+          connectedAccount,
+          null,
+          connectedProfile?.name ?? null
+        );
+
+        treasuryAccountId = newTreasuryAccount?.id ?? null;
+      }
+    }
+
+    if (!treasuryAccountId) {
+      // something went wrong creating an account id, disable ponto
+      pontoTreasury = null;
+    }
 
     return (
       <TopUpSelector
@@ -283,6 +317,7 @@ async function PlacePage({
         placeId={place.id}
         stripeTreasury={stripeTreasury}
         pontoTreasury={pontoTreasury}
+        treasuryAccountId={treasuryAccountId}
       />
     );
   }
