@@ -80,6 +80,34 @@ export default function PlaceSearch({
   return (
     <div className="flex flex-col justify-start items-center min-h-screen bg-gray-100 p-4 md:flex md:justify-start">
       <div className="flex flex-col flex-1 w-full max-w-md">
+        {/* Color demonstration section */}
+        <div className="mb-6 p-4 bg-white rounded-lg shadow-md">
+          <h3 className="text-lg font-semibold mb-3">Dynamic Color Demo</h3>
+          <p className="text-sm text-gray-600 mb-3">
+            Try adding a color parameter to the URL: <code>?color=#ff0000</code>
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              "#3431c4",
+              "#ff0000",
+              "#00ff00",
+              "#ff6b35",
+              "#8b5cf6",
+              "#f59e0b",
+            ].map((color) => (
+              <a
+                key={color}
+                href={`?color=${color.replace("#", "")}${
+                  search ? `&search=${search}` : ""
+                }`}
+                className="w-8 h-8 rounded-full border-2 border-gray-300 hover:border-gray-500 transition-colors"
+                style={{ backgroundColor: color }}
+                title={`Use ${color}`}
+              />
+            ))}
+          </div>
+        </div>
+
         <div className="fixed bottom-0 left-0 w-full bg-white p-4 rounded-t-lg shadow-md flex flex-row justify-center items-center">
           <div className="flex space-x-2 max-w-xl w-full">
             <Input

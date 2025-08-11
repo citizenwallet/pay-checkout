@@ -388,7 +388,7 @@ export default function TopUpSelector({
                       className={cn(
                         "p-4 text-lg h-auto",
                         selectedAmount === amount &&
-                          "bg-black hover:bg-black/90"
+                          "bg-primary hover:bg-primary/90"
                       )}
                     >
                       <Image
@@ -443,7 +443,7 @@ export default function TopUpSelector({
                 disabled={!isValidEthereumAddress(address) || !finalAmount}
                 className={cn(
                   "w-full py-4 text-lg h-auto",
-                  finalAmount && "bg-black hover:bg-black/90"
+                  finalAmount && "bg-primary hover:bg-primary/90"
                 )}
               >
                 {finalAmount ? (
