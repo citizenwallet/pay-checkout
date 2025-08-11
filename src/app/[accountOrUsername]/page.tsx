@@ -276,6 +276,7 @@ async function PlacePage({
     );
 
     let treasuryAccountId: string | null = null;
+    let target: number | null = pontoTreasury?.target ?? null;
     if (pontoTreasury && connectedAccount) {
       const { data: treasuryAccount } = await getTreasuryAccountByAccount(
         client,
@@ -284,6 +285,7 @@ async function PlacePage({
       );
 
       treasuryAccountId = treasuryAccount?.id ?? null;
+      target = treasuryAccount?.target ?? target ?? null;
       if (!treasuryAccountId) {
         const nextTreasuryAccount = await getNextTreasuryAccountId(
           client,
@@ -295,11 +297,12 @@ async function PlacePage({
           nextTreasuryAccount,
           pontoTreasury.id,
           connectedAccount,
-          null,
+          target,
           connectedProfile?.name ?? null
         );
 
         treasuryAccountId = newTreasuryAccount?.id ?? null;
+        target = newTreasuryAccount?.target ?? target ?? null;
       }
     }
 

@@ -37,12 +37,13 @@ const isValidEthereumAddress = (address: string) => {
 const generateBCDQrCode = (
   iban: string,
   legalName: string,
+  target: number | null,
   communication: string
 ): string => {
   // BCD 002 SCT format: BCD\n002\n1\nSCT\nBIC\nName\nIBAN\nAmount\nCommunication
   // We leave amount blank as requested
   const bic = ""; // BIC is optional for SEPA transfers
-  const amount = ""; // Leave blank for user to fill in their bank app
+  const amount = target ? `${target / 100}` : ""; // Leave blank for user to fill in their bank app
 
   return `BCD\n002\n1\nSCT\n${bic}\n${legalName}\n${iban}\n${amount}\n\n\n${communication}`;
 };
@@ -154,6 +155,7 @@ export default function TopUpSelector({
       ? generateBCDQrCode(
           pontoTreasury.iban,
           pontoTreasury.business.legal_name,
+          pontoTreasury.target,
           treasuryAccountId
         )
       : "";
@@ -285,6 +287,34 @@ export default function TopUpSelector({
                       )}
                     </Button>
                   </div>
+
+                  {pontoTreasury.target && (
+                    <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                      <div className="text-sm">
+                        <div className="font-medium">Target</div>
+                        <div className="text-muted-foreground font-mono">
+                          {((pontoTreasury?.target ?? 0) / 100).toFixed(2)} €
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          handleCopy(
+                            `${(pontoTreasury?.target ?? 0) / 100}`,
+                            "target"
+                          )
+                        }
+                        className="h-8 w-8 p-0"
+                      >
+                        {copiedField === "target" ? (
+                          <Check className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  )}
 
                   {treasuryAccountId && (
                     <div className="flex items-center justify-between p-3 bg-muted rounded-lg">

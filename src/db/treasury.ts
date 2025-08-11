@@ -86,6 +86,7 @@ export interface PublicPontoTreasury {
   token: string;
   sync_provider: "ponto";
   iban: string;
+  target: number | null;
   business: {
     legal_name: string;
   };
@@ -220,7 +221,7 @@ export const getPublicPontoTreasuryByBusinessId = async (
   const result = await client
     .from("treasury")
     .select(
-      "id, business_id, created_at, token, sync_provider, sync_provider_credentials->>iban, business:businesses(legal_name)"
+      "id, business_id, created_at, token, sync_provider, sync_provider_credentials->>iban, sync_strategy_config->>target, business:businesses(legal_name)"
     )
     .eq("token", token)
     .eq("sync_provider", "ponto");
@@ -235,22 +236,21 @@ export const getPublicPontoTreasuryByBusinessId = async (
     (treasury) => treasury.business_id === businessId
   );
 
-  // if this business id has no treasury for this token, return the first one
-  if (!preferredTreasury) {
-    return {
-      // @ts-expect-error wrong type inference
-      data: result.data[0],
-      error: null,
-      count: 0,
-      status: 200,
-      statusText: "OK",
-    };
+  const treasuryToReturn = preferredTreasury || result.data[0];
+
+  if (!treasuryToReturn) {
+    return { data: null, error: null, count: 0, status: 200, statusText: "OK" };
   }
 
-  // if this business id has a treasury for this token, return it
+  // Convert the target from string to number since PostgreSQL JSON extraction returns strings
+  // @ts-expect-error wrong type inference
+  const convertedTreasury: PublicPontoTreasury = {
+    ...treasuryToReturn,
+    target: treasuryToReturn.target ? Number(treasuryToReturn.target) : null,
+  };
+
   return {
-    // @ts-expect-error wrong type inference
-    data: preferredTreasury,
+    data: convertedTreasury,
     error: null,
     count: result.data.length,
     status: 200,
