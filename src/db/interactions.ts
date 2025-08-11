@@ -7,6 +7,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 export interface AInteraction {
   id: string; // uuid becomes string in TypeScript
   exchange_direction: ExchangeDirection;
+  account: string;
   new_interaction: boolean;
 
   transaction: Pick<
@@ -25,6 +26,7 @@ export interface AInteraction {
 
 export const INTERACTIONS_SELECT_QUERY = `
   id,
+  account,
   new_interaction,
   transaction:a_transactions!transaction_id (
     id,
@@ -140,6 +142,7 @@ function createAInteraction(
   return {
     id: rawData.id,
     exchange_direction: transaction.from === account ? "sent" : "received",
+    account,
     new_interaction: rawData.new_interaction,
     transaction,
     with_profile,

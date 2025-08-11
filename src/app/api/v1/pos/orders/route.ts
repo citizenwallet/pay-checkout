@@ -56,7 +56,6 @@ interface OrderRequest {
   description: string;
   total: number;
   posId: string;
-  type: "web" | "app" | "terminal" | "pos";
   token?: string;
 }
 
