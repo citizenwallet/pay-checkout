@@ -66,6 +66,32 @@ export interface Treasury<
   sync_currency_symbol: string;
 }
 
+export interface PublicStripeTreasury {
+  id: number;
+  business_id: number;
+  created_at: string;
+  token: string;
+  sync_provider: "stripe";
+  price_id: string;
+  publishable_key: string;
+  business: {
+    legal_name: string;
+  };
+}
+
+export interface PublicPontoTreasury {
+  id: number;
+  business_id: number;
+  created_at: string;
+  token: string;
+  sync_provider: "ponto";
+  iban: string;
+  target: number | null;
+  business: {
+    legal_name: string;
+  };
+}
+
 export const getTreasury = async <S extends SyncProvider>(
   client: SupabaseClient,
   id: number,
@@ -134,6 +160,97 @@ export const getTreasuryByBusinessId = async <S extends SyncProvider>(
   // if this business id has a treasury for this token, return it
   return {
     data: preferredTreasury,
+    error: null,
+    count: result.data.length,
+    status: 200,
+    statusText: "OK",
+  };
+};
+
+export const getPublicStripeTreasuryByBusinessId = async (
+  client: SupabaseClient,
+  businessId: number,
+  token: string
+): Promise<PostgrestSingleResponse<PublicStripeTreasury | null>> => {
+  const result = await client
+    .from("treasury")
+    .select(
+      "id, business_id, created_at, token, sync_provider, sync_provider_credentials->>price_id, sync_provider_credentials->>publishable_key, business:businesses(legal_name)"
+    )
+    .eq("token", token)
+    .eq("sync_provider", "stripe");
+  if (result.error) {
+    throw result.error;
+  }
+  if (result.data.length === 0) {
+    return { data: null, error: null, count: 0, status: 200, statusText: "OK" };
+  }
+
+  const preferredTreasury = result.data.find(
+    (treasury) => treasury.business_id === businessId
+  );
+
+  // if this business id has no treasury for this token, return the first one
+  if (!preferredTreasury) {
+    return {
+      // @ts-expect-error wrong type inference
+      data: result.data[0],
+      error: null,
+      count: 0,
+      status: 200,
+      statusText: "OK",
+    };
+  }
+
+  // if this business id has a treasury for this token, return it
+  return {
+    // @ts-expect-error wrong type inference
+    data: preferredTreasury,
+    error: null,
+    count: result.data.length,
+    status: 200,
+    statusText: "OK",
+  };
+};
+
+export const getPublicPontoTreasuryByBusinessId = async (
+  client: SupabaseClient,
+  businessId: number,
+  token: string
+): Promise<PostgrestSingleResponse<PublicPontoTreasury | null>> => {
+  const result = await client
+    .from("treasury")
+    .select(
+      "id, business_id, created_at, token, sync_provider, sync_provider_credentials->>iban, sync_strategy_config->>target, business:businesses(legal_name)"
+    )
+    .eq("token", token)
+    .eq("sync_provider", "ponto");
+  if (result.error) {
+    throw result.error;
+  }
+  if (result.data.length === 0) {
+    return { data: null, error: null, count: 0, status: 200, statusText: "OK" };
+  }
+
+  const preferredTreasury = result.data.find(
+    (treasury) => treasury.business_id === businessId
+  );
+
+  const treasuryToReturn = preferredTreasury || result.data[0];
+
+  if (!treasuryToReturn) {
+    return { data: null, error: null, count: 0, status: 200, statusText: "OK" };
+  }
+
+  // Convert the target from string to number since PostgreSQL JSON extraction returns strings
+  // @ts-expect-error wrong type inference
+  const convertedTreasury: PublicPontoTreasury = {
+    ...treasuryToReturn,
+    target: treasuryToReturn.target ? Number(treasuryToReturn.target) : null,
+  };
+
+  return {
+    data: convertedTreasury,
     error: null,
     count: result.data.length,
     status: 200,

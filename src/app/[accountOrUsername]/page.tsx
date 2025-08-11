@@ -13,6 +13,15 @@ import { getPlaceWithProfile } from "@/lib/place";
 import { redirect } from "next/navigation";
 import { createOrder, getOrderWithBusiness, Order } from "@/db/orders";
 import TopUpSelector from "./TopUp";
+import {
+  getPublicPontoTreasuryByBusinessId,
+  getPublicStripeTreasuryByBusinessId,
+} from "@/db/treasury";
+import {
+  createTreasuryAccount,
+  getNextTreasuryAccountId,
+  getTreasuryAccountByAccount,
+} from "@/db/treasury_account";
 
 export async function generateMetadata({
   params,
@@ -86,6 +95,7 @@ export default async function Page({
     account?: string;
     orderId?: string;
     amount?: string;
+    token?: string;
     description?: string;
     successUrl?: string;
     errorUrl?: string;
@@ -100,6 +110,7 @@ export default async function Page({
     account,
     orderId,
     amount,
+    token,
     description,
     successUrl,
     errorUrl,
@@ -128,6 +139,7 @@ export default async function Page({
           account={account}
           accountOrUsername={accountOrUsername}
           amount={amount}
+          tokenAddress={token}
           description={description}
           successUrl={successUrl}
           errorUrl={errorUrl}
@@ -146,6 +158,7 @@ async function PlacePage({
   account,
   accountOrUsername,
   amount,
+  tokenAddress,
   description,
   successUrl,
   errorUrl,
@@ -158,6 +171,7 @@ async function PlacePage({
   account?: string;
   accountOrUsername: string;
   amount?: string;
+  tokenAddress?: string;
   description?: string;
   successUrl?: string;
   errorUrl?: string;
@@ -212,8 +226,9 @@ async function PlacePage({
 
   const { data: items } = await getItemsForPlace(client, place.id);
 
+  const token = community.getToken(tokenAddress);
+
   if (!orderId && amount && successUrl && errorUrl) {
-    const token = community.getToken();
     const { data: orderData } = await createOrder(
       client,
       place.id,
@@ -249,6 +264,53 @@ async function PlacePage({
   }
 
   if (place.display === "topup") {
+    const { data: stripeTreasury } = await getPublicStripeTreasuryByBusinessId(
+      client,
+      place.business_id,
+      token.address
+    );
+    let { data: pontoTreasury } = await getPublicPontoTreasuryByBusinessId(
+      client,
+      place.business_id,
+      token.address
+    );
+
+    let treasuryAccountId: string | null = null;
+    let target: number | null = pontoTreasury?.target ?? null;
+    if (pontoTreasury && connectedAccount) {
+      const { data: treasuryAccount } = await getTreasuryAccountByAccount(
+        client,
+        pontoTreasury.id,
+        connectedAccount
+      );
+
+      treasuryAccountId = treasuryAccount?.id ?? null;
+      target = treasuryAccount?.target ?? target ?? null;
+      if (!treasuryAccountId) {
+        const nextTreasuryAccount = await getNextTreasuryAccountId(
+          client,
+          pontoTreasury.id
+        );
+
+        const { data: newTreasuryAccount } = await createTreasuryAccount(
+          client,
+          nextTreasuryAccount,
+          pontoTreasury.id,
+          connectedAccount,
+          target,
+          connectedProfile?.name ?? null
+        );
+
+        treasuryAccountId = newTreasuryAccount?.id ?? null;
+        target = newTreasuryAccount?.target ?? target ?? null;
+      }
+    }
+
+    if (!treasuryAccountId) {
+      // something went wrong creating an account id, disable ponto
+      pontoTreasury = null;
+    }
+
     return (
       <TopUpSelector
         connectedAccount={connectedAccount}
@@ -256,6 +318,9 @@ async function PlacePage({
         connectedProfile={connectedProfile}
         sigAuthRedirect={sigAuthRedirect}
         placeId={place.id}
+        stripeTreasury={stripeTreasury}
+        pontoTreasury={pontoTreasury}
+        treasuryAccountId={treasuryAccountId}
       />
     );
   }
