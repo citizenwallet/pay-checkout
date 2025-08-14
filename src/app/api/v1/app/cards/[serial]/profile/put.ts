@@ -163,6 +163,7 @@ export async function PUT(
       image_small: defaultCardProfileImage,
       image_medium: defaultCardProfileImage,
       image: defaultCardProfileImage,
+      parent: verifiedAccount,
     };
 
     const formattedProfile = formatProfileImageLinks(
@@ -205,15 +206,13 @@ export async function PUT(
 
     const bundler = new BundlerService(community);
 
-    const tx = await bundler.setProfile(
+    await bundler.setProfile(
       signer,
       profileManagerAddress,
       profile.account,
       profile.username,
       response
     );
-
-    await bundler.awaitSuccess(tx);
 
     return NextResponse.json(formattedProfile, { status: 200 });
   } catch (err) {
