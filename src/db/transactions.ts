@@ -18,6 +18,12 @@ export interface ATransaction {
 
 export type ExchangeDirection = "sent" | "received"; // to denote '+' or '-' value
 
+const TRANSACTION_SELECT_QUERY = `
+  *,
+  from_profile:a_profiles!from(*),
+  to_profile:a_profiles!to(*)
+`;
+
 export async function getProfileMapFromTransactionHashes(
   supabase: SupabaseClient,
   hashes: string[],
@@ -44,7 +50,11 @@ export async function getTransactionByHash(
   client: SupabaseClient,
   hash: string
 ): Promise<PostgrestResponse<ATransaction>> {
-  return client.from("a_transactions").select("*").eq("hash", hash).single();
+  return client
+    .from("a_transactions")
+    .select(TRANSACTION_SELECT_QUERY)
+    .eq("hash", hash)
+    .single();
 }
 
 export async function getTransactionsForAccount(
@@ -54,7 +64,9 @@ export async function getTransactionsForAccount(
   limit?: number,
   offset?: number
 ): Promise<PostgrestResponse<ATransaction>> {
-  let query = client.from("a_transactions").select("*", { count: "exact" });
+  let query = client
+    .from("a_transactions")
+    .select(TRANSACTION_SELECT_QUERY, { count: "exact" });
 
   if (contract) {
     query = query.eq("contract", contract);
@@ -77,13 +89,11 @@ export async function getNewTransactionsForAccount(
   fromDate: Date,
   contract?: string
 ): Promise<PostgrestResponse<ATransaction>> {
-  let query = client.from("a_transactions").select("*");
+  let query = client.from("a_transactions").select(TRANSACTION_SELECT_QUERY);
 
   if (contract) {
     query = query.eq("contract", contract);
   }
-
-  console.log(fromDate.toISOString());
 
   query = query
     .or(`from.eq.${account},to.eq.${account}`)
@@ -102,7 +112,7 @@ export async function getTransactionsBetweenAccounts(
 ): Promise<PostgrestResponse<ATransaction>> {
   let query = client
     .from("a_transactions")
-    .select("*", { count: "exact" })
+    .select(TRANSACTION_SELECT_QUERY, { count: "exact" })
     .or(
       `and(from.eq.${account},to.eq.${withAccount}),and(from.eq.${withAccount},to.eq.${account})`
     )
@@ -123,7 +133,7 @@ export async function getNewTransactionsBetweenAccounts(
 ): Promise<(ATransaction & { exchange_direction: ExchangeDirection })[]> {
   const { data, error } = await supabase
     .from("a_transactions")
-    .select("*")
+    .select(TRANSACTION_SELECT_QUERY)
     .or(
       `and(from.eq.${account},to.eq.${withAccount}),and(from.eq.${withAccount},to.eq.${account})`
     )
