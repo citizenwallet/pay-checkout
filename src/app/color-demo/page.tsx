@@ -35,7 +35,8 @@ export default function ColorDemoPage() {
             Dynamic Color Demo
           </h1>
           <p className="text-lg text-muted-foreground">
-            See how Tailwind's primary colors change based on the selected color
+            See how Tailwind&apos;s primary colors change based on the selected
+            color
           </p>
         </div>
 
