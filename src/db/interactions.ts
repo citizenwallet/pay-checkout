@@ -9,11 +9,12 @@ export interface AInteraction {
   exchange_direction: ExchangeDirection;
   account: string;
   new_interaction: boolean;
+  created_at: string;
 
   transaction: Pick<
     ATransaction,
     "id" | "value" | "description" | "from" | "to" | "created_at"
-  >;
+  > | null;
   with_profile: Pick<
     AProfile,
     "account" | "username" | "name" | "image" | "description"
@@ -28,6 +29,7 @@ export const INTERACTIONS_SELECT_QUERY = `
   id,
   account,
   new_interaction,
+  created_at,
   transaction:a_transactions!transaction_id (
     id,
     contract,
@@ -59,13 +61,20 @@ export const INTERACTIONS_SELECT_QUERY = `
 // TODO: paginate
 export async function getInteractionsOfAccount(
   supabase: SupabaseClient,
-  account: string
+  account: string,
+  token?: string | null
 ): Promise<AInteraction[]> {
   const interactionsQuery = supabase
     .from("a_interactions")
     .select(INTERACTIONS_SELECT_QUERY)
     .eq("account", account)
-    .eq("with_place.items.hidden", false)
+    .eq("with_place.items.hidden", false);
+
+  if (token) {
+    interactionsQuery.eq("transaction.contract", token);
+  }
+
+  interactionsQuery
     .order("new_interaction", { ascending: false })
     .order("updated_at", { ascending: false });
 
@@ -78,13 +87,20 @@ export async function getInteractionsOfAccount(
 export async function getNewInteractionsOfAccount(
   supabase: SupabaseClient,
   account: string,
-  fromDate: Date
+  fromDate: Date,
+  token?: string | null
 ): Promise<AInteraction[]> {
   const interactionsQuery = supabase
     .from("a_interactions")
     .select(INTERACTIONS_SELECT_QUERY)
     .eq("account", account)
-    .eq("with_place.items.hidden", false)
+    .eq("with_place.items.hidden", false);
+
+  if (token) {
+    interactionsQuery.eq("transaction.contract", token);
+  }
+
+  interactionsQuery
     .gt("updated_at", fromDate.toISOString())
     .order("new_interaction", { ascending: false })
     .order("updated_at", { ascending: false });
@@ -115,7 +131,8 @@ export async function setInteractionAsRead(
 type RawInteractionData = {
   id: string;
   new_interaction: boolean;
-  transaction: unknown;
+  created_at: string;
+  transaction?: unknown;
   with_profile: unknown;
   with_place: unknown;
 };
@@ -127,7 +144,7 @@ function createAInteraction(
   const transaction = rawData.transaction as unknown as Pick<
     ATransaction,
     "id" | "value" | "description" | "from" | "to" | "created_at"
-  >;
+  > | null;
 
   const with_profile = rawData.with_profile as unknown as Pick<
     AProfile,
@@ -141,9 +158,10 @@ function createAInteraction(
 
   return {
     id: rawData.id,
-    exchange_direction: transaction.from === account ? "sent" : "received",
+    exchange_direction: transaction?.from === account ? "sent" : "received",
     account,
     new_interaction: rawData.new_interaction,
+    created_at: rawData.created_at,
     transaction,
     with_profile,
     with_place,

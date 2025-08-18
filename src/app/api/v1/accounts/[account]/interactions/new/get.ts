@@ -39,6 +39,9 @@ export async function GET(
   request: NextRequest,
   context: { params: Promise<{ account: string }> }
 ) {
+  const { searchParams } = new URL(request.url);
+  const token = searchParams.get("token");
+
   const { account } = await context.params;
   const fromDateParam = request.nextUrl.searchParams.get("from_date");
 
@@ -57,11 +60,9 @@ export async function GET(
     const interactions = await getNewInteractionsOfAccount(
       client,
       account,
-      fromDate
+      fromDate,
+      token
     );
-    console.log("fromDateParam", fromDateParam);
-    console.log("fromDate", fromDate.toISOString());
-    console.log("interactions", interactions.length);
 
     return NextResponse.json({ interactions }, { status: 200 });
   } catch (error) {

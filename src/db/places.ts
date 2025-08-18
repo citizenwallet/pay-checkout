@@ -21,6 +21,7 @@ export interface Place {
   description: string | null;
   display: "amount" | "menu" | "amountAndMenu" | "topup";
   hidden: boolean;
+  tokens: string[];
 }
 
 export interface PlaceWithItems extends Place {
@@ -176,7 +177,8 @@ export const updatePlaceAccounts = async (
 
 // TODO: add pagination
 export const getAllPlaces = async (
-  client: SupabaseClient
+  client: SupabaseClient,
+  tokens?: string[]
 ): Promise<
   Pick<
     Place,
@@ -185,9 +187,12 @@ export const getAllPlaces = async (
 > => {
   const placesQuery = client
     .from("places")
-    .select("id, name, slug, image, accounts ,description, display")
-    .eq("hidden", false)
-    .order("name", { ascending: true });
+    .select("id, name, slug, image, accounts ,description, display, tokens");
+  if (tokens && tokens.length > 0) {
+    placesQuery.contains("tokens", JSON.stringify(tokens));
+  }
+
+  placesQuery.eq("hidden", false).order("name", { ascending: true });
 
   const { data, error } = await placesQuery;
 

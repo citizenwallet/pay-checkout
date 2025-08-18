@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getServiceRoleClient } from "@/db";
 import { getAllPlaces } from "@/db/places";
 
@@ -46,10 +46,14 @@ export interface PlaceResponse {
   image: string | null;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+
+  const tokens = searchParams.getAll("token");
+
   try {
     const client = getServiceRoleClient();
-    const places = await getAllPlaces(client);
+    const places = await getAllPlaces(client, tokens);
 
     return NextResponse.json({ places }, { status: 200 });
   } catch (error) {

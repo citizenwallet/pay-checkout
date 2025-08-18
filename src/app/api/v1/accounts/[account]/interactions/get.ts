@@ -6,6 +6,9 @@ export async function GET(
   request: NextRequest,
   context: { params: Promise<{ account: string }> }
 ) {
+  const { searchParams } = new URL(request.url);
+  const token = searchParams.get("token");
+
   const { account } = await context.params;
 
   if (!account) {
@@ -15,7 +18,7 @@ export async function GET(
   const client = getServiceRoleClient();
 
   try {
-    const interactions = await getInteractionsOfAccount(client, account);
+    const interactions = await getInteractionsOfAccount(client, account, token);
 
     return NextResponse.json({ interactions }, { status: 200 });
   } catch (error) {
