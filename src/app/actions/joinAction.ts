@@ -105,6 +105,7 @@ export async function joinAction(
     image: null,
     display: "amount",
     hidden: true,
+    tokens: [community.getToken().address],
   });
 
   if (placeError) {
