@@ -195,7 +195,9 @@ export async function syncPontoTreasuryPeriodic(
       // process the periodic operations for the accounts that have reached their target
       for (const account of accountsTargetReached) {
         const accountOperations = periodicOperations.filter(
-          (operation) => operation.account === account
+          (operation) =>
+            operation.account &&
+            operation.account.toLowerCase() === account.toLowerCase()
         );
 
         if (accountOperations.length === 0) {
@@ -211,7 +213,7 @@ export async function syncPontoTreasuryPeriodic(
           firstOperation.id,
           treasury.id,
           groupedOperations.map((operation) => operation.id), // grouped operations
-          syncStrategyConfig.reward // reward
+          syncStrategyConfig.target // reward
         );
       }
     default:
