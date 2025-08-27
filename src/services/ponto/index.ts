@@ -27,6 +27,18 @@ export interface PontoTransactionsResponse {
   synchronizedAt: string;
 }
 
+export interface PontoSynchronizationResponse {
+  data: {
+    type: "synchronization";
+    attributes: {
+      resourceType: "account";
+      resourceId: string;
+      subtype: "accountDetails" | "accountTransactions";
+      customerIpAddress: string;
+    };
+  };
+}
+
 /**
  * Fetches an access token from Ponto using client credentials flow
  */
@@ -192,6 +204,23 @@ export class PontoClient {
 
       after = response.meta.paging.after;
     }
+  }
+
+  async syncPontoTransactions(accountId: string, ip: string) {
+    const response = await this.makeRequest<PontoSynchronizationResponse>(
+      "/synchronizations",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          resourceType: "account",
+          resourceId: accountId,
+          subtype: "accountTransactions",
+          customerIpAddress: ip,
+        }),
+      }
+    );
+
+    return response;
   }
 }
 

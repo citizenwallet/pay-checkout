@@ -61,6 +61,7 @@ export default function TopUpSelector({
   treasuryAccountId,
   target,
 }: TopUpSelectorProps) {
+  const [close, setClose] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState("");
@@ -93,10 +94,9 @@ export default function TopUpSelector({
   };
 
   const handleClose = async () => {
-    console.log("handleClose");
+    setClose(true);
     if (pontoTreasury) {
-      const ip = await pontoSyncAction(pontoTreasury.id);
-      console.log("ip", ip);
+      await pontoSyncAction(pontoTreasury.id);
     }
 
     if (sigAuthRedirect) {
@@ -367,7 +367,8 @@ export default function TopUpSelector({
                   onClick={handleClose}
                   className={cn("w-full py-4 text-lg h-auto")}
                 >
-                  I made the transfer <CheckIcon className="w-4 h-4" />
+                  I made the transfer{" "}
+                  {close && <CheckIcon className="w-4 h-4" />}
                 </Button>
               </div>
             </CardContent>
