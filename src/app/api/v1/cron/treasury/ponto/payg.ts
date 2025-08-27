@@ -4,12 +4,14 @@ import {
   getLatestTreasuryOperation,
   insertTreasuryOperations,
 } from "@/db/treasury_operation";
+import { sendTransferConfirmationEmail } from "@/services/brevo";
 import { PontoClient } from "@/services/ponto";
 import {
   extractIdFromMessage,
   pontoTransactionToTreasuryOperation,
 } from "@/services/ponto/transaction";
 import { SupabaseClient } from "@supabase/supabase-js";
+import { format } from "date-fns";
 
 export async function syncPontoTreasuryPayg(
   client: SupabaseClient,
@@ -75,6 +77,19 @@ export async function syncPontoTreasuryPayg(
     }
 
     operation.account = taccount.account;
+
+    if (taccount.email) {
+      sendTransferConfirmationEmail(
+        taccount.email,
+        taccount.id,
+        format(new Date(operation.created_at), "dd/MM/yyyy"),
+        operation.amount / 100,
+        treasury.business.legal_name,
+        treasury.business.address_legal,
+        treasury.business.image,
+        treasury.business.image
+      );
+    }
   }
 
   // insert the operations into the database

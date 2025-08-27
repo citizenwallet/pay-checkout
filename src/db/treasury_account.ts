@@ -10,6 +10,7 @@ export interface TreasuryAccount {
   account: string;
   target: number | null;
   name: string | null;
+  email: string | null;
 }
 
 export const createTreasuryAccount = async (
@@ -18,11 +19,12 @@ export const createTreasuryAccount = async (
   treasuryId: number,
   account: string,
   target: number | null,
-  name: string | null
+  name: string | null,
+  email: string | null
 ): Promise<PostgrestSingleResponse<TreasuryAccount | null>> => {
   return client
     .from("treasury_account")
-    .insert({ id, treasury_id: treasuryId, account, target, name });
+    .insert({ id, treasury_id: treasuryId, account, target, name, email });
 };
 
 export const getTreasuryAccount = async (

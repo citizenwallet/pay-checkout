@@ -47,6 +47,11 @@ export interface Treasury<
 > {
   id: number;
   business_id: number;
+  business: {
+    legal_name: string | null;
+    address_legal: string | null;
+    image: string | null;
+  };
   created_at: string;
   token: string;
   sync_provider: S;
@@ -99,7 +104,7 @@ export const getTreasury = async <S extends SyncProvider>(
 ): Promise<PostgrestSingleResponse<Treasury<S> | null>> => {
   return client
     .from("treasury")
-    .select("*")
+    .select("*, business:businesses(legal_name, address_legal, image)")
     .eq("id", id)
     .eq("sync_provider", syncProvider)
     .maybeSingle();
@@ -112,7 +117,7 @@ export const getTreasuryByToken = async <S extends SyncProvider>(
 ): Promise<PostgrestSingleResponse<Treasury<S> | null>> => {
   return client
     .from("treasury")
-    .select("*")
+    .select("*, business:businesses(legal_name, address_legal, image)")
     .eq("token", token)
     .eq("sync_provider", syncProvider)
     .limit(1)
@@ -132,7 +137,7 @@ export const getTreasuryByBusinessId = async <S extends SyncProvider>(
 ): Promise<PostgrestSingleResponse<Treasury<S> | null>> => {
   const result = await client
     .from("treasury")
-    .select("*")
+    .select("*, business:businesses(legal_name, address_legal, image)")
     .eq("token", token)
     .eq("sync_provider", syncProvider);
   if (result.error) {
@@ -175,7 +180,7 @@ export const getPublicStripeTreasuryByBusinessId = async (
   const result = await client
     .from("treasury")
     .select(
-      "id, business_id, created_at, token, sync_provider, sync_provider_credentials->>price_id, sync_provider_credentials->>publishable_key, business:businesses(legal_name)"
+      "id, business_id, created_at, token, sync_provider, sync_provider_credentials->>price_id, sync_provider_credentials->>publishable_key, business:businesses(legal_name, address_legal, image)"
     )
     .eq("token", token)
     .eq("sync_provider", "stripe");
@@ -221,7 +226,7 @@ export const getPublicPontoTreasuryByBusinessId = async (
   const result = await client
     .from("treasury")
     .select(
-      "id, business_id, created_at, token, sync_provider, sync_provider_credentials->>iban, sync_strategy_config->>target, business:businesses(legal_name)"
+      "id, business_id, created_at, token, sync_provider, sync_provider_credentials->>iban, sync_strategy_config->>target, business:businesses(legal_name, address_legal, image)"
     )
     .eq("token", token)
     .eq("sync_provider", "ponto");
@@ -261,5 +266,8 @@ export const getPublicPontoTreasuryByBusinessId = async (
 export const getPontoTreasuries = async (
   client: SupabaseClient
 ): Promise<PostgrestSingleResponse<Treasury<"ponto">[]>> => {
-  return client.from("treasury").select("*").eq("sync_provider", "ponto");
+  return client
+    .from("treasury")
+    .select("*, business:businesses(legal_name, address_legal, image)")
+    .eq("sync_provider", "ponto");
 };

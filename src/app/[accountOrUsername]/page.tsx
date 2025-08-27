@@ -298,7 +298,8 @@ async function PlacePage({
           pontoTreasury.id,
           connectedAccount,
           target,
-          connectedProfile?.name ?? null
+          connectedProfile?.name ?? null,
+          null
         );
 
         treasuryAccountId = newTreasuryAccount?.id ?? null;
