@@ -10,10 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { generateOrder } from "../actions/generateOrder";
-import { Loader2, Copy, Check } from "lucide-react";
+import { Loader2, Copy, Check, CheckIcon } from "lucide-react";
 import { ProfileWithTokenId } from "@citizenwallet/sdk";
 import { PublicPontoTreasury, PublicStripeTreasury } from "@/db/treasury";
 import { QRCodeSVG } from "qrcode.react";
+import { pontoSyncAction } from "../actions/pontoSync";
 
 const PRESET_AMOUNTS = [10, 20, 50, 100];
 const CURRENCY_LOGO = Config.community.logo;
@@ -92,6 +93,10 @@ export default function TopUpSelector({
   };
 
   const handleClose = () => {
+    if (pontoTreasury) {
+      pontoSyncAction(pontoTreasury.id);
+    }
+
     if (sigAuthRedirect) {
       router.push(`?tax=no&close=${sigAuthRedirect}/close`);
     } else {
@@ -360,7 +365,7 @@ export default function TopUpSelector({
                   onClick={handleClose}
                   className={cn("w-full py-4 text-lg h-auto")}
                 >
-                  Transfer Done
+                  I made the transfer <CheckIcon className="w-4 h-4" />
                 </Button>
               </div>
             </CardContent>
