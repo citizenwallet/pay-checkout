@@ -321,6 +321,7 @@ async function PlacePage({
         stripeTreasury={stripeTreasury}
         pontoTreasury={pontoTreasury}
         treasuryAccountId={treasuryAccountId}
+        target={target}
       />
     );
   }

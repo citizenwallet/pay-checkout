@@ -27,6 +27,7 @@ interface TopUpSelectorProps {
   stripeTreasury: PublicStripeTreasury | null;
   pontoTreasury: PublicPontoTreasury | null;
   treasuryAccountId: string | null;
+  target: number | null;
 }
 
 const isValidEthereumAddress = (address: string) => {
@@ -57,6 +58,7 @@ export default function TopUpSelector({
   stripeTreasury,
   pontoTreasury,
   treasuryAccountId,
+  target,
 }: TopUpSelectorProps) {
   const [loading, setLoading] = useState(false);
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
@@ -155,7 +157,7 @@ export default function TopUpSelector({
       ? generateBCDQrCode(
           pontoTreasury.iban,
           pontoTreasury.business.legal_name,
-          pontoTreasury.target,
+          target,
           treasuryAccountId
         )
       : "";
