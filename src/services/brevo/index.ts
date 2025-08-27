@@ -44,7 +44,7 @@ export const sendTransferConfirmationEmail = async (
   email: string,
   accountId: string,
   date: string,
-  amount: number,
+  amount: string,
   treasuryName: string | null,
   treasuryAddress: string | null,
   treasuryImage: string | null,

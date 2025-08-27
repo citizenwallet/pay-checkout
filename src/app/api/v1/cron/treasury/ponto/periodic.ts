@@ -88,7 +88,7 @@ export async function syncPontoTreasuryPeriodic(
         taccount.email,
         taccount.id,
         format(new Date(operation.created_at), "dd/MM/yyyy"),
-        operation.amount / 100,
+        `€${(operation.amount / 100).toFixed(2)}`,
         treasury.business.legal_name,
         treasury.business.address_legal,
         treasury.business.image,
