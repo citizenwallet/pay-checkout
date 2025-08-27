@@ -92,6 +92,7 @@ export async function syncPontoTreasuryPeriodic(
         treasury.business.legal_name,
         treasury.business.address_legal,
         treasury.business.image,
+        treasury.business.website,
         treasury.business.image
       );
     }

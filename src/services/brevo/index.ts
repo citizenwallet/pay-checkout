@@ -48,6 +48,7 @@ export const sendTransferConfirmationEmail = async (
   treasuryName: string | null,
   treasuryAddress: string | null,
   treasuryImage: string | null,
+  treasuryLink: string | null,
   image: string | null
 ) => {
   const params = {
@@ -57,6 +58,7 @@ export const sendTransferConfirmationEmail = async (
     TREASURY_IMAGE: treasuryImage,
     TREASURY_NAME: treasuryName,
     TREASURY_ADDRESS: treasuryAddress,
+    TREASURY_LINK: treasuryLink,
     IMAGE: image,
   };
 
@@ -66,7 +68,7 @@ export const sendTransferConfirmationEmail = async (
       name: process.env.BREVO_SENDER_NAME,
     },
     templateId: 5,
-    subject: "Transfer Confirmation",
+    subject: `Transfer for card #${accountId} Received`,
     params,
     messageVersions: [
       {
