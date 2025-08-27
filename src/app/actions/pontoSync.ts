@@ -6,6 +6,10 @@ import { PontoClient } from "@/services/ponto";
 import { getClientIp } from "@/utils/ip";
 
 export async function pontoSyncAction(treasuryId: number) {
+  if (process.env.NODE_ENV === "development") {
+    return;
+  }
+
   const client = getServiceRoleClient();
 
   const { data: treasury, error: treasuryError } = await getTreasury(
@@ -28,15 +32,20 @@ export async function pontoSyncAction(treasuryId: number) {
 
   console.log("ip", ip);
 
-  const ponto = new PontoClient(
-    treasury.sync_provider_credentials.client_id,
-    treasury.sync_provider_credentials.client_secret
-  );
+  try {
+    const ponto = new PontoClient(
+      treasury.sync_provider_credentials.client_id,
+      treasury.sync_provider_credentials.client_secret
+    );
 
-  const response = await ponto.syncPontoTransactions(
-    treasury.sync_provider_credentials.account_id,
-    ip
-  );
+    const response = await ponto.syncPontoTransactions(
+      treasury.sync_provider_credentials.account_id,
+      ip
+    );
 
-  console.log("response", response);
+    console.log("response", response);
+  } catch (error) {
+    console.error("pontoSyncAction error", error);
+    return;
+  }
 }

@@ -212,10 +212,15 @@ export class PontoClient {
       {
         method: "POST",
         body: JSON.stringify({
-          resourceType: "account",
-          resourceId: accountId,
-          subtype: "accountTransactions",
-          customerIpAddress: ip,
+          data: {
+            type: "synchronization",
+            attributes: {
+              resourceType: "account",
+              resourceId: accountId,
+              subtype: "accountTransactions",
+              customerIpAddress: ip,
+            },
+          },
         }),
       }
     );
