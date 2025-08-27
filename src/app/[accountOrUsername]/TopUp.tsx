@@ -290,22 +290,19 @@ export default function TopUpSelector({
                     </Button>
                   </div>
 
-                  {pontoTreasury.target && (
+                  {target && (
                     <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                       <div className="text-sm">
                         <div className="font-medium">Target</div>
                         <div className="text-muted-foreground font-mono">
-                          {((pontoTreasury?.target ?? 0) / 100).toFixed(2)} €
+                          {((target ?? 0) / 100).toFixed(2)} €
                         </div>
                       </div>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() =>
-                          handleCopy(
-                            `${(pontoTreasury?.target ?? 0) / 100}`,
-                            "target"
-                          )
+                          handleCopy(`${(target ?? 0) / 100}`, "target")
                         }
                         className="h-8 w-8 p-0"
                       >
