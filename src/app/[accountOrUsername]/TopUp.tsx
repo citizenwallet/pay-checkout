@@ -92,9 +92,11 @@ export default function TopUpSelector({
     setCustomAmount("");
   };
 
-  const handleClose = () => {
+  const handleClose = async () => {
+    console.log("handleClose");
     if (pontoTreasury) {
-      pontoSyncAction(pontoTreasury.id);
+      const ip = await pontoSyncAction(pontoTreasury.id);
+      console.log("ip", ip);
     }
 
     if (sigAuthRedirect) {

@@ -7,4 +7,5 @@ export async function pontoSyncAction(treasuryId: number) {
   const ip = await getClientIp();
 
   console.log("ip", ip);
+  return ip;
 }
