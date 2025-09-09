@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceRoleClient } from "@/db";
-import { getPontoTreasuries } from "@/db/treasury";
+import { getPontoTreasuries, Treasury } from "@/db/treasury";
 import { syncPontoTreasuryPayg } from "./payg";
 import { syncPontoTreasuryPeriodic } from "./periodic";
 
@@ -34,7 +34,10 @@ export async function GET(request: NextRequest) {
         await syncPontoTreasuryPayg(client, treasury);
         break;
       case "periodic":
-        await syncPontoTreasuryPeriodic(client, treasury);
+        await syncPontoTreasuryPeriodic(
+          client,
+          treasury as unknown as Treasury<"ponto", "periodic">
+        );
         break;
       default:
         console.error(`Unknown sync strategy: ${treasury.sync_strategy}`);
