@@ -1,7 +1,7 @@
 import { PeriodicSyncStrategyConfig, Treasury } from "@/db/treasury";
 import {
   getTreasuryAccount,
-  getTreasuryAccountTarget,
+  getTreasuryAccountByAccount,
   TreasuryAccount,
 } from "@/db/treasury_account";
 import {
@@ -10,7 +10,11 @@ import {
   insertTreasuryOperations,
   processPeriodicTreasuryOperation,
 } from "@/db/treasury_operation";
-import { sendTransferConfirmationEmail } from "@/services/brevo";
+import {
+  sendTransferConfirmationEmail,
+  sendTransferFailedEmail,
+  sendTransferToppedUpEmail,
+} from "@/services/brevo";
 import { PontoClient } from "@/services/ponto";
 import {
   extractIdFromMessage,
@@ -21,7 +25,7 @@ import { format } from "date-fns";
 
 export async function syncPontoTreasuryPeriodic(
   client: SupabaseClient,
-  treasury: Treasury<"ponto">
+  treasury: Treasury<"ponto", "periodic">
 ): Promise<void> {
   const ponto = new PontoClient(
     treasury.sync_provider_credentials.client_id,
@@ -183,18 +187,33 @@ export async function syncPontoTreasuryPeriodic(
       // determine which accounts have reached their target
       const accountsTargetReached = new Set<string>();
       for (const [account, total] of Object.entries(mappedAccountTotals)) {
-        // get the target for the account
-        const { data: accountTarget } = await getTreasuryAccountTarget(
-          client,
-          treasury.id,
-          account
-        );
-
-        // if the account target is not set, use the default target
-        const target = accountTarget ?? syncStrategyConfig.target;
+        // use the default target
+        const { target } = syncStrategyConfig;
 
         // if the account total is less than the target, continue
         if (total < target) {
+          // get account
+          const { data: taccount } = await getTreasuryAccountByAccount(
+            client,
+            treasury.id,
+            account
+          );
+
+          if (taccount?.email) {
+            sendTransferFailedEmail(
+              taccount.email,
+              taccount.id,
+              format(new Date(), "dd/MM/yyyy"),
+              `€${(total / 100).toFixed(2)}`,
+              `€${(target / 100).toFixed(2)}`,
+              treasury.business.legal_name,
+              treasury.business.address_legal,
+              treasury.business.image,
+              treasury.business.website,
+              treasury.business.image
+            );
+          }
+
           console.log(
             "month: account not reached target",
             account,
@@ -229,8 +248,29 @@ export async function syncPontoTreasuryPeriodic(
           firstOperation.id,
           treasury.id,
           groupedOperations.map((operation) => operation.id), // grouped operations
-          syncStrategyConfig.target // reward
+          treasury.sync_strategy_config.reward // reward
         );
+
+        // get account
+        const { data: taccount } = await getTreasuryAccountByAccount(
+          client,
+          treasury.id,
+          account
+        );
+
+        if (taccount?.email) {
+          sendTransferToppedUpEmail(
+            taccount.email,
+            taccount.id,
+            format(new Date(), "dd/MM/yyyy"),
+            `€${(treasury.sync_strategy_config.reward / 100).toFixed(2)}`,
+            treasury.business.legal_name,
+            treasury.business.address_legal,
+            treasury.business.image,
+            treasury.business.website,
+            treasury.business.image
+          );
+        }
       }
     default:
       break;
