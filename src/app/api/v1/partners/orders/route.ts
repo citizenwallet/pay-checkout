@@ -1,9 +1,10 @@
-import { NextResponse, NextRequest } from "next/server";
+import { NextRequest } from "next/server";
 import { getServiceRoleClient } from "@/db";
 import { createPartnerOrder } from "@/db/orders";
 import { checkApiKey } from "@/db/apiKeys";
 import { CommunityConfig } from "@citizenwallet/sdk";
 import Config from "@/cw/community.json";
+import { createCorsResponse, createCorsOptionsResponse } from "@/lib/cors";
 
 interface PartnerOrderRequest {
   placeId: number;
@@ -12,36 +13,34 @@ interface PartnerOrderRequest {
   description?: string;
 }
 
+export async function OPTIONS() {
+  return createCorsOptionsResponse();
+}
+
 export async function POST(request: NextRequest) {
   const headersList = request.headers;
   const apiKey = headersList.get("x-api-key");
 
   if (!apiKey) {
-    return NextResponse.json(
-      { error: "No API key specified" },
-      { status: 400 }
-    );
+    return createCorsResponse({ error: "No API key specified" }, 400);
   }
 
   const client = getServiceRoleClient();
 
   const requestBody = (await request.json()) as PartnerOrderRequest;
   if (!requestBody.placeId) {
-    return NextResponse.json(
-      { error: "No placeId specified" },
-      { status: 400 }
-    );
+    return createCorsResponse({ error: "No placeId specified" }, 400);
   }
 
   if (!requestBody.total) {
-    return NextResponse.json({ error: "No total specified" }, { status: 400 });
+    return createCorsResponse({ error: "No total specified" }, 400);
   }
 
   const { placeId, total, items = [], description = "" } = requestBody;
 
   const ok = await checkApiKey(client, apiKey, ["orders", placeId.toString()]);
   if (!ok) {
-    return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
+    return createCorsResponse({ error: "Invalid API key" }, 401);
   }
 
   const community = new CommunityConfig(Config);
@@ -58,29 +57,23 @@ export async function POST(request: NextRequest) {
     );
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return createCorsResponse({ error: error.message }, 500);
     }
 
     if (!order) {
-      return NextResponse.json(
-        { error: "Failed to create order" },
-        { status: 500 }
-      );
+      return createCorsResponse({ error: "Failed to create order" }, 500);
     }
 
-    return NextResponse.json(
+    return createCorsResponse(
       {
         orderId: order.id,
         slug: order.place.slug,
         link: `https://${process.env.BASE_DOMAIN}/${order.place.slug}?orderId=${order.id}`,
       },
-      { status: 200 }
+      200
     );
   } catch (error) {
     console.error(error);
-    return NextResponse.json(
-      { error: "Failed to fetch orders" },
-      { status: 500 }
-    );
+    return createCorsResponse({ error: "Failed to fetch orders" }, 500);
   }
 }
