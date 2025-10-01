@@ -71,6 +71,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         orderId: order.id,
+        slug: order.place.slug,
+        link: `https://${process.env.BASE_DOMAIN}/${order.place.slug}?orderId=${order.id}`,
       },
       { status: 200 }
     );
