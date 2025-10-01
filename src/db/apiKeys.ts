@@ -29,7 +29,7 @@ export const checkApiKey = async (
     return false;
   }
 
-  return data.scopes.some((scope: string) =>
+  return data.scopes.every((scope: string) =>
     scopes.some((s: string) => scope.includes(s))
   );
 };

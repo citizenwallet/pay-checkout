@@ -25,11 +25,6 @@ export async function POST(request: NextRequest) {
 
   const client = getServiceRoleClient();
 
-  const ok = await checkApiKey(client, apiKey, ["orders"]);
-  if (!ok) {
-    return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
-  }
-
   const requestBody = (await request.json()) as PartnerOrderRequest;
   if (!requestBody.placeId) {
     return NextResponse.json(
@@ -43,6 +38,11 @@ export async function POST(request: NextRequest) {
   }
 
   const { placeId, total, items = [], description = "" } = requestBody;
+
+  const ok = await checkApiKey(client, apiKey, ["orders", placeId.toString()]);
+  if (!ok) {
+    return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
+  }
 
   const community = new CommunityConfig(Config);
   const token = community.getToken();
