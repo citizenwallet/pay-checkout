@@ -29,22 +29,22 @@ const nextConfig: NextConfig = {
   },
   images: {
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: process.env.IPFS_DOMAIN ?? "",
+      ...(process.env.IPFS_DOMAIN ? [{
+        protocol: "https" as const,
+        hostname: process.env.IPFS_DOMAIN,
         port: "",
-      },
-      {
-        protocol: "https",
-        hostname: process.env.ASSETS_DOMAIN ?? "",
+      }] : []),
+      ...(process.env.ASSETS_DOMAIN ? [{
+        protocol: "https" as const,
+        hostname: process.env.ASSETS_DOMAIN,
         port: "",
-      },
-      {
-        protocol: "https",
-        hostname: process.env.SUPABASE_BUCKET_DOMAIN ?? "",
+      }] : []),
+      ...(process.env.SUPABASE_BUCKET_DOMAIN ? [{
+        protocol: "https" as const,
+        hostname: process.env.SUPABASE_BUCKET_DOMAIN,
         port: "",
         pathname: "**",
-      },
+      }] : []),
     ],
   },
 };
