@@ -99,6 +99,8 @@ export default function Component({
 
       const currentStatus = statusData?.status;
 
+      console.log("currentStatus", currentStatus);
+
       // Handle different statuses
       if (currentStatus && currentStatus !== "pending") {
         switch (currentStatus) {
@@ -145,7 +147,7 @@ export default function Component({
   // Handle page focus/visibility change
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (!document.hidden && order?.status === "pending") {
+      if (!document.hidden) {
         // Page became visible and order is still pending, check status
         checkOrderStatus();
       }

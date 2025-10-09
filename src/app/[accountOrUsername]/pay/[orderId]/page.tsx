@@ -23,6 +23,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getPlace } from "@/lib/place";
 import { getTreasuryByBusinessId } from "@/db/treasury";
 import ElementsWrapper from "../ElementsWrapper";
+import {
+  CancelledStatus,
+  NeedsMintingStatus,
+  NeedsBurningStatus,
+  RefundedStatus,
+  RefundPendingStatus,
+  RefundStatus,
+  CorrectionStatus,
+} from "./status";
 
 export default async function Page({
   params,
@@ -107,6 +116,7 @@ async function AsyncPage({
     );
   }
 
+  // Handle different order statuses with dedicated components
   if (data.status === "paid") {
     return (
       <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
@@ -151,6 +161,85 @@ async function AsyncPage({
     );
   }
 
+  const community = new CommunityConfig(Config);
+
+  // Route to appropriate status component for non-pending statuses
+  if (data.status === "cancelled") {
+    return (
+      <CancelledStatus
+        order={data}
+        orderId={orderId}
+        accountOrUsername={accountOrUsername}
+      />
+    );
+  }
+
+  if (data.status === "needs_minting") {
+    return (
+      <NeedsMintingStatus
+        order={data}
+        orderId={orderId}
+        accountOrUsername={accountOrUsername}
+        logo={community.community.logo}
+      />
+    );
+  }
+
+  if (data.status === "needs_burning") {
+    return (
+      <NeedsBurningStatus
+        order={data}
+        orderId={orderId}
+        accountOrUsername={accountOrUsername}
+        logo={community.community.logo}
+      />
+    );
+  }
+
+  if (data.status === "refunded") {
+    return (
+      <RefundedStatus
+        order={data}
+        orderId={orderId}
+        accountOrUsername={accountOrUsername}
+        logo={community.community.logo}
+      />
+    );
+  }
+
+  if (data.status === "refund_pending") {
+    return (
+      <RefundPendingStatus
+        order={data}
+        orderId={orderId}
+        accountOrUsername={accountOrUsername}
+        logo={community.community.logo}
+      />
+    );
+  }
+
+  if (data.status === "refund") {
+    return (
+      <RefundStatus
+        order={data}
+        orderId={orderId}
+        accountOrUsername={accountOrUsername}
+        logo={community.community.logo}
+      />
+    );
+  }
+
+  if (data.status === "correction") {
+    return (
+      <CorrectionStatus
+        order={data}
+        orderId={orderId}
+        accountOrUsername={accountOrUsername}
+        logo={community.community.logo}
+      />
+    );
+  }
+
   if (!data.tx_hash && tx) {
     data.tx_hash = tx;
     await attachTxHashToOrder(client, orderId, tx);
@@ -177,8 +266,6 @@ async function AsyncPage({
   if (itemsError || !items) {
     return <div>Items not found</div>;
   }
-
-  const community = new CommunityConfig(Config);
 
   const place = await getPlace(client, accountOrUsername);
   if (!place.place) {
