@@ -2,10 +2,16 @@
 
 import { track } from "@vercel/analytics/server";
 
-export const openAppAction = async (isInstalled: boolean) => {
-  await track("open_app", {
-    isInstalled,
-  });
+export const tryOpenAppAction = async () => {
+  await track("try_open_app");
+};
+
+export const retryOpenAppAction = async () => {
+  await track("retry_open_app");
+};
+
+export const errorOpenAppAction = async () => {
+  await track("error_open_app");
 };
 
 export const installAppAction = async (
