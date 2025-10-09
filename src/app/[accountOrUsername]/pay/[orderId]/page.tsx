@@ -14,7 +14,7 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import { CreditCard } from "lucide-react";
+import { CreditCard, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getPlace } from "@/lib/place";
@@ -107,7 +107,47 @@ async function AsyncPage({
   }
 
   if (data.status === "paid") {
-    return <div>Order {orderId} completed</div>;
+    return (
+      <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+        <Card className="mx-auto max-w-lg">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <CheckCircle className="w-16 h-16 text-green-600" />
+            </div>
+            <CardTitle className="text-2xl font-bold text-green-600">
+              Order Completed!
+            </CardTitle>
+            <p className="text-gray-600 mt-2">
+              Thank you for your purchase. Your order has been successfully
+              processed.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="font-semibold">Order ID:</span>
+                <span className="font-mono">{orderId}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-semibold">Status:</span>
+                <span className="text-green-600 font-semibold">Paid</span>
+              </div>
+              {data.completed_at && (
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold">Completed:</span>
+                  <span>{new Date(data.completed_at).toLocaleString()}</span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-center">
+            <p className="text-sm text-gray-500 text-center">
+              Please show this confirmation to the vendor
+            </p>
+          </CardFooter>
+        </Card>
+      </div>
+    );
   }
 
   if (!data.tx_hash && tx) {
