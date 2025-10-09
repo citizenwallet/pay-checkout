@@ -10,6 +10,7 @@ import {
   retryOpenAppAction,
   tryOpenAppAction,
 } from "./actions";
+import { getOrderStatus } from "@/app/actions/getOrderStatuts";
 import { Order } from "@/db/orders";
 import {
   Sheet,
@@ -119,20 +120,69 @@ export default function BrusselsPayButton({
     [order, accountOrUsername, successUrl, errorUrl]
   );
 
-  const handleBrusselsPay = useCallback(() => {
-    // Just open the modal, don't attempt to open app yet
-    setIsSheetOpen(true);
-    setIsAttemptingToOpen(false);
-    setShowAppStoreLinks(false);
-  }, []);
+  const handleBrusselsPay = useCallback(async () => {
+    if (!order) return;
 
-  // Auto-attempt to open app on component mount, but only once
-  useEffect(() => {
-    if (!hasAutoAttempted && order && !isTopUp) {
-      tryOpenAppAction();
-      setHasAutoAttempted(true);
-      handleBrusselsPay();
+    // Check order status before opening modal
+    try {
+      const { data: statusData, error } = await getOrderStatus(order.id);
+
+      if (error) {
+        console.error("Error checking order status:", error);
+        return;
+      }
+
+      const currentStatus = statusData?.status;
+
+      // Only open modal if order is still pending
+      if (currentStatus === "pending") {
+        setIsSheetOpen(true);
+        setIsAttemptingToOpen(false);
+        setShowAppStoreLinks(false);
+      } else {
+        console.log(`Order status is ${currentStatus}, not opening modal`);
+      }
+    } catch (error) {
+      console.error("Error checking order status:", error);
     }
+  }, [order]);
+
+  // Auto-attempt to open app on component mount, but only once and only if order is pending
+  useEffect(() => {
+    const autoAttemptIfPending = async () => {
+      if (!hasAutoAttempted && order && !isTopUp) {
+        try {
+          const { data: statusData, error } = await getOrderStatus(order.id);
+
+          if (error) {
+            console.error(
+              "Error checking order status for auto-attempt:",
+              error
+            );
+            return;
+          }
+
+          const currentStatus = statusData?.status;
+
+          // Only auto-attempt if order is still pending
+          if (currentStatus === "pending") {
+            tryOpenAppAction();
+            setHasAutoAttempted(true);
+            handleBrusselsPay();
+          } else {
+            console.log(
+              `Order status is ${currentStatus}, skipping auto-attempt`
+            );
+            setHasAutoAttempted(true); // Mark as attempted to prevent retries
+          }
+        } catch (error) {
+          console.error("Error checking order status for auto-attempt:", error);
+          setHasAutoAttempted(true); // Mark as attempted to prevent retries
+        }
+      }
+    };
+
+    autoAttemptIfPending();
   }, [hasAutoAttempted, order, isTopUp, handleBrusselsPay]);
 
   // Attempt to open app when modal opens
@@ -184,7 +234,7 @@ export default function BrusselsPayButton({
 
       {/* Bottom Sheet with all secondary functionality */}
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetContent side="bottom" className="h-[80vh]">
+        <SheetContent side="bottom" className="h-[80vh] max-w-md mx-auto">
           <SheetHeader>
             <SheetTitle>Brussels Pay</SheetTitle>
             <SheetDescription>

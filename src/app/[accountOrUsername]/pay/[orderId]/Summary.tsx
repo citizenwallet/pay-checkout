@@ -23,9 +23,10 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import PayElement from "./PayElement";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useStripe } from "@stripe/react-stripe-js";
 import { getClientSecretAction } from "@/app/actions/paymentProcess";
+import { getOrderStatus } from "@/app/actions/getOrderStatuts";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import BrusselsPayButton from "./BrusselsPayButton";
@@ -72,6 +73,7 @@ export default function Component({
 
   const [showMethods, setShowMethods] = useState<boolean>(false);
   const [cancelled, setCancelled] = useState(false);
+  const [checkingStatus, setCheckingStatus] = useState(false);
 
   const [cartItems, setCartItems] = useState<Order["items"]>(
     order?.items ?? []
@@ -82,6 +84,79 @@ export default function Component({
       setShowMethods(true);
     }, 1000);
   }, []);
+
+  const checkOrderStatus = useCallback(async () => {
+    if (!order || checkingStatus) return;
+
+    setCheckingStatus(true);
+    try {
+      const { data: statusData, error } = await getOrderStatus(order.id);
+
+      if (error) {
+        console.error("Error checking order status:", error);
+        return;
+      }
+
+      const currentStatus = statusData?.status;
+
+      // Handle different statuses
+      if (currentStatus && currentStatus !== "pending") {
+        switch (currentStatus) {
+          case "paid":
+            // Redirect to success page
+            router.push(successUrl);
+            break;
+          case "cancelled":
+            setCancelled(true);
+            break;
+          case "refunded":
+          case "refund":
+            // Handle refunded status - could redirect to error page or show message
+            if (errorUrl) {
+              router.push(errorUrl);
+            } else {
+              setCancelled(true);
+            }
+            break;
+          case "needs_minting":
+          case "needs_burning":
+            // These are intermediate states, could show a processing message
+            console.log(`Order is in ${currentStatus} state`);
+            break;
+          case "refund_pending":
+            // Show that refund is pending
+            console.log("Refund is pending");
+            break;
+          case "correction":
+            // Handle correction status
+            console.log("Order requires correction");
+            break;
+          default:
+            console.log(`Unknown order status: ${currentStatus}`);
+        }
+      }
+    } catch (error) {
+      console.error("Error checking order status:", error);
+    } finally {
+      setCheckingStatus(false);
+    }
+  }, [order, checkingStatus, router, successUrl, errorUrl]);
+
+  // Handle page focus/visibility change
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && order?.status === "pending") {
+        // Page became visible and order is still pending, check status
+        checkOrderStatus();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [order?.id, order?.status, checkOrderStatus]);
 
   const updateQuantity = (id: number, change: number) => {
     setCartItems(
@@ -229,6 +304,21 @@ export default function Component({
 
   if (cancelled) {
     return <div>Order cancelled</div>;
+  }
+
+  if (checkingStatus) {
+    return (
+      <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+        <Card className="mx-auto max-w-lg">
+          <CardContent className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+              <p className="text-gray-600">Checking order status...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
