@@ -27,9 +27,8 @@ import { useEffect, useState } from "react";
 import { useStripe } from "@stripe/react-stripe-js";
 import { getClientSecretAction } from "@/app/actions/paymentProcess";
 import { Separator } from "@/components/ui/separator";
-import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { installAppAction, openAppAction } from "./actions";
+import BrusselsPayButton from "./BrusselsPayButton";
 
 interface Props {
   publishableKey: string;
@@ -73,7 +72,6 @@ export default function Component({
 
   const [showMethods, setShowMethods] = useState<boolean>(false);
   const [cancelled, setCancelled] = useState(false);
-  const [showAppStoreLinks, setShowAppStoreLinks] = useState<boolean>(false);
 
   const [cartItems, setCartItems] = useState<Order["items"]>(
     order?.items ?? []
@@ -141,54 +139,6 @@ export default function Component({
     if (!customOrderId) {
       router.back();
     }
-  };
-
-  const handleBrusselsPay = async () => {
-    if (!order) return;
-
-    try {
-      const appScheme = process.env.NEXT_PUBLIC_APP_SCHEME;
-      if (!appScheme) {
-        throw new Error("No app scheme");
-      }
-
-      let hasOpened = false;
-
-      setTimeout(() => {
-        openAppAction(hasOpened);
-
-        if (!hasOpened) {
-          setShowAppStoreLinks(true);
-          return;
-        }
-      }, 250);
-
-      let appUrl = `${appScheme}checkout.pay.brussels/${accountOrUsername}?orderId=${order.id}`;
-
-      if (successUrl) {
-        appUrl += `&successUrl=${successUrl}`;
-      }
-
-      if (errorUrl) {
-        appUrl += `&errorUrl=${errorUrl}`;
-      }
-
-      window.open(appUrl, "_blank");
-
-      hasOpened = true;
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const handleAppStore = () => {
-    installAppAction("app-store");
-    window.open(process.env.NEXT_PUBLIC_APP_STORE_URL, "_blank");
-  };
-
-  const handlePlayStore = () => {
-    installAppAction("play-store");
-    window.open(process.env.NEXT_PUBLIC_PLAY_STORE_URL, "_blank");
   };
 
   const handleBancontact = async () => {
@@ -378,58 +328,20 @@ export default function Component({
           </div>
           {!isTopUp && <Separator className="my-4" />}
 
-          {!isTopUp && (
-            <Button
-              onClick={handleBrusselsPay}
-              className="flex items-center gap-2 w-full h-14 text-white"
-            >
-              <span className="font-medium text-lg">Pay with</span>
-              <CurrencyLogo logo={currencyLogo} size={24} />
-              <span className="font-medium text-lg">Brussels Pay</span>
-            </Button>
-          )}
-          {!isTopUp && (
-            <div className="flex justify-center items-center gap-2 mt-2">
-              <p className="text-sm py-2 px-4 bg-green-300 text-green-900 rounded-full">
-                100% goes to vendor
-              </p>
-            </div>
-          )}
-          {showAppStoreLinks && (
-            <div className="flex justify-center items-center gap-2 my-4">
-              <p className="text-lg">Install the App</p>
-            </div>
-          )}
-          {showAppStoreLinks && (
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={handleAppStore}
-                className="flex justify-center items-center gap-2 w-full h-14 bg-slate-900 hover:bg-slate-700 text-white"
-              >
-                <span className="font-medium text-lg">iOS</span>
-                <Image
-                  src="/app_store.svg"
-                  alt="App Store"
-                  width={24}
-                  height={24}
-                />
-              </Button>
-              <Button
-                onClick={handlePlayStore}
-                className="flex justify-center items-center gap-2 w-full h-14 bg-slate-900 hover:bg-slate-700 text-white"
-              >
-                <span className="font-medium text-lg">Android</span>
-                <Image
-                  src="/play_store.svg"
-                  alt="Google Play"
-                  width={24}
-                  height={24}
-                />
-              </Button>
-            </div>
-          )}
+          <BrusselsPayButton
+            order={order}
+            accountOrUsername={accountOrUsername}
+            currencyLogo={currencyLogo}
+            isTopUp={isTopUp}
+            successUrl={successUrl}
+            errorUrl={errorUrl}
+          />
 
           <Separator className="my-4" />
+
+          <div className="flex justify-center items-center gap-2 my-4">
+            <p className="text-lg">Traditional Payments</p>
+          </div>
 
           <div
             className={cn(
