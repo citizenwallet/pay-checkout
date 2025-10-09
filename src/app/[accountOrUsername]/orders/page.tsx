@@ -1,5 +1,6 @@
 import { getServiceRoleClient } from "@/db";
 import VendorOrders from "./Orders";
+import PlaceNotFound from "@/components/PlaceNotFound";
 import { Suspense } from "react";
 import { getOrdersByPlace } from "@/db/orders";
 import { CommunityConfig, getAccountBalance } from "@citizenwallet/sdk";
@@ -112,7 +113,7 @@ async function OrdersPage({
       redirect(`/${accountOrUsername}/join`);
     }
 
-    return <div>Place not found</div>;
+    return <PlaceNotFound accountOrUsername={accountOrUsername} />;
   }
 
   const { data } = await getOrdersByPlace(client, place.id);

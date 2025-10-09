@@ -1,6 +1,7 @@
 import { getServiceRoleClient } from "@/db";
 import { Suspense } from "react";
 import Menu from "./Menu";
+import PlaceNotFound from "@/components/PlaceNotFound";
 import Config from "@/cw/community.json";
 import {
   CommunityConfig,
@@ -221,7 +222,7 @@ async function PlacePage({
       redirect(`/${accountOrUsername}/join`);
     }
 
-    return <div>Place not found</div>;
+    return <PlaceNotFound accountOrUsername={accountOrUsername} />;
   }
 
   const { data: items } = await getItemsForPlace(client, place.id);
