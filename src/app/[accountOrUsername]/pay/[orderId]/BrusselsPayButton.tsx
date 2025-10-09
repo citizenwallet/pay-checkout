@@ -11,6 +11,13 @@ import {
   tryOpenAppAction,
 } from "./actions";
 import { Order } from "@/db/orders";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 
 interface BrusselsPayButtonProps {
   order?: Order;
@@ -31,10 +38,10 @@ export default function BrusselsPayButton({
 }: BrusselsPayButtonProps) {
   const [showAppStoreLinks, setShowAppStoreLinks] = useState<boolean>(false);
   const [isAttemptingToOpen, setIsAttemptingToOpen] = useState<boolean>(false);
-  const [hasAttempted, setHasAttempted] = useState<boolean>(false);
   const [hasAutoAttempted, setHasAutoAttempted] = useState<boolean>(false);
+  const [isSheetOpen, setIsSheetOpen] = useState<boolean>(false);
 
-  const handleBrusselsPay = useCallback(
+  const attemptToOpenApp = useCallback(
     async (retried: boolean = false) => {
       if (!order) return;
 
@@ -44,7 +51,6 @@ export default function BrusselsPayButton({
 
       // Set states for user feedback
       setIsAttemptingToOpen(true);
-      setHasAttempted(true);
       setShowAppStoreLinks(false);
 
       try {
@@ -113,6 +119,13 @@ export default function BrusselsPayButton({
     [order, accountOrUsername, successUrl, errorUrl]
   );
 
+  const handleBrusselsPay = useCallback(() => {
+    // Just open the modal, don't attempt to open app yet
+    setIsSheetOpen(true);
+    setIsAttemptingToOpen(false);
+    setShowAppStoreLinks(false);
+  }, []);
+
   // Auto-attempt to open app on component mount, but only once
   useEffect(() => {
     if (!hasAutoAttempted && order && !isTopUp) {
@@ -121,6 +134,13 @@ export default function BrusselsPayButton({
       handleBrusselsPay();
     }
   }, [hasAutoAttempted, order, isTopUp, handleBrusselsPay]);
+
+  // Attempt to open app when modal opens
+  useEffect(() => {
+    if (isSheetOpen && !isAttemptingToOpen && !showAppStoreLinks) {
+      attemptToOpenApp(false);
+    }
+  }, [isSheetOpen, isAttemptingToOpen, showAppStoreLinks, attemptToOpenApp]);
 
   const handleAppStore = () => {
     installAppAction("app-store");
@@ -132,128 +152,117 @@ export default function BrusselsPayButton({
     window.open(process.env.NEXT_PUBLIC_PLAY_STORE_URL, "_blank");
   };
 
+  const handleCloseSheet = () => {
+    setIsSheetOpen(false);
+    setShowAppStoreLinks(false);
+    setIsAttemptingToOpen(false);
+  };
+
   if (isTopUp) {
     return null;
   }
 
   return (
     <>
-      {!showAppStoreLinks && (
-        <Button
-          onClick={() => handleBrusselsPay(false)}
-          disabled={isAttemptingToOpen}
-          className="flex items-center gap-2 w-full h-14 text-white disabled:opacity-70"
-        >
-          {isAttemptingToOpen ? (
-            <>
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              <span className="font-medium text-lg">Opening app...</span>
-            </>
-          ) : hasAttempted ? (
-            <>
-              <span className="font-medium text-lg">Try again with</span>
-              <CurrencyLogo logo={currencyLogo} size={24} />
-              <span className="font-medium text-lg">Brussels Pay</span>
-            </>
-          ) : (
-            <>
-              <span className="font-medium text-lg">Pay with</span>
-              <CurrencyLogo logo={currencyLogo} size={24} />
-              <span className="font-medium text-lg">Brussels Pay</span>
-            </>
-          )}
-        </Button>
-      )}
+      {/* Standard Pay with Brussels Pay button */}
+      <Button
+        onClick={handleBrusselsPay}
+        disabled={isAttemptingToOpen}
+        className="flex items-center gap-2 w-full h-14 text-white disabled:opacity-70"
+      >
+        <span className="font-medium text-lg">Pay with</span>
+        <CurrencyLogo logo={currencyLogo} size={24} />
+        <span className="font-medium text-lg">Brussels Pay</span>
+      </Button>
 
-      {isAttemptingToOpen && (
-        <div className="flex justify-center items-center gap-2 mt-2">
-          <p className="text-sm py-2 px-4 bg-blue-300 text-blue-900 rounded-full">
-            Attempting to open Brussels Pay app...
-          </p>
-        </div>
-      )}
+      {/* Success message */}
+      <div className="flex justify-center items-center gap-2 mt-2">
+        <p className="text-sm py-2 px-4 bg-green-300 text-green-900 rounded-full">
+          100% goes to vendor
+        </p>
+      </div>
 
-      {!isAttemptingToOpen && !showAppStoreLinks && (
-        <div className="flex justify-center items-center gap-2 mt-2">
-          <p className="text-sm py-2 px-4 bg-green-300 text-green-900 rounded-full">
-            100% goes to vendor
-          </p>
-        </div>
-      )}
+      {/* Bottom Sheet with all secondary functionality */}
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent side="bottom" className="h-[80vh]">
+          <SheetHeader>
+            <SheetTitle>Brussels Pay</SheetTitle>
+            <SheetDescription>
+              {isAttemptingToOpen
+                ? "Attempting to open the Brussels Pay app..."
+                : "We were unable to open the app automatically"}
+            </SheetDescription>
+          </SheetHeader>
 
-      {showAppStoreLinks && (
-        <>
-          <div className="flex justify-center items-center gap-2 my-4">
-            <p className="text-lg">Get the App</p>
+          <div className="flex flex-col gap-4 mt-6">
+            {/* Loading indicator when trying to open the app */}
+            {isAttemptingToOpen && (
+              <div className="flex justify-center items-center gap-2 py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                <span className="text-lg font-medium">Opening app...</span>
+              </div>
+            )}
+
+            {/* Try again button */}
+            {!isAttemptingToOpen && (
+              <Button
+                onClick={() => attemptToOpenApp(true)}
+                disabled={isAttemptingToOpen}
+                className="flex items-center gap-2 w-full h-14 text-white disabled:opacity-70"
+              >
+                <span className="font-medium text-lg">Try again with</span>
+                <CurrencyLogo logo={currencyLogo} size={24} />
+                <span className="font-medium text-lg">Brussels Pay</span>
+              </Button>
+            )}
+
+            {/* App store buttons */}
+            {showAppStoreLinks && (
+              <>
+                <div className="flex justify-center items-center gap-2 my-4">
+                  <p className="text-lg font-medium">Get the App</p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={handleAppStore}
+                    className="flex justify-center items-center gap-2 w-full h-14 bg-slate-900 hover:bg-slate-700 text-white"
+                  >
+                    <span className="font-medium text-lg">iOS</span>
+                    <Image
+                      src="/app_store.svg"
+                      alt="App Store"
+                      width={24}
+                      height={24}
+                    />
+                  </Button>
+                  <Button
+                    onClick={handlePlayStore}
+                    className="flex justify-center items-center gap-2 w-full h-14 bg-slate-900 hover:bg-slate-700 text-white"
+                  >
+                    <span className="font-medium text-lg">Android</span>
+                    <Image
+                      src="/play_store.svg"
+                      alt="Google Play"
+                      width={24}
+                      height={24}
+                    />
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {/* Close modal button */}
+            <Button
+              onClick={handleCloseSheet}
+              variant="outline"
+              className="w-full h-12 mt-4"
+            >
+              Use traditional payments
+            </Button>
           </div>
-        </>
-      )}
-
-      {showAppStoreLinks && (
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={handleAppStore}
-            className="flex justify-center items-center gap-2 w-full h-14 bg-slate-900 hover:bg-slate-700 text-white"
-          >
-            <span className="font-medium text-lg">iOS</span>
-            <Image
-              src="/app_store.svg"
-              alt="App Store"
-              width={24}
-              height={24}
-            />
-          </Button>
-          <Button
-            onClick={handlePlayStore}
-            className="flex justify-center items-center gap-2 w-full h-14 bg-slate-900 hover:bg-slate-700 text-white"
-          >
-            <span className="font-medium text-lg">Android</span>
-            <Image
-              src="/play_store.svg"
-              alt="Google Play"
-              width={24}
-              height={24}
-            />
-          </Button>
-        </div>
-      )}
-
-      {showAppStoreLinks && (
-        <>
-          <div className="flex justify-center items-center gap-2 my-4">
-            <p className="text-sm py-2 px-4 bg-red-300 text-red-900 rounded-full">
-              We were unable to open the app
-            </p>
-          </div>
-        </>
-      )}
-
-      {showAppStoreLinks && (
-        <Button
-          onClick={() => handleBrusselsPay(true)}
-          disabled={isAttemptingToOpen}
-          className="flex items-center gap-2 w-full h-14 text-white disabled:opacity-70"
-        >
-          {isAttemptingToOpen ? (
-            <>
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              <span className="font-medium text-lg">Opening app...</span>
-            </>
-          ) : hasAttempted ? (
-            <>
-              <span className="font-medium text-lg">Try again with</span>
-              <CurrencyLogo logo={currencyLogo} size={24} />
-              <span className="font-medium text-lg">Brussels Pay</span>
-            </>
-          ) : (
-            <>
-              <span className="font-medium text-lg">Pay with</span>
-              <CurrencyLogo logo={currencyLogo} size={24} />
-              <span className="font-medium text-lg">Brussels Pay</span>
-            </>
-          )}
-        </Button>
-      )}
+        </SheetContent>
+      </Sheet>
     </>
   );
 }
