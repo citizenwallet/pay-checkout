@@ -10,18 +10,12 @@ import {
   insertTreasuryOperations,
   processPeriodicTreasuryOperation,
 } from "@/db/treasury_operation";
-import {
-  sendTransferConfirmationEmail,
-  sendTransferFailedEmail,
-  sendTransferToppedUpEmail,
-} from "@/services/brevo";
 import { PontoClient } from "@/services/ponto";
 import {
   extractIdFromMessage,
   pontoTransactionToTreasuryOperation,
 } from "@/services/ponto/transaction";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { format } from "date-fns";
 
 export async function syncPontoTreasuryPeriodic(
   client: SupabaseClient,
@@ -88,17 +82,17 @@ export async function syncPontoTreasuryPeriodic(
     operation.account = taccount.account;
 
     if (taccount.email) {
-      sendTransferConfirmationEmail(
-        taccount.email,
-        taccount.id,
-        format(new Date(operation.created_at), "dd/MM/yyyy"),
-        `€${(operation.amount / 100).toFixed(2)}`,
-        treasury.business.legal_name,
-        treasury.business.address_legal,
-        treasury.business.image,
-        treasury.business.website,
-        treasury.business.image
-      );
+      // sendTransferConfirmationEmail(
+      //   taccount.email,
+      //   taccount.id,
+      //   format(new Date(operation.created_at), "dd/MM/yyyy"),
+      //   `€${(operation.amount / 100).toFixed(2)}`,
+      //   treasury.business.legal_name,
+      //   treasury.business.address_legal,
+      //   treasury.business.image,
+      //   treasury.business.website,
+      //   treasury.business.image
+      // );
     }
   }
 
@@ -200,18 +194,18 @@ export async function syncPontoTreasuryPeriodic(
           );
 
           if (taccount?.email) {
-            sendTransferFailedEmail(
-              taccount.email,
-              taccount.id,
-              format(new Date(), "dd/MM/yyyy"),
-              `€${(total / 100).toFixed(2)}`,
-              `€${(target / 100).toFixed(2)}`,
-              treasury.business.legal_name,
-              treasury.business.address_legal,
-              treasury.business.image,
-              treasury.business.website,
-              treasury.business.image
-            );
+            // sendTransferFailedEmail(
+            //   taccount.email,
+            //   taccount.id,
+            //   format(new Date(), "dd/MM/yyyy"),
+            //   `€${(total / 100).toFixed(2)}`,
+            //   `€${(target / 100).toFixed(2)}`,
+            //   treasury.business.legal_name,
+            //   treasury.business.address_legal,
+            //   treasury.business.image,
+            //   treasury.business.website,
+            //   treasury.business.image
+            // );
           }
 
           console.log(
@@ -259,17 +253,17 @@ export async function syncPontoTreasuryPeriodic(
         );
 
         if (taccount?.email) {
-          sendTransferToppedUpEmail(
-            taccount.email,
-            taccount.id,
-            format(new Date(), "dd/MM/yyyy"),
-            `€${(treasury.sync_strategy_config.reward / 100).toFixed(2)}`,
-            treasury.business.legal_name,
-            treasury.business.address_legal,
-            treasury.business.image,
-            treasury.business.website,
-            treasury.business.image
-          );
+          // sendTransferToppedUpEmail(
+          //   taccount.email,
+          //   taccount.id,
+          //   format(new Date(), "dd/MM/yyyy"),
+          //   `€${(treasury.sync_strategy_config.reward / 100).toFixed(2)}`,
+          //   treasury.business.legal_name,
+          //   treasury.business.address_legal,
+          //   treasury.business.image,
+          //   treasury.business.website,
+          //   treasury.business.image
+          // );
         }
       }
     default:
